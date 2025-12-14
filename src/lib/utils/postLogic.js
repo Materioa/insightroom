@@ -300,6 +300,31 @@ export function addHeadingAnchorLinks() {
         // @ts-ignore
         heading.style.position = 'relative';
         heading.appendChild(anchor);
+
+        // Handle click - copy link to clipboard
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = window.location.origin + window.location.pathname + '#' + heading.id;
+
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Link copied to clipboard!');
+                } catch (err) {
+                    alert('Failed to copy link');
+                }
+                document.body.removeChild(textArea);
+            });
+        });
     });
 }
 

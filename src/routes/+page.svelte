@@ -1,26 +1,26 @@
 <script>
-  import { onMount } from 'svelte';
-  import { searchTerm } from '$lib/stores/search';
-  
+  import { onMount } from "svelte";
+  import { searchTerm } from "$lib/stores/search";
+
   /** @type {{ data: import('./$types').PageData }} */
   let { data } = $props();
 
   // Logic to organize posts
-  let posts = $derived(data.posts.filter(p => p.hasAccess));
-  let postsWithImages = $derived(posts.filter(p => p.image));
-  let heroPost = $derived(postsWithImages.length > 0 ? postsWithImages[0] : null);
-  
+  let posts = $derived(data.posts.filter((p) => p.hasAccess));
+  let postsWithImages = $derived(posts.filter((p) => p.image));
+  let heroPost = $derived(
+    postsWithImages.length > 0 ? postsWithImages[0] : null,
+  );
+
   // Quick Reads - posts without images, limit to 10
-  let quickReads = $derived(posts
-    .filter(p => !p.image)
-    .slice(0, 10));
+  let quickReads = $derived(posts.filter((p) => !p.image).slice(0, 10));
 
   // Grid posts - all posts with images, excluding the hero post
   let gridPosts = $derived(postsWithImages.slice(1));
 
   // Categories
   let categories = $derived(data.categories || []);
-  let selectedCategory = $state('all');
+  let selectedCategory = $state("all");
 
   // Search
   /** @type {any[]} */
@@ -32,58 +32,82 @@
       searchResults = [];
     } else {
       const term = $searchTerm.toLowerCase();
-      searchResults = posts.filter(post => 
-        post.title?.toLowerCase().includes(term) || 
-        (post.excerpt && post.excerpt.toLowerCase().includes(term))
+      searchResults = posts.filter(
+        (post) =>
+          post.title?.toLowerCase().includes(term) ||
+          (post.excerpt && post.excerpt.toLowerCase().includes(term)),
       );
     }
   });
 
-  /** @param {string} url */
+  /** @param {string|undefined|null} url */
   function isVideo(url) {
-    return url && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'));
+    if (!url) return false;
+    return (
+      url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".mov")
+    );
   }
 
-  /** @param {string} url */
+  /** @param {string|undefined|null} url */
   function getVideoType(url) {
-    if (url.endsWith('.webm')) return 'video/webm';
-    if (url.endsWith('.mov')) return 'video/quicktime';
-    return 'video/mp4';
+    if (!url) return "video/mp4";
+    if (url.endsWith(".webm")) return "video/webm";
+    if (url.endsWith(".mov")) return "video/quicktime";
+    return "video/mp4";
   }
 
   /** @param {string} dateStr */
-  function formatDate(dateStr, format = 'long') {
+  function formatDate(dateStr, format = "long") {
     const date = new Date(dateStr);
-    if (format === 'short') {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (format === "short") {
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
     }
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   }
 
   /** @param {any} post */
   function getCategory(post) {
     if (post.category) return post.category;
     if (post.categories) {
-      return Array.isArray(post.categories) ? post.categories[0] : post.categories;
+      return Array.isArray(post.categories)
+        ? post.categories[0]
+        : post.categories;
     }
     return null;
   }
 
   /** @param {any} post */
   function matchesCategory(post) {
-    if (selectedCategory === 'all') return true;
+    if (selectedCategory === "all") return true;
     const cat = getCategory(post);
-    return cat?.toLowerCase().replace(/\s+/g, '-') === selectedCategory.toLowerCase().replace(/\s+/g, '-');
+    return (
+      cat?.toLowerCase().replace(/\s+/g, "-") ===
+      selectedCategory.toLowerCase().replace(/\s+/g, "-")
+    );
   }
 </script>
 
 <svelte:head>
   <title>Materio - The InsightRoom</title>
-  <meta property="og:title" content="Materio - The InsightRoom">
-  <meta property="og:description" content="The InsightRoom is a place to find insightful reads">
-  <meta property="og:image" content="https://materioa.vercel.app/assets/img/og-theinsroom.jpg">
-  <meta property="og:url" content="https://materioa.vercel.app/room">
-  <meta property="og:type" content="website">
+  <meta property="og:title" content="Materio - The InsightRoom" />
+  <meta
+    property="og:description"
+    content="The InsightRoom is a place to find insightful reads"
+  />
+  <meta
+    property="og:image"
+    content="https://materioa.vercel.app/assets/img/og-theinsroom.jpg"
+  />
+  <meta property="og:url" content="https://materioa.vercel.app/room" />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="home-container">
@@ -101,18 +125,27 @@
                   {#if isVideo(post.image)}
                     <div class="video-thumbnail">
                       <video muted loop autoplay>
-                        <source src={post.image} type={getVideoType(post.image)}>
+                        <source
+                          src={post.image}
+                          type={getVideoType(post.image)}
+                        />
                       </video>
                     </div>
                   {:else}
-                    <img src={post.image} class="post-image rounded" alt="{post.title} thumbnail">
+                    <img
+                      src={post.image}
+                      class="post-image rounded"
+                      alt="{post.title} thumbnail"
+                    />
                   {/if}
                 {/if}
                 <div class="post-meta">
                   <h2 class="post-title">
                     {post.title}
-                    {#if post.visibility === 'private'}
-                      <span class="private-badge"><i class="fa-solid fa-lock"></i> Private</span>
+                    {#if post.visibility === "private"}
+                      <span class="private-badge"
+                        ><i class="fa-solid fa-lock"></i> Private</span
+                      >
                     {/if}
                   </h2>
                   <p class="post-date">{formatDate(post.date)}</p>
@@ -130,22 +163,35 @@
       <!-- Normal Hero Mode -->
       {#if heroPost}
         <div class="hero-content">
-          <a class="hero-post" href={heroPost.url} data-visibility={heroPost.visibility}>
+          <a
+            class="hero-post"
+            href={heroPost.url}
+            data-visibility={heroPost.visibility}
+          >
             {#if isVideo(heroPost.image)}
               <div class="hero-video">
                 <video muted loop autoplay>
-                  <source src={heroPost.image} type={getVideoType(heroPost.image)}>
+                  <source
+                    src={heroPost.image}
+                    type={getVideoType(heroPost.image)}
+                  />
                 </video>
               </div>
             {:else}
-              <img src={heroPost.image} class="hero-image" alt="{heroPost.title} thumbnail">
+              <img
+                src={heroPost.image}
+                class="hero-image"
+                alt="{heroPost.title} thumbnail"
+              />
             {/if}
             <div class="hero-meta">
               <p class="post-date">{formatDate(heroPost.date)}</p>
               <h2 class="post-title">
                 {heroPost.title}
-                {#if heroPost.visibility === 'private'}
-                  <span class="private-badge"><i class="fa-solid fa-lock"></i> Private</span>
+                {#if heroPost.visibility === "private"}
+                  <span class="private-badge"
+                    ><i class="fa-solid fa-lock"></i> Private</span
+                  >
                 {/if}
               </h2>
             </div>
@@ -158,14 +204,20 @@
         <h3 class="uncategorized-title">Quick Reads</h3>
         <div class="uncategorized-list">
           {#each quickReads as post}
-            <a class="uncategorized-item" href={post.url} data-visibility={post.visibility}>
+            <a
+              class="uncategorized-item"
+              href={post.url}
+              data-visibility={post.visibility}
+            >
               <h4 class="uncategorized-item-title">
                 {post.title}
-                {#if post.visibility === 'private'}
+                {#if post.visibility === "private"}
                   <i class="fa-solid fa-lock"></i>
                 {/if}
               </h4>
-              <p class="uncategorized-item-date">{formatDate(post.date, 'short')}</p>
+              <p class="uncategorized-item-date">
+                {formatDate(post.date, "short")}
+              </p>
             </a>
           {/each}
         </div>
@@ -176,15 +228,17 @@
   {#if !$searchTerm}
     <!-- Category Selector -->
     <div class="category-selector">
-      <button 
-        class="category-pill {selectedCategory === 'all' ? 'active' : ''}" 
-        onclick={() => selectedCategory = 'all'}
-      >All Posts</button>
+      <button
+        class="category-pill {selectedCategory === 'all' ? 'active' : ''}"
+        onclick={() => (selectedCategory = "all")}>All Posts</button
+      >
       {#each categories as category}
-        <button 
-          class="category-pill {selectedCategory === category ? 'active' : ''}" 
-          onclick={() => selectedCategory = category}
-        >{category}</button>
+        <button
+          class="category-pill {selectedCategory === (category || '')
+            ? 'active'
+            : ''}"
+          onclick={() => (selectedCategory = category || "")}>{category}</button
+        >
       {/each}
     </div>
 
@@ -192,21 +246,37 @@
     <div class="post-grid">
       {#each gridPosts as post}
         {#if matchesCategory(post)}
-          <a class="post-card no-border" href={post.url} data-visibility={post.visibility} data-category={getCategory(post)?.toLowerCase().replace(/\s+/g, '-')}>
+          <a
+            class="post-card no-border"
+            href={post.url}
+            data-visibility={post.visibility}
+            data-category={getCategory(post)
+              ?.toLowerCase()
+              .replace(/\s+/g, "-")}
+          >
             {#if isVideo(post.image)}
               <div class="video-thumbnail">
                 <video muted loop autoplay>
-                  <source src={post.image} type={getVideoType(post.image)}>
+                  <source
+                    src={post.image || ""}
+                    type={getVideoType(post.image)}
+                  />
                 </video>
               </div>
             {:else}
-              <img src={post.image} class="post-image rounded" alt="{post.title} thumbnail">
+              <img
+                src={post.image || ""}
+                class="post-image rounded"
+                alt="{post.title} thumbnail"
+              />
             {/if}
             <div class="post-meta">
               <h2 class="post-title">
                 {post.title}
-                {#if post.visibility === 'private'}
-                  <span class="private-badge"><i class="fa-solid fa-lock"></i> Private</span>
+                {#if post.visibility === "private"}
+                  <span class="private-badge"
+                    ><i class="fa-solid fa-lock"></i> Private</span
+                  >
                 {/if}
               </h2>
               {#if getCategory(post)}
@@ -336,7 +406,7 @@
   }
 
   .category-pill {
-    font-family: 'Manrope', sans-serif;
+    font-family: "Manrope", sans-serif;
     background: var(--pill-bg, #f9f8f7);
     border: 1px solid var(--border, #e0e0e0);
     color: var(--text, #666);

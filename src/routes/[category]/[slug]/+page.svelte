@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, tick, onDestroy } from "svelte";
   import {
     addHeadingAnchorLinks,
     buildTOCFallback,
@@ -11,31 +11,50 @@
     seekForward,
     stopAudio,
   } from "../../../lib/utils/postLogic.js";
+  import { page } from "$app/stores";
+  import { dev } from "$app/environment";
   import { initializePostBase } from "../../../lib/utils/postBaseLogic.js";
+  import AISummary from "$lib/components/AISummary.svelte";
+  import {
+    trackPageView,
+    trackReadingTime,
+    trackFeatureUsage,
+    flushEvents,
+  } from "$lib/utils/analytics.js";
 
   /** @type {{ data: any }} */
   let { data } = $props();
+  // State for content binding
+  let contentElement = $state();
+  let postContentText = $state("");
 
-  /** @param {string} dateStr */
+  /** @param {string|undefined|null} dateStr */
   function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch (e) {
+      return "";
+    }
   }
 
-  /** @param {string} url */
+  // ... (existing helper functions: isVideo, getVideoType, sharePost, printPost, toggleVideo)
+  /** @param {string|undefined|null} url */
   function isVideo(url) {
+    if (!url) return false;
     return (
-      url &&
-      (url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".mov"))
+      url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".mov")
     );
   }
 
-  /** @param {string} url */
+  /** @param {string|undefined|null} url */
   function getVideoType(url) {
+    if (!url) return "video/mp4";
     if (url.endsWith(".webm")) return "video/webm";
     if (url.endsWith(".mov")) return "video/quicktime";
     return "video/mp4";
@@ -96,6 +115,20 @@
     }
     return data.category?.replace(/ /g, "-") || "";
   });
+
+  /** @param {string} name */
+  function getCookie(name) {
+    if (typeof document === "undefined") return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      const popped = parts.pop();
+      if (popped) {
+        return popped.split(";").shift() || null;
+      }
+    }
+    return null;
+  }
 
   onMount(() => {
     // Enhanced post links script
@@ -177,6 +210,32 @@
 
     // Initialize Post Base Features (Code Blocks, Print, Security)
     initializePostBase();
+
+    // Track page view for analytics
+    trackPageView({
+      title: data.title || "",
+      slug: $page.params.slug || "",
+      category: $page.params.category || "",
+      contentId: data.slug || $page.params.slug || "",
+    });
+
+    // Track reading time - record start time
+    const startTime = Date.now();
+
+    // Cleanup function to track reading time when leaving
+    return () => {
+      const duration = Math.round((Date.now() - startTime) / 1000);
+      if (duration > 5) {
+        // Only track if spent more than 5 seconds
+        trackReadingTime(data.slug || $page.params.slug, duration);
+        flushEvents(); // Ensure events are sent before navigation
+      }
+    };
+  });
+  $effect(() => {
+    if (contentElement && contentElement.textContent) {
+      postContentText = contentElement.textContent;
+    }
   });
 </script>
 
@@ -302,9 +361,14 @@
               <!-- Video cover -->
               <div class="video-cover" style="margin: 0;">
                 <video id="cover-video" muted loop style="border-radius: 12px;">
-                  <source src={data.image} type={getVideoType(data.image)} />
+                  <source
+                    src={data.image || ""}
+                    type={getVideoType(data.image)}
+                  />
                   Your browser does not support the video tag.
                 </video>
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div
                   class="video-controls paused"
                   onclick={() => toggleVideo("cover-video")}
@@ -315,8 +379,8 @@
             {:else}
               <!-- Image cover -->
               <img
-                src={data.image}
-                alt="Cover image"
+                src={data.image || ""}
+                alt={data.title || "Cover image"}
                 class="post-cover"
                 style="border-radius: 12px; display: block; width: 100%; height: auto; object-fit: cover;"
               />
@@ -360,6 +424,8 @@
             style="display: flex; justify-content: center; align-items: center; gap: 1rem;"
           >
             <!-- Listen Component -->
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               id="listen-component"
               class="listen-pill"
@@ -399,6 +465,8 @@
             </div>
 
             <!-- Seek controls (only visible when playing/paused) -->
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               id="seek-controls"
               class="seek-controls"
@@ -433,6 +501,8 @@
 
             <!-- Share and Print icons -->
             {#if !data["hide_share"]}
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
               <i
                 class="fa-regular fa-link-simple"
                 onclick={sharePost}
@@ -441,6 +511,8 @@
               ></i>
             {/if}
             {#if !data["hide_print"]}
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
               <i
                 class="fa-regular fa-print"
                 onclick={printPost}
@@ -470,15 +542,29 @@
               content.
             </p>
             <a
-              href="https://materioa.vercel.app/account"
+              href={dev
+                ? `http://localhost:1000/account?redirect=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
+                : `https://materioa.vercel.app/account?redirect=${encodeURIComponent("https://insightroom.vercel.app" + $page.url.pathname)}`}
               style="background: #ff8200; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600;"
             >
               Log In
             </a>
           </div>
-        {:else}
-          <data.content />
         {/if}
+        <!-- Capture content for summary -->
+        <div bind:this={contentElement} style="display: none;">
+          <data.content />
+        </div>
+
+        <AISummary
+          data={{
+            title: data.title,
+            content: postContentText,
+          }}
+          token={data.token}
+        />
+
+        <data.content />
       </div>
 
       <aside class="post-toc" aria-label="Table of contents">
