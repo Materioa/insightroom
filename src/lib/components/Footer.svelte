@@ -1,0 +1,24 @@
+<script>
+  let { setTheme } = $props();
+</script>
+
+<footer class="site-footer">
+  <div class="footer-img">
+    <img src="/assets/img/banner.svg" alt="Banner">
+  </div>
+  <div class="footer-content">
+    <p>&copy; {new Date().getFullYear()} Materio - The InsightRoom All rights reserved.</p>
+  </div>
+
+  <div class="theme-switcher" style="margin: 1rem auto 0; background: var(--bg); border: 1px solid lightgray; border-radius: 9999px; display: flex; gap: 0.5rem; padding: 0.5rem 1rem; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; width: fit-content;">
+    <button aria-label="Light Mode" onclick={() => setTheme('light')} id="light-btn" style="background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--text);">
+      <i class="fa-regular fa-sun-bright"></i>
+    </button>
+    <button aria-label="Dark Mode" onclick={() => setTheme('dark')} id="dark-btn" style="background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--text);">
+      <i class="fa-regular fa-moon"></i>
+    </button>
+    <button aria-label="System Theme" onclick={() => setTheme('system')} id="system-btn" style="background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--text);">
+      <i class="fa-regular fa-computer-classic"></i>
+    </button>
+  </div>
+</footer>
