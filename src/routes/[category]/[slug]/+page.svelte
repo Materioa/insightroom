@@ -2,9 +2,6 @@
   import { onMount, tick, onDestroy } from "svelte";
   import {
     addHeadingAnchorLinks,
-    buildTOCFallback,
-    wireTOCSidebar,
-    wireTOCActiveTracking,
     initializeListenComponent,
     toggleListen,
     seekBackward,
@@ -178,11 +175,17 @@
       mermaid.initialize({ startOnLoad: true });
     }
 
-    // Initialize Post Logic (TOC, Anchors, Listen)
+    // Initialize heading anchors
     addHeadingAnchorLinks();
-    buildTOCFallback();
-    wireTOCSidebar();
-    wireTOCActiveTracking();
+
+    // Initialize TOC via standalone script (toc.js loaded via script tag)
+    // @ts-ignore
+    if (typeof window.initTOC === "function") {
+      // @ts-ignore
+      window.initTOC();
+    }
+
+    // Initialize Listen component
     initializeListenComponent();
 
     // Render math
@@ -270,6 +273,8 @@
     name="twitter:image"
     content={`https://materioa.vercel.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
   />
+  <!-- Standalone TOC script - runs independently of Svelte -->
+  <script src="/assets/scripts/toc.js" defer></script>
 </svelte:head>
 
 <main
@@ -550,21 +555,29 @@
               Log In
             </a>
           </div>
+        {:else}
+          <!-- Capture content for summary (hidden, no IDs to avoid duplicates) -->
+          <div
+            bind:this={contentElement}
+            class="summary-capture"
+            style="display: none;"
+          >
+            <data.content />
+          </div>
+
+          <AISummary
+            data={{
+              title: data.title,
+              content: postContentText,
+            }}
+            token={data.token}
+            accessTier={data.accessTier}
+          />
+
+          <div class="post-content-visible">
+            <data.content />
+          </div>
         {/if}
-        <!-- Capture content for summary -->
-        <div bind:this={contentElement} style="display: none;">
-          <data.content />
-        </div>
-
-        <AISummary
-          data={{
-            title: data.title,
-            content: postContentText,
-          }}
-          token={data.token}
-        />
-
-        <data.content />
       </div>
 
       <aside class="post-toc" aria-label="Table of contents">

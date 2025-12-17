@@ -2,7 +2,7 @@
     import { onMount, tick } from "svelte";
     import { dev } from "$app/environment";
 
-    let { data = { title: "", content: "" }, token = null } = $props();
+    let { data = { title: "", content: "" }, token = null, accessTier = null } = $props();
 
     let componentState = $state({
         showSummarySection: false,
@@ -20,6 +20,12 @@
         : "https://materioa.vercel.app";
 
     async function checkSummaryAccess() {
+        if (accessTier === 'super' || accessTier === 'plus') {
+            componentState.showSummarySection = true;
+            console.log("Access granted via accessTier:", accessTier);
+            return;
+        }
+
         if (!token) {
             console.log("No token provided to AISummary.");
             return;
@@ -192,22 +198,10 @@
     }
 
     $effect(() => {
-        console.log("Effect triggered. Token:", token);
-        if (token) {
-            checkSummaryAccess();
-        }
+        console.log("Effect triggered. Token:", token, "AccessTier:", accessTier);
+        checkSummaryAccess();
     });
 </script>
-
-<!-- Debug Info -->
-<div
-    style="background: #eee; padding: 5px; font-size: 10px; border: 1px solid #ccc; margin-bottom: 1rem;"
->
-    <strong>Debug ({Date.now()}):</strong>
-    showSummarySection: {componentState.showSummarySection} | Token available: {!!token}
-    | isExpanded:
-    {componentState.isSummaryExpanded}
-</div>
 
 {#if componentState.showSummarySection}
     <!-- AI Summary Section -->

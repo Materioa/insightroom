@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 
 /** @type {import('./$types').PageServerLoad} */
 export const load = async ({ params, parent }) => {
-    const { accessTier } = await parent();
+    const { accessTier, token } = await parent();
 
     // Import dynamically
     const { getPost, getAllPosts } = await import('$lib/server/posts.js');
@@ -31,6 +31,8 @@ export const load = async ({ params, parent }) => {
         ...post.metadata,
         slug: params.slug,
         category: params.category, // Pass category param to page if needed
-        isLocked // Pass lock status to UI
+        isLocked, // Pass lock status to UI
+        token, // Pass token to component for AI Summary API calls
+        accessTier // Pass access tier to UI
     };
 };

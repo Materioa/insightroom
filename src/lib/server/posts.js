@@ -100,5 +100,7 @@ export function getAllPosts() {
  */
 export function getPost(categorySlug, slug) {
     const posts = getAllPosts();
-    return posts.find(p => p.categorySlug === categorySlug && p.slug === slug);
+    // Slugify the incoming category to ensure case-insensitive matching
+    const normalizedCategory = slugify(categorySlug);
+    return posts.find(p => p.categorySlug === normalizedCategory && p.slug === slug);
 }
