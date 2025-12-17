@@ -66,7 +66,28 @@ export function getAllPosts() {
         if (!category && metadata.categories) {
             category = Array.isArray(metadata.categories) ? metadata.categories[0] : metadata.categories;
         }
-        const categorySlug = slugify(category || 'uncategorized');
+        let categorySlug = slugify(category || 'uncategorized');
+
+        // Handle permalink
+        if (metadata.permalink) {
+            const cleanLink = metadata.permalink.replace(/^\/|\/$/g, '');
+            const parts = cleanLink.split('/');
+            
+            // Extract slug (last part)
+            let permalinkSlug = parts.pop();
+            
+            // Handle :title placeholder
+            if (permalinkSlug === ':title') {
+                permalinkSlug = slug;
+            }
+            
+            slug = permalinkSlug;
+
+            // If there are remaining parts, they form the category
+            if (parts.length > 0) {
+                categorySlug = parts.map((/** @type {string} */ part) => slugify(part)).join('/');
+            }
+        }
 
         // Determine URL
         const url = `/${categorySlug}/${slug}`;
