@@ -1,0 +1,56 @@
+﻿
+> the-insightroom@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./jsconfig.json
+
+Loading svelte-check in workspace: d:\v4\materio\insightroom
+Getting Svelte diagnostics...
+
+d:\v4\materio\insightroom\[32msrc\routes\api\posts\all\+server.js[39m:9:25
+[31mError[39m: Parameter 'origin' implicitly has an 'any' type. 
+[36m
+function getCorsHeaders([35morigin[36m) {
+    if (origin) {[39m
+
+d:\v4\materio\insightroom\[32msrc\routes\api\posts\all\+server.js[39m:28:9
+[31mError[39m: Type '{ 'Access-Control-Allow-Origin': any; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials': string; } | { 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credenti...' is not assignable to type 'HeadersInit | undefined'.
+  Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+    Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'Record<string, string>'.
+      Property ''Access-Control-Allow-Credentials'' is incompatible with index signature.
+        Type 'undefined' is not assignable to type 'string'. 
+[36m    return new Response(null, {
+        [35mheaders[36m: getCorsHeaders(origin)
+    });[39m
+
+d:\v4\materio\insightroom\[32msrc\routes\api\posts\all\+server.js[39m:45:63
+[31mError[39m: Type '{ 'Access-Control-Allow-Origin': any; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials': string; } | { 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credenti...' is not assignable to type 'HeadersInit | undefined'.
+  Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+    Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'Record<string, string>'.
+      Property ''Access-Control-Allow-Credentials'' is incompatible with index signature.
+        Type 'undefined' is not assignable to type 'string'. 
+[36m    if (!token) {
+        return json({ error: 'Unauthorized' }, { status: 401, [35mheaders[36m: corsHeaders });
+    }[39m
+
+d:\v4\materio\insightroom\[32msrc\routes\api\posts\all\+server.js[39m:53:60
+[31mError[39m: Type '{ 'Access-Control-Allow-Origin': any; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials': string; } | { 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credenti...' is not assignable to type 'HeadersInit | undefined'.
+  Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+    Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'Record<string, string>'.
+      Property ''Access-Control-Allow-Credentials'' is incompatible with index signature.
+        Type 'undefined' is not assignable to type 'string'. 
+[36m    } catch (err) {
+        return json({ error: 'Forbidden' }, { status: 403, [35mheaders[36m: corsHeaders });
+    }[39m
+
+d:\v4\materio\insightroom\[32msrc\routes\api\posts\all\+server.js[39m:85:9
+[31mError[39m: Type '{ 'Access-Control-Allow-Origin': any; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials': string; } | { 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credenti...' is not assignable to type 'HeadersInit | undefined'.
+  Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+    Type '{ 'Access-Control-Allow-Origin': string; 'Access-Control-Allow-Methods': string; 'Access-Control-Allow-Headers': string; 'Access-Control-Allow-Credentials'?: undefined; }' is not assignable to type 'Record<string, string>'.
+      Property ''Access-Control-Allow-Credentials'' is incompatible with index signature.
+        Type 'undefined' is not assignable to type 'string'. 
+[36m    return json(apiPosts, {
+        [35mheaders[36m: corsHeaders
+    });[39m
+
+====================================
+[31msvelte-check found 5 errors and 0 warnings in 1 file
+[39m

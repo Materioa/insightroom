@@ -15,6 +15,7 @@
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.49.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"@types/jsonwebtoken": "^9.0.10",
 		"mdsvex": "^0.12.6",
 		"svelte": "^5.45.6",
 		"svelte-check": "^4.3.4",
@@ -23,6 +24,7 @@
 	},
 	"dependencies": {
 		"gray-matter": "^4.0.3",
+		"jsonwebtoken": "^9.0.3",
 		"marked": "^17.0.1",
 		"rehype-raw": "^7.0.0",
 		"remark-gfm": "^4.0.1"

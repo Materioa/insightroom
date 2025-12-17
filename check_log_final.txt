@@ -1,0 +1,9 @@
+﻿
+> the-insightroom@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./jsconfig.json
+
+Loading svelte-check in workspace: d:\v4\materio\insightroom
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39m
