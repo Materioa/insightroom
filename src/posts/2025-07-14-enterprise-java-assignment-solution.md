@@ -497,30 +497,30 @@ If any code needs to target javax.* (Servlet 3.1/4.0) vs jakarta.* (Servlet 5.0+
 
 ## 1) What is JSP (JavaServer Pages)?
 
-JSP is a server-side technology that allows embedding Java code into HTML to generate dynamic web content; at runtime, a JSP is translated into a servlet, compiled, loaded, and executed by the container to produce the response. JSP supports features like automatic translation-to-servlet, implicit objects (request, response, session, application), and lifecycle hooks (jspInit, _jspService, jspDestroy). Compared to writing raw servlets, JSP is advantageous for view-centric pages because HTML authoring is more natural, Java can be inserted where needed, and the container manages translation/compilation automatically.[1][2][3]
+JSP is a server-side technology that allows embedding Java code into HTML to generate dynamic web content; at runtime, a JSP is translated into a servlet, compiled, loaded, and executed by the container to produce the response. JSP supports features like automatic translation-to-servlet, implicit objects (request, response, session, application), and lifecycle hooks (jspInit, _jspService, jspDestroy). Compared to writing raw servlets, JSP is advantageous for view-centric pages because HTML authoring is more natural, Java can be inserted where needed, and the container manages translation/compilation automatically.
 
 ## 2) JSP Architecture
 
-JSP follows the standard web app stack where the browser sends an HTTP request to the web server, which forwards it to the JSP engine (in the servlet container); the engine checks if compilation is needed, translates the JSP into a servlet, compiles it, loads it, and invokes it to create the dynamic response. Conceptually, this aligns with a three-layer architecture: presentation (JSP), business logic (Java classes/beans/services), and data access (databases), with JSP primarily handling the presentation layer and delegating logic to Java classes or beans. During request processing, the steps are: parse JSP, generate servlet source, compile to class, instantiate, initialize via jspInit(), and handle the request via _jspService(), then write the response back to the client.[2][1]
+JSP follows the standard web app stack where the browser sends an HTTP request to the web server, which forwards it to the JSP engine (in the servlet container); the engine checks if compilation is needed, translates the JSP into a servlet, compiles it, loads it, and invokes it to create the dynamic response. Conceptually, this aligns with a three-layer architecture: presentation (JSP), business logic (Java classes/beans/services), and data access (databases), with JSP primarily handling the presentation layer and delegating logic to Java classes or beans. During request processing, the steps are: parse JSP, generate servlet source, compile to class, instantiate, initialize via jspInit(), and handle the request via _jspService(), then write the response back to the client.
 
 ## 3) Phases of the JSP Lifecycle
 
-- Translation: The JSP file is parsed and converted into a Java servlet source file (e.g., test.java).[1][2]
-- Compilation: The generated Java servlet is compiled into bytecode (test.class).[2][1]
-- Class loading and instantiation: The class is loaded and an instance is created by the container.[1]
-- Initialization: The container calls jspInit() once for initialization tasks.[2][1]
-- Request processing: For each request, the container invokes _jspService(request, response), which corresponds to the JSP body and should not be overridden by the author.[4][3][1]
-- Destruction: Before removal, the container calls jspDestroy() to release resources.[1][2]
+- Translation: The JSP file is parsed and converted into a Java servlet source file (e.g., test.java).
+- Compilation: The generated Java servlet is compiled into bytecode (test.class).
+- Class loading and instantiation: The class is loaded and an instance is created by the container.
+- Initialization: The container calls jspInit() once for initialization tasks.
+- Request processing: For each request, the container invokes _jspService(request, response), which corresponds to the JSP body and should not be overridden by the author.
+- Destruction: Before removal, the container calls jspDestroy() to release resources.
 
-Typical example pattern: define setup in jspInit(), use JSP elements in the page body to generate output (which becomes _jspService()), and clean up in jspDestroy().[3][2][1]
+Typical example pattern: define setup in jspInit(), use JSP elements in the page body to generate output (which becomes _jspService()), and clean up in jspDestroy().
 
 ## 4) Role of jspInit(), _jspService(), and jspDestroy()
 
-- jspInit(): Called once when the JSP is initialized; use to open resources such as DB connections or caches.[3][2][1]
-- _jspService(): Automatically generated method that contains the body of the JSP and handles each request; it should never be defined by the JSP author.[4][3]
-- jspDestroy(): Called once when the JSP is about to be destroyed; use to release resources.[4][3][2][1]
+- jspInit(): Called once when the JSP is initialized; use to open resources such as DB connections or caches.
+- _jspService(): Automatically generated method that contains the body of the JSP and handles each request; it should never be defined by the JSP author.
+- jspDestroy(): Called once when the JSP is about to be destroyed; use to release resources.
 
-The JSP container manages these methods: it generates _jspService(), and invokes jspInit() before servicing requests and jspDestroy() during cleanup; authors may override jspInit() and jspDestroy(), but not _jspService().[5][3][4][1]
+The JSP container manages these methods: it generates _jspService(), and invokes jspInit() before servicing requests and jspDestroy() during cleanup; authors may override jspInit() and jspDestroy(), but not _jspService().
 
 ## 5) Types of JSP Elements (syntax and examples)
 

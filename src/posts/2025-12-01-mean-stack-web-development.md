@@ -48,7 +48,7 @@ The key differentiator for Node.js is its architecture. It is built on an **even
 *   **Traditional (Blocking) Model (e.g., Java, Python)**: In a traditional multi-threaded server, each incoming connection is assigned a separate thread. This can consume a lot of memory and system resources, especially when handling thousands of concurrent connections. If a thread is waiting for a database query or a file operation to complete, it "blocks" and cannot do anything else.
 *   **Node.js (Non-Blocking) Model**: Node.js operates on a single thread. When it encounters an I/O operation (like reading a file or a database call), it sends the task to the system's kernel and immediately moves on to handle the next request. When the I/O task is complete, the kernel informs Node.js via a callback, and the result is returned.
 
-This non-blocking nature makes Node.js extremely efficient for I/O-heavy applications like real-time chat apps, streaming services, and collaborative tools where the server needs to maintain many open connections and handle frequent, small data exchanges.[9]
+This non-blocking nature makes Node.js extremely efficient for I/O-heavy applications like real-time chat apps, streaming services, and collaborative tools where the server needs to maintain many open connections and handle frequent, small data exchanges.
 
 **Tip:** The main advantage of Node.js is not that it's faster at raw computation, but its efficiency in handling concurrent I/O operations. Its single-threaded, non-blocking model makes it highly scalable for real-time applications.
 

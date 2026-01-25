@@ -338,7 +338,7 @@ int ne = 1;             // Edge count initialized to 1
 int mincost = 0; 
 // complete the missing code..
 void prims() {
-    visited[1] = 1;
+    visited = 1;
     while (ne < n) {
         min = 999;
         for (i = 1; i <= n; i++) {
@@ -396,7 +396,7 @@ void main() {
 # include<stdio.h>
 void knapsack(int n, float weight[], float profit[], float capacity) {
   // write your code here
-  float x[20], tp = 0;
+  float x, tp = 0;
 	int i, j, u;
 	u = capacity;
 	for (i = 0; i < n; i++)
@@ -420,9 +420,9 @@ void knapsack(int n, float weight[], float profit[], float capacity) {
 }
 
 int main() {
-	float weight[20], profit[20], capacity;
+	float weight, profit, capacity;
 	int num, i, j;
-	float ratio[20], temp;
+	float ratio, temp;
 	printf("Enter the no. of objects: ");
 	scanf("%d", &num);
 	printf("Enter the weights and profits of each object:\n");

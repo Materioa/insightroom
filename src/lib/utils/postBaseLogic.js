@@ -15,6 +15,9 @@ export function initializePostBase() {
         initializeScrollToTop();
         initializeSecureMode();
         initializeMermaid();
+        initializeMarkmap();
+        initializeGraphviz();
+        initializeFlashcards();
     }, 100);
 }
 
@@ -73,8 +76,8 @@ function initializeCodeBlocks() {
             else if (txt.includes('def ') && txt.includes('print(')) language = 'python';
         }
 
-        // Mermaid handling - skip here, handled in initializeMermaid
-        if (language === 'mermaid') return;
+        // Mermaid, Markmap, Graphviz, Flashcards handling - skip here, handled separately
+        if (['mermaid', 'markmap', 'graphviz', 'dot', 'flashcards'].includes(language)) return;
 
         const content = codeBlock.textContent || '';
         const lineCount = content.trim().split('\n').length;
@@ -170,6 +173,564 @@ function initializeMermaid() {
     } catch (e) {
         console.error('Mermaid init error:', e);
     }
+}
+
+/* =========================================
+   Markmap Mindmaps
+   ========================================= */
+
+function initializeMarkmap() {
+    // @ts-ignore
+    if (typeof markmap === 'undefined' || typeof markmap.Transformer === 'undefined') {
+        console.warn('Markmap library not loaded');
+        return;
+    }
+
+    const markmapBlocks = document.querySelectorAll('pre code.language-markmap');
+    if (markmapBlocks.length === 0) return;
+
+    // @ts-ignore
+    const transformer = new markmap.Transformer();
+
+    markmapBlocks.forEach((element, index) => {
+        const code = element.textContent || '';
+        const pre = element.parentElement;
+        if (!pre || !pre.parentElement) return;
+
+        // Create mindmap card container
+        const card = document.createElement('div');
+        card.className = 'mindmap-card';
+        card.id = `mindmap-${index}`;
+
+        // Create SVG for the mindmap
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.id = `mindmap-svg-${index}`;
+        svg.style.width = '100%';
+        svg.style.height = '400px';
+
+        card.appendChild(svg);
+        pre.replaceWith(card);
+
+        try {
+            // Transform markdown to markmap data
+            const { root } = transformer.transform(code);
+
+            // Create markmap instance with interactivity
+            // @ts-ignore
+            markmap.Markmap.create(svg, {
+                colorFreezeLevel: 2,
+                duration: 300,
+                maxWidth: 200,
+                zoom: true,
+                pan: true,
+            }, root);
+        } catch (e) {
+            console.error('Markmap render error:', e);
+            card.innerHTML = `<div class="diagram-error">Error rendering mindmap: ${e.message}</div>`;
+        }
+    });
+}
+
+/* =========================================
+   Graphviz FSM/Automata Diagrams
+   ========================================= */
+
+async function initializeGraphviz() {
+    // @ts-ignore
+    if (typeof Viz === 'undefined') {
+        console.warn('Viz.js library not loaded');
+        return;
+    }
+
+    const graphvizBlocks = document.querySelectorAll('pre code.language-graphviz, pre code.language-dot');
+    if (graphvizBlocks.length === 0) return;
+
+    try {
+        // @ts-ignore
+        const viz = await Viz.instance();
+
+        graphvizBlocks.forEach((element, index) => {
+            const code = element.textContent || '';
+            const pre = element.parentElement;
+            if (!pre || !pre.parentElement) return;
+
+            // Create graphviz diagram container
+            const container = document.createElement('div');
+            container.className = 'graphviz-diagram';
+            container.id = `graphviz-${index}`;
+
+            try {
+                // Render DOT to SVG
+                const svgString = viz.renderSVGElement(code);
+                container.appendChild(svgString);
+                pre.replaceWith(container);
+            } catch (e) {
+                console.error('Graphviz render error:', e);
+                container.innerHTML = `<div class="diagram-error">Error rendering diagram: ${e.message}</div>`;
+                pre.replaceWith(container);
+            }
+        });
+    } catch (e) {
+        console.error('Viz.js initialization error:', e);
+    }
+}
+
+/* =========================================
+   Flashcards Carousel
+   ========================================= */
+
+function initializeFlashcards() {
+    const flashcardBlocks = document.querySelectorAll('pre code.language-flashcards');
+    if (flashcardBlocks.length === 0) return;
+
+    flashcardBlocks.forEach((element, blockIndex) => {
+        const code = element.textContent || '';
+        const pre = element.parentElement;
+        if (!pre || !pre.parentElement) return;
+
+        // Parse flashcards from markdown
+        // Format: Q: question text
+        //         A: answer text
+        //         ---  (separator between cards)
+        const cards = parseFlashcards(code);
+        if (cards.length === 0) return;
+
+        // Create flashcard carousel container
+        const container = document.createElement('div');
+        container.className = 'flashcard-carousel';
+        container.id = `flashcard-carousel-${blockIndex}`;
+
+        // Create cards container
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'flashcard-cards';
+
+        // Create individual cards
+        cards.forEach((card, cardIndex) => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'flashcard';
+            cardEl.dataset.index = cardIndex;
+            if (cardIndex === 0) cardEl.classList.add('active');
+
+            const cardInner = document.createElement('div');
+            cardInner.className = 'flashcard-inner';
+
+            // Front (Question)
+            const front = document.createElement('div');
+            front.className = 'flashcard-front';
+            front.innerHTML = `
+                <div class="flashcard-label">Question</div>
+                <div class="flashcard-content">${escapeHtml(card.question)}</div>
+                <div class="flashcard-hint">Click to reveal answer</div>
+            `;
+
+            // Back (Answer)
+            const back = document.createElement('div');
+            back.className = 'flashcard-back';
+            back.innerHTML = `
+                <div class="flashcard-label">Answer</div>
+                <div class="flashcard-content">${escapeHtml(card.answer)}</div>
+                <div class="flashcard-hint">Click to see question</div>
+            `;
+
+            cardInner.appendChild(front);
+            cardInner.appendChild(back);
+            cardEl.appendChild(cardInner);
+
+            // Flip on click
+            cardEl.addEventListener('click', () => {
+                cardEl.classList.toggle('flipped');
+            });
+
+            cardsContainer.appendChild(cardEl);
+        });
+
+        // Navigation controls - create buttons separately for inline placement
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'flashcard-btn flashcard-prev';
+        prevBtn.setAttribute('aria-label', 'Previous card');
+        prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'flashcard-btn flashcard-next';
+        nextBtn.setAttribute('aria-label', 'Next card');
+        nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+
+        const counter = document.createElement('span');
+        counter.className = 'flashcard-counter';
+        counter.textContent = `1 / ${cards.length}`;
+
+        // Build layout: prev button, cards, next button (inline)
+        container.appendChild(prevBtn);
+        container.appendChild(cardsContainer);
+        container.appendChild(nextBtn);
+        cardsContainer.appendChild(counter);
+        pre.replaceWith(container);
+
+        // Navigation logic
+        let currentIndex = 0;
+        const cardEls = cardsContainer.querySelectorAll('.flashcard');
+
+        function showCard(index) {
+            cardEls.forEach((el, i) => {
+                el.classList.remove('active', 'prev', 'next', 'hidden');
+                el.classList.remove('flipped'); // Reset flip state
+                if (i === index) {
+                    el.classList.add('active');
+                } else if (i === index - 1) {
+                    el.classList.add('prev');
+                } else if (i === index + 1) {
+                    el.classList.add('next');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+            counter.textContent = `${index + 1} / ${cards.length}`;
+        }
+
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentIndex > 0) {
+                currentIndex--;
+                showCard(currentIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentIndex < cards.length - 1) {
+                currentIndex++;
+                showCard(currentIndex);
+            }
+        });
+
+        // Keyboard navigation
+        container.tabIndex = 0;
+        container.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                currentIndex--;
+                showCard(currentIndex);
+            } else if (e.key === 'ArrowRight' && currentIndex < cards.length - 1) {
+                currentIndex++;
+                showCard(currentIndex);
+            } else if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                cardEls[currentIndex].classList.toggle('flipped');
+            }
+        });
+    });
+}
+
+/**
+ * Parse flashcard markdown format
+ * @param {string} content
+ * @returns {Array<{question: string, answer: string}>}
+ */
+function parseFlashcards(content) {
+    const cards = [];
+    const cardBlocks = content.split(/\n---\n|\n---$|^---\n/);
+
+    cardBlocks.forEach(block => {
+        const trimmed = block.trim();
+        if (!trimmed) return;
+
+        // Match Q: and A: patterns
+        const qMatch = trimmed.match(/^Q:\s*(.+?)(?=\nA:|$)/s);
+        const aMatch = trimmed.match(/\nA:\s*(.+?)$/s);
+
+        if (qMatch) {
+            cards.push({
+                question: qMatch[1].trim(),
+                answer: aMatch ? aMatch[1].trim() : 'No answer provided'
+            });
+        }
+    });
+
+    return cards;
+}
+
+/**
+ * Escape HTML to prevent XSS
+ * @param {string} text
+ * @returns {string}
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/* =========================================
+   AI Summary
+   ========================================= */
+
+/**
+ * Initialize AI Summary feature
+ * @param {Object} options
+ * @param {string} options.title - Post title
+ * @param {string} options.content - Post content text
+ * @param {string|null} options.token - Auth token
+ * @param {string|null} options.accessTier - User access tier
+ */
+export function initializeAISummary(options = {}) {
+    const { title = '', content = '', token = null, accessTier = null } = options;
+
+    const container = document.getElementById('ai-summary-container');
+    if (!container) return;
+
+    // Prevent re-initialization
+    if (container.dataset.initialized === 'true') return;
+    container.dataset.initialized = 'true';
+
+    const API_BASE = window.location.hostname === 'localhost'
+        ? 'http://localhost:1000'
+        : 'https://materioa.vercel.app';
+
+    // State
+    let state = {
+        showSummarySection: false,
+        isSummaryExpanded: false,
+        isGeneratingSummary: false,
+        summaryContent: '',
+        summaryError: '',
+        isFollowupLoading: false,
+        followupQuery: '',
+        followupResponse: ''
+    };
+
+    // Check access
+    async function checkSummaryAccess() {
+        if (accessTier === 'super' || accessTier === 'plus') {
+            state.showSummarySection = true;
+            render();
+            return;
+        }
+
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/v2/profile`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to verify user');
+            const userData = await response.json();
+            const hasAccess = userData.user?.hasAdminPrivileges || userData.user?.isPlusUser;
+
+            if (hasAccess) {
+                state.showSummarySection = true;
+                render();
+            }
+        } catch (error) {
+            console.error('Error checking summary access:', error);
+        }
+    }
+
+    function parseBasicMarkdown(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/^\* (.*$)/gm, '<li>$1</li>')
+            .replace(/^\- (.*$)/gm, '<li>$1</li>')
+            .replace(/\n\n/g, '<br><br>');
+    }
+
+    async function generateSummary() {
+        if (!content) return;
+        state.isGeneratingSummary = true;
+        state.summaryError = '';
+        render();
+
+        try {
+            const wordCount = content.split(/\s+/).length;
+            const targetWords = Math.max(30, Math.min(80, Math.floor(wordCount / 6)));
+
+            const summaryPrompt = `Please provide an ultra-concise summary (max ${targetWords} words). Focus ONLY on the main point and 2-3 key takeaways. Use simple, clear language and bullet points. Preserve LaTeX where present.\n\nTitle: ${title}\n\n${content}`;
+
+            const response = await fetch(`${API_BASE}/api/v2/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    message: summaryPrompt,
+                    messages: [],
+                    mode: 'general',
+                    model: 'openai/gpt-oss-120b:free'
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to generate summary');
+            const resData = await response.json();
+            if (!resData.success) throw new Error(resData.error || 'Failed');
+
+            state.summaryContent = parseBasicMarkdown(resData.response);
+            render();
+
+            // Render math if available
+            setTimeout(() => {
+                if (typeof renderMathInElement !== 'undefined') {
+                    const el = document.getElementById('summary-text');
+                    if (el) {
+                        renderMathInElement(el, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: false },
+                                { left: '$', right: '$', display: false },
+                                { left: '\\(', right: '\\)', display: false },
+                                { left: '\\[', right: '\\]', display: true }
+                            ]
+                        });
+                    }
+                }
+            }, 100);
+        } catch (err) {
+            console.error(err);
+            state.summaryError = 'Failed to generate summary. Please try again.';
+        } finally {
+            state.isGeneratingSummary = false;
+            render();
+        }
+    }
+
+    async function askFollowupQuestion() {
+        const query = state.followupQuery.trim();
+        if (!query) return;
+
+        state.isFollowupLoading = true;
+        state.followupResponse = '';
+        render();
+
+        try {
+            const prompt = `Based on the following content, satisfy the user's request: "${query}".\n\nContent: ${content}`;
+
+            const response = await fetch(`${API_BASE}/api/v2/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    message: prompt,
+                    messages: [],
+                    mode: 'general',
+                    model: 'openai/gpt-oss-20b:free'
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to get answer');
+            const resData = await response.json();
+            if (!resData.success) throw new Error(resData.error || 'Failed');
+            state.followupResponse = parseBasicMarkdown(resData.response);
+        } catch (e) {
+            state.followupResponse = 'Error: Could not get a response.';
+        } finally {
+            state.isFollowupLoading = false;
+            render();
+        }
+    }
+
+    function toggleSummary() {
+        state.isSummaryExpanded = !state.isSummaryExpanded;
+        if (state.isSummaryExpanded && !state.summaryContent && !state.isGeneratingSummary) {
+            generateSummary();
+        }
+        render();
+    }
+
+    function render() {
+        if (!state.showSummarySection) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const chevronRotate = state.isSummaryExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+
+        let contentHtml = '';
+        if (state.isSummaryExpanded) {
+            if (state.isGeneratingSummary) {
+                contentHtml = `
+                    <div style="color: var(--text); padding: 1rem 0; font-style: italic;">
+                        <i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>
+                        Generating summary...
+                    </div>`;
+            } else if (state.summaryError) {
+                contentHtml = `
+                    <div style="color: #ff6b6b; padding: 1rem 0;">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        ${state.summaryError}
+                    </div>`;
+            } else if (state.summaryContent) {
+                contentHtml = `
+                    <div id="summary-text">${state.summaryContent}</div>
+                    <div id="followup-section" style="margin-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 1rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                            <i class="fa-solid fa-question-circle" style="margin-right: 0.5rem; font-size: 14px; opacity: 0.7;"></i>
+                            <span style="font-size: 14px; font-weight: 600; opacity: 0.8;">Ask a Follow up:</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                            <div class="followup-pill" style="position: relative; flex: 1; display: flex; align-items: center; background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.2); border-radius: 25px; padding: 0.5rem 3rem 0.5rem 1rem;">
+                                <input type="text" id="followup-input" placeholder="e.g., What are the main benefits discussed?" style="flex: 1; border: none; background: transparent; font-size: 14px; outline: none;" value="${escapeHtml(state.followupQuery)}">
+                                <button id="followup-btn" style="position: absolute; right: 4px; width: 32px; height: 32px; background: #ff8200; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
+                                    ${state.isFollowupLoading
+                        ? '<i class="fa-solid fa-spinner fa-spin" style="font-size: 12px;"></i>'
+                        : '<i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>'}
+                                </button>
+                            </div>
+                        </div>
+                        ${state.followupResponse ? `
+                            <div id="followup-response" style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(0,0,0,0.03); border-radius: 6px; font-size: 14px; line-height: 1.5;">
+                                ${state.followupResponse}
+                            </div>
+                        ` : ''}
+                    </div>`;
+            } else {
+                contentHtml = `<p style="margin: 0; font-style: italic; opacity: 0.7;">Click to generate AI summary...</p>`;
+            }
+        }
+
+        container.innerHTML = `
+            <div class="ai-summary-section">
+                <div id="summary-header" class="summary-header" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 0.5rem; font-size: 18px;"></i>
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Summary</h3>
+                    </div>
+                    <i class="fa-solid fa-chevron-down" style="transition: transform 0.3s ease; transform: ${chevronRotate};"></i>
+                </div>
+                ${state.isSummaryExpanded ? `
+                    <div class="summary-content">
+                        ${contentHtml}
+                    </div>
+                ` : ''}
+            </div>`;
+
+        // Attach event listeners
+        const header = container.querySelector('#summary-header');
+        if (header) {
+            header.addEventListener('click', toggleSummary);
+        }
+
+        const followupInput = container.querySelector('#followup-input');
+        if (followupInput) {
+            followupInput.addEventListener('input', (e) => {
+                state.followupQuery = e.target.value;
+            });
+            followupInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') askFollowupQuestion();
+            });
+        }
+
+        const followupBtn = container.querySelector('#followup-btn');
+        if (followupBtn) {
+            followupBtn.addEventListener('click', askFollowupQuestion);
+        }
+    }
+
+    // Initialize
+    checkSummaryAccess();
 }
 
 

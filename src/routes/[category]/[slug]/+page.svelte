@@ -10,8 +10,10 @@
   } from "../../../lib/utils/postLogic.js";
   import { page } from "$app/stores";
   import { dev } from "$app/environment";
-  import { initializePostBase } from "../../../lib/utils/postBaseLogic.js";
-  import AISummary from "$lib/components/AISummary.svelte";
+  import {
+    initializePostBase,
+    initializeAISummary,
+  } from "../../../lib/utils/postBaseLogic.js";
   import {
     trackPageView,
     trackReadingTime,
@@ -238,6 +240,13 @@
   $effect(() => {
     if (contentElement && contentElement.textContent) {
       postContentText = contentElement.textContent;
+      // Initialize AI Summary when content is ready
+      initializeAISummary({
+        title: data.title || "",
+        content: postContentText,
+        token: data.token,
+        accessTier: data.accessTier,
+      });
     }
   });
 </script>
@@ -565,14 +574,8 @@
             <data.content />
           </div>
 
-          <AISummary
-            data={{
-              title: data.title,
-              content: postContentText,
-            }}
-            token={data.token}
-            accessTier={data.accessTier}
-          />
+          <!-- AI Summary Container - rendered by JS -->
+          <div id="ai-summary-container"></div>
 
           <div class="post-content-visible">
             <data.content />

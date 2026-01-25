@@ -161,6 +161,16 @@
   <script
     src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"
   ></script>
+
+  <!-- Markmap for mindmaps -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.18.12"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.18.12"></script>
+
+  <!-- Graphviz for FSM/automata diagrams -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@viz-js/viz@3.11.0/lib/viz-standalone.js"
+  ></script>
   <script
     src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"
   ></script>
