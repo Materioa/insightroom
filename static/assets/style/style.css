@@ -1003,8 +1003,11 @@ table td code {
   fill: var(--text, #212529);
 }
 
-.dark .mindmap-card .markmap-node text {
-  fill: var(--text, #eee);
+.dark .mindmap-card .markmap-node text,
+.dark .mindmap-card svg text,
+.dark .mindmap-card svg tspan {
+  fill: #ffffff !important;
+  stroke: none !important;
 }
 
 /* Responsive mindmap */
@@ -1055,8 +1058,12 @@ table td code {
   stroke: var(--text) !important;
 }
 
-.dark .graphviz-diagram svg text {
-  fill: var(--text) !important;
+.dark .graphviz-diagram svg text,
+.dark .graphviz-diagram svg g.node text,
+.dark .graphviz-diagram svg g.edge text,
+.dark .graphviz-diagram svg g.graph text {
+  fill: #ffffff !important;
+  stroke: none !important;
 }
 
 /* Responsive graphviz */
@@ -1154,39 +1161,45 @@ table td code {
   top: 0;
   height: 100%;
   width: 70%;
-  left: 15%;
+  left: 50%;
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.85);
+  transform: translateX(-50%) scale(0.85);
+  transform-origin: center center;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
+  box-sizing: border-box;
+}
+
+.flashcard * {
+  box-sizing: border-box;
 }
 
 .flashcard.active {
   opacity: 1;
   pointer-events: auto;
-  transform: scale(1);
+  transform: translateX(-50%) scale(1);
   z-index: 3;
 }
 
 .flashcard.prev {
   opacity: 1;
   pointer-events: none;
-  transform: translateX(-25%) scale(0.85);
+  transform: translateX(-120%) scale(0.85);
   z-index: 2;
 }
 
 .flashcard.next {
   opacity: 1;
   pointer-events: none;
-  transform: translateX(25%) scale(0.85);
+  transform: translateX(20%) scale(0.85);
   z-index: 2;
 }
 
 .flashcard.hidden {
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.7);
+  transform: translateX(-50%) scale(0.7);
   z-index: 1;
 }
 
@@ -1347,16 +1360,16 @@ table td code {
 
   .flashcard {
     width: 80%;
-    left: 10%;
+    left: 50%;
   }
 
   .flashcard.prev {
-    transform: translateX(-110%) scale(0.8);
+    transform: translateX(-120%) scale(0.8);
     opacity: 1;
   }
 
   .flashcard.next {
-    transform: translateX(110%) scale(0.8);
+    transform: translateX(20%) scale(0.8);
     opacity: 1;
   }
 

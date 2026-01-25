@@ -264,11 +264,11 @@
   />
   <meta
     property="og:image"
-    content={`https://materioa.vercel.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
+    content={`https://insightroom.vercel.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
   />
   <meta
     property="og:url"
-    content={`https://materioa.vercel.app/blog/${data.slug}`}
+    content={`https://insightroom.vercel.app/blog/${data.slug}`}
   />
   <meta property="og:type" content="article" />
   <meta name="description" content={data.excerpt || ""} />
@@ -280,7 +280,7 @@
   <meta name="twitter:description" content={data.excerpt || ""} />
   <meta
     name="twitter:image"
-    content={`https://materioa.vercel.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
+    content={`https://insightroom.vercel.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
   />
   <!-- Standalone TOC script - runs independently of Svelte -->
   <script src="/assets/scripts/toc.js" defer></script>
