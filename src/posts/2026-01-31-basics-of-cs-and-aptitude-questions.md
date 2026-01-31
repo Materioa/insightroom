@@ -943,9 +943,12 @@ We only keep the numbers from the given string and remove all other characters.
 > ```
 
 <script>
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) {
-        e.preventDefault();
-    }
-});
+  import { onMount } from 'svelte';
+  onMount(() => {
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) {
+            e.preventDefault();
+        }
+    });
+  });
 </script>

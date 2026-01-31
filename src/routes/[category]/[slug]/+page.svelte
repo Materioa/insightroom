@@ -12,7 +12,6 @@
   import { dev } from "$app/environment";
   import {
     initializePostBase,
-    initializeAISummary,
   } from "../../../lib/utils/postBaseLogic.js";
   import {
     trackPageView,
@@ -240,13 +239,6 @@
   $effect(() => {
     if (contentElement && contentElement.textContent) {
       postContentText = contentElement.textContent;
-      // Initialize AI Summary when content is ready
-      initializeAISummary({
-        title: data.title || "",
-        content: postContentText,
-        token: data.token,
-        accessTier: data.accessTier,
-      });
     }
   });
 </script>
@@ -573,9 +565,6 @@
           >
             <data.content />
           </div>
-
-          <!-- AI Summary Container - rendered by JS -->
-          <div id="ai-summary-container"></div>
 
           <div class="post-content-visible">
             <data.content />
