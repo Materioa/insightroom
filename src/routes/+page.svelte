@@ -330,7 +330,8 @@
     color: var(--muted-text, #666);
     background: var(--card-bg, #ffffff);
     border: 1px solid var(--border, #e5e5e5);
-    border-radius: 12px;
+    corner-shape: squircle;
+    border-radius: 40px;
   }
 
   /* Quick Reads Container */
@@ -338,7 +339,8 @@
     width: 300px;
     flex-shrink: 0;
     background: var(--card-bg, #f9f8f7);
-    border-radius: 16px;
+    corner-shape: squircle;
+    border-radius: 40px;
     padding: 1.5rem;
     height: 400px;
     display: flex;

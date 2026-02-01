@@ -116,6 +116,7 @@
 <svelte:head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content={isDark ? "#1a1a1a" : "#e8e4e0"} />
   <link
     rel="icon"
     type="image/x-icon"
@@ -220,7 +221,6 @@
   :global(body.dark) {
     --bg: #121212;
     --text: #eeeeee;
-    --link: #3ea6ff;
     --card-bg: #1e1e1e;
     --border: #333;
   }
@@ -229,11 +229,11 @@
     background-image: url("/assets/img/materio_new_wh.svg");
   }
   :global(body.blog-layout .site-header) {
-    background-image: url("/assets/img/The InsightRoom-bk.png");
+    background-image: url("/assets/img/logo-b.svg");
     background-size: auto 32px;
   }
   :global(body.blog-layout.dark .site-header) {
-    background-image: url("/assets/img/The InsightRoom.png");
+    background-image: url("/assets/img/logo-w.svg");
     background-size: auto 32px;
   }
   /* Mobile: ensure header is full width and properly sized */

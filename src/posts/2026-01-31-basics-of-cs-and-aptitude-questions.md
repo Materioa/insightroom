@@ -11,7 +11,8 @@ hidden: true
 no-ads: true
 hide_print: true
 hide_author: true
-summarize: false
+summarize: true
+aiSummarize: false
 ---
 
 #### Q1. In a bustling e-commerce warehouse, the management has been facing challenges in optimizing their inventory flow to reduce idle stock while ensuring that popular items are always available for customers. They analyze sales data from the past year and find that during festive seasons, there is a significant spike in the sales of electronics, particularly smartphones and laptops. To enhance efficiency, they decide to implement an aptitude model that can predict future areas of demand based on previous trends, competitors' pricing strategies, and seasonal analyses. The team sets up an algorithm but is unsure about which variables will significantly influence their predictions. Given this scenario and applying your robust problem-solving skills in analyzing what factors might have the most substantial impact on supply chain management decisions under these conditions, which approach would you prioritize? Remember to think critically about how each factor plays into overall performance.

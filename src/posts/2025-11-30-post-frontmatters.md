@@ -28,7 +28,8 @@ Front-matter is how Jekyll (and many static-site setups) receives metadata for a
 - `excerpt` (string) — Short summary used in lists and meta; if it contains `:` or other special characters, wrap it in quotes.
 - `image` (string) — Path to a cover image (relative to site root).
 - `summarize` (boolean) — Used in our templates to control whether the post is summarized on index pages.
- - `summarize` (boolean) — Used in our templates to control whether the post is summarized on index pages.
+- `aiSummarize` (boolean) — When `false`, disables the AI "Summarize" button for this post. Defaults to `true`.
+- `aiAsk` (boolean) — When `false`, disables the AI "Ask" button for this post. Defaults to `true`. You can disable one or both AI features independently.
 - `no-ads` (boolean) — When `true` the `post` layout will emit `data-no-ads="true"` and `assets/scripts/post.js` will skip injecting in-article ads for that post. Useful for sponsor posts, documentation, or internal notes where ads are inappropriate.
 - `permalink` (string) — When present, overrides the generated URL.
 - `hidden` (boolean) — When `true`, hides the post from lists/indexes (still published).
@@ -75,7 +76,7 @@ Other keys you might encounter depending on needs:
 
     - `image` (string) — Cover media; the template checks whether `page.image` contains video extensions (`.mp4`, `.webm`, `.mov`) and will render a video cover when appropriate. Otherwise an `<img>` is emitted.
 
-    - `summarize` (boolean) — When `true` the template renders the AI Summary UI block (`#ai-summary-section`). Client-side summary actions (in `post.js`) will activate within that block.
+
 
     - `toc` (boolean) — The layout checks `page.toc != false`; by default the TOC is shown. Set `toc: false` to suppress the generated in-page TOC.
 

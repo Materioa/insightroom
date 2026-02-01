@@ -12,13 +12,9 @@
 }
 
 .post-image-frame {
+  corner-shape: squircle !important; 
+   border-radius: 40px !important; 
   background: #e7e3df;
-}
-
-.ai-summary-section {
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  color: #333;
 }
 
 body.dark-mode .post-date-pill {
@@ -35,30 +31,6 @@ body.dark-mode .post-nav-button {
 
 body.dark-mode .post-image-frame {
   background: #1a1a1a;
-}
-
-body.dark-mode .ai-summary-section {
-  background: #282828;
-  border: 1px solid #555555;
-  color: #ffffff;
-}
-
-body.dark-mode #followup-input {
-  background: transparent !important;
-  color: #ffffff !important;
-}
-
-body.dark-mode #followup-input::placeholder {
-  color: #aaaaaa !important;
-}
-
-body.dark-mode .followup-pill {
-  background: rgba(255,255,255,0.1) !important;
-  border: 1px solid #555555 !important;
-}
-
-body.dark-mode #followup-response {
-  background: rgba(255,255,255,0.05) !important;
 }
 
 /* Attachment Card Styles */

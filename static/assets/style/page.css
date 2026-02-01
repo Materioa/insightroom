@@ -44,11 +44,11 @@ header.dark-mode {
 }
 
 .light-mode .header-logo {
-  background-image: url('/assets/img/The InsightRoom-bk.png') !important;
+  background-image: url('/assets/img/logo-b.svg') !important;
 }
 
 .dark-mode .header-logo {
-  background-image: url('/assets/img/The InsightRoom.png') !important;
+  background-image: url('/assets/img/logo-w.svg') !important;
 }
 
 /* Theme Toggle Styles */
@@ -254,8 +254,9 @@ body.dark-mode .markdown-body .alert {
   }
   
   .header-logo {
-    width: 100px;
-    height: 26px;
+    width: 75px;
+    height: 20px;
+    flex-shrink: 0;
   }
   
   .theme-toggle {

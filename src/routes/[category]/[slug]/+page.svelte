@@ -19,6 +19,7 @@
     trackFeatureUsage,
     flushEvents,
   } from "$lib/utils/analytics.js";
+  import AISummary from "$lib/components/AISummary.svelte";
 
   /** @type {{ data: any }} */
   let { data } = $props();
@@ -528,6 +529,16 @@
             {/if}
           </div>
         </div>
+      {/if}
+
+      <!-- AI Summary/Ask Card -->
+      {#if !data.isLocked}
+        <AISummary 
+          postContent={postContentText} 
+          postTitle={data.title || ""} 
+          canSummarize={data.summarize !== false && data.aiSummarize !== false && (data.accessTier === 'plus' || data.accessTier === 'super')}
+          canAsk={data.summarize !== false && data.aiAsk !== false && (data.accessTier === 'plus' || data.accessTier === 'super')}
+        />
       {/if}
     </div>
 
