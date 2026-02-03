@@ -10,7 +10,7 @@ export const load = async ({ cookies, fetch, url }) => {
     if (handoffCode) {
         try {
             // Exchange the one-time handoff code for a JWT token
-            const exchangeResponse = await fetch(`${AUTH_BASE_URL}/api/v2/exchange-handoff`, {
+            const exchangeResponse = await fetch(`${AUTH_BASE_URL}/api/v2/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
