@@ -211,7 +211,7 @@
   {@render children()}
 </main>
 
-<Footer {setTheme} />
+<Footer {setTheme} user={data.user} accessTier={data.accessTier} />
 
 <style>
   /* Default link color for light mode */

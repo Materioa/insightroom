@@ -602,8 +602,8 @@
               <div class="locked-actions">
                 <a
                   href={dev
-                    ? `http://localhost:1000/account?redirect=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
-                    : `https://materioa.vercel.app/account?redirect=${encodeURIComponent("https://insightroom.vercel.app" + $page.url.pathname)}`}
+                    ? `http://localhost:1000/account?callback=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
+                    : `https://materioa.vercel.app/account?callback=${encodeURIComponent("https://insightroom.vercel.app" + $page.url.pathname)}`}
                   class="locked-btn locked-btn-login no-pill"
                 >
                   <i class="fa-solid fa-user"></i>

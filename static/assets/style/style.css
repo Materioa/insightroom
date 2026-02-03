@@ -2245,7 +2245,7 @@ table td code {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1.75rem;
+  padding: 0.5rem 2rem;
   corner-shape: squircle;
   border-radius: 16px;
   font-size: 0.95rem;
@@ -2379,18 +2379,25 @@ body.dark-mode .locked-bottom-image .locked-img-dark {
 }
 
 /* Responsive adjustments */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .locked-content-wrapper {
     border-radius: 30px;
   }
 
   .locked-dummy-content {
-    padding: 1.5rem;
+    padding: 0.5rem 1.25rem 0;
     font-size: 1rem;
+    max-height: 200px;
+    overflow: hidden;
   }
 
   .locked-card {
-    padding: 1.5rem 1.5rem 2rem;
+    padding: 0.5rem 1rem 1.25rem;
+    z-index: 2;
+  }
+
+  .locked-benefits li {
+    font-size: 0.8rem;
   }
 
   .materio-plus-logo img,
@@ -2409,9 +2416,13 @@ body.dark-mode .locked-bottom-image .locked-img-dark {
     gap: 0.6rem;
   }
 
-  .locked-btn {
+  .locked-btn,
+  .post-body .locked-btn,
+  .locked-content-wrapper .locked-btn {
+    display: flex !important;
     width: 100%;
-    padding: 0.875rem 1.25rem;
+    padding: 0.5rem 1.25rem;
+    box-sizing: border-box;
   }
 
   .locked-bottom-image img {

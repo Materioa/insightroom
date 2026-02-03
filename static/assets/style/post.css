@@ -489,6 +489,13 @@ body.dark-mode code {
   font-size: 15px;
 }
 
+@media (max-width: 768px) {
+  #scroll-to-top {
+    bottom: 90px;
+    /* Stay above the pills on mobile */
+  }
+}
+
 body.dark-mode #scroll-to-top {
   background: var(--primary, #ff8200);
   border-color: var(--primary, #ff8200);
