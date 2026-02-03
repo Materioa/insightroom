@@ -31,77 +31,77 @@
 }
 
 /* Header Search Box */
-  .header-search {
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    background: rgba(231, 231, 221, 0.09);
-    border: 1px solid var(--border, #3333334a);
-    border-radius: 25px;
-    padding: 0.5rem 1rem;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    width: 250px;
-  }
+.header-search {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  background: rgba(231, 231, 221, 0.09);
+  border: 1px solid var(--border, #3333334a);
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  width: 250px;
+}
 
-  .header-search:focus-within {
-    border-color: var(--primary, #ff9320);
-    box-shadow: 0 0 0 2px rgba(255, 145, 0, 0.2);
+.header-search:focus-within {
+  border-color: var(--primary, #ff9320);
+  box-shadow: 0 0 0 2px rgba(255, 145, 0, 0.2);
+}
+
+.header-search input {
+  font-family: "Manrope", sans-serif;
+  background: transparent;
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text, #333);
+  padding: 0;
+}
+
+.header-search input::placeholder {
+  color: var(--muted-text, #999);
+}
+
+.header-search i {
+  color: var(--muted-text, #999);
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Dark mode styles for search */
+:global(.dark) .header-search {
+  background: rgba(33, 33, 33, 0.5);
+  border-color: var(--border, #404040);
+}
+
+:global(.dark) .header-search input {
+  color: var(--text, #cccccc69);
+}
+
+@media (max-width: 768px) {
+  .header-search {
+    width: 120px;
+    padding: 0.35rem 0.7rem;
+    right: 15px;
   }
 
   .header-search input {
-    font-family: "Manrope", sans-serif;
-    background: transparent;
-    border: none;
-    outline: none;
-    flex: 1;
-    font-size: 0.9rem;
-    color: var(--text, #333);
-    padding: 0;
-  }
-
-  .header-search input::placeholder {
-    color: var(--muted-text, #999);
+    font-size: 0.8rem;
+    min-width: 0;
   }
 
   .header-search i {
-    color: var(--muted-text, #999);
-    margin-left: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
+    margin-left: 0.3rem;
+    flex-shrink: 0;
   }
-
-  /* Dark mode styles for search */
-  :global(.dark) .header-search {
-    background: rgba(33, 33, 33, 0.5);
-    border-color: var(--border, #404040);
-  }
-
-  :global(.dark) .header-search input {
-    color: var(--text, #cccccc69);
-  }
-
-  @media (max-width: 768px) {
-    .header-search {
-      width: 120px;
-      padding: 0.35rem 0.7rem;
-      right: 15px;
-    }
-
-    .header-search input {
-      font-size: 0.8rem;
-      min-width: 0;
-    }
-
-    .header-search i {
-      font-size: 0.75rem;
-      margin-left: 0.3rem;
-      flex-shrink: 0;
-    }
-  }
+}
 
 body {
   margin: 0;
@@ -656,7 +656,7 @@ body.dark-mode .post-body blockquote.quote::before {
   object-fit: cover;
 
   corner-shape: squircle;
-    border-radius: 35px !important;
+  border-radius: 35px !important;
   /* margin: 1.5rem auto; */
   display: block;
 }
@@ -665,8 +665,8 @@ body.dark-mode .post-body blockquote.quote::before {
 pre {
   position: relative;
   margin: 1.5rem 0;
-corner-shape: squircle;
-    border-radius: 24px;
+  corner-shape: squircle;
+  border-radius: 24px;
   overflow: hidden;
   background: #1e1e1e;
   border: 1px solid #333;
@@ -2079,5 +2079,342 @@ table td code {
     margin-right: -0.5in !important;
     margin-bottom: -0.75in !important;
     page: cover !important;
+  }
+}
+
+/* ============================================
+   Locked Content with Paywall Effect
+   ============================================ */
+
+.locked-content-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  overflow: hidden;
+  corner-shape: squircle;
+  border-radius: 40px;
+}
+
+/* Blurred dummy content behind */
+.locked-dummy-content {
+  position: relative;
+  padding: 1.25rem 1.5rem;
+  filter: blur(6px);
+  user-select: none;
+  pointer-events: none;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.locked-dummy-content p {
+  margin-bottom: 1rem;
+}
+
+.locked-dummy-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Gradient overlay - transparent at top, solid at bottom */
+.locked-gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom,
+      rgba(244, 242, 240, 0) 0%,
+      rgba(244, 242, 240, 0.3) 20%,
+      rgba(244, 242, 240, 0.7) 40%,
+      rgba(244, 242, 240, 0.95) 60%,
+      rgba(244, 242, 240, 1) 80%);
+  pointer-events: none;
+}
+
+.dark .locked-gradient-overlay {
+  background: linear-gradient(to bottom,
+      rgba(18, 18, 18, 0) 0%,
+      rgba(18, 18, 18, 0.3) 20%,
+      rgba(18, 18, 18, 0.7) 40%,
+      rgba(18, 18, 18, 0.95) 60%,
+      rgba(18, 18, 18, 1) 80%);
+}
+
+/* Upgrade Card - positioned relatively */
+.locked-card {
+  position: relative;
+  padding: 1rem 1.5rem 1.25rem;
+  text-align: center;
+  background: transparent;
+}
+
+.upgrade-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #888;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.materio-plus-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  margin-top: -0.5rem;
+}
+
+.materio-plus-logo img,
+.post-body .materio-plus-logo img,
+.locked-content-wrapper .materio-plus-logo img {
+  width: auto;
+  max-width: 200px;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  object-fit: contain;
+}
+
+.locked-description {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+}
+
+.locked-description i {
+  margin-right: 0.4rem;
+  color: #ff5200;
+  font-size: 0.8rem;
+}
+
+.locked-description strong {
+  color: #ff5200;
+  font-weight: 600;
+}
+
+/* Benefits list */
+.locked-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  text-align: left;
+  display: inline-block;
+}
+
+.locked-benefits li {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.locked-benefits li i {
+  color: #22c55e;
+  font-size: 0.75rem;
+}
+
+.dark .locked-benefits li {
+  color: #bbb;
+}
+
+/* Dummy content heading */
+.locked-dummy-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.locked-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Squircle buttons - override .post-body a */
+.locked-btn,
+.post-body .locked-btn,
+.locked-content-wrapper .locked-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.75rem;
+  corner-shape: squircle;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: 'Manrope', sans-serif;
+  text-decoration: none !important;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.locked-btn i,
+.post-body .locked-btn i {
+  font-size: 0.85rem;
+}
+
+/* Login button - #ff5200 */
+.locked-btn-login,
+.post-body .locked-btn-login,
+.locked-content-wrapper .locked-btn-login {
+  background: #ff5200 !important;
+  color: white !important;
+}
+
+.locked-btn-login:hover,
+.post-body .locked-btn-login:hover {
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(255, 82, 0, 0.3);
+}
+
+/* Upgrade button - light yellow */
+.locked-btn-upgrade,
+.post-body .locked-btn-upgrade,
+.locked-content-wrapper .locked-btn-upgrade {
+  background: #FFE066 !important;
+  color: #5c4d00 !important;
+}
+
+.locked-btn-upgrade:hover,
+.post-body .locked-btn-upgrade:hover {
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(255, 224, 102, 0.4);
+}
+
+/* Dark mode styles */
+.dark .upgrade-label {
+  color: #999;
+}
+
+.dark .locked-description {
+  color: #aaa;
+}
+
+.dark .locked-description i,
+.dark .locked-description strong {
+  color: #ff6b35;
+}
+
+.dark .locked-btn-login {
+  background: #ff5200;
+  color: white;
+}
+
+.dark .locked-btn-upgrade {
+  background: #FFE066;
+  color: #5c4d00;
+}
+
+/* Bottom image section with gradient covering 80% */
+.locked-bottom-image {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.locked-bottom-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+  object-fit: cover;
+  object-position: center calc(100%);
+  corner-shape: squircle;
+  border-radius: 0 0 40px 40px;
+}
+
+/* Light/Dark mode image switching */
+.locked-bottom-image .locked-img-light {
+  display: block;
+}
+
+.locked-bottom-image .locked-img-dark {
+  display: none;
+}
+
+.dark .locked-bottom-image .locked-img-light,
+body.dark-mode .locked-bottom-image .locked-img-light {
+  display: none;
+}
+
+.dark .locked-bottom-image .locked-img-dark,
+body.dark-mode .locked-bottom-image .locked-img-dark {
+  display: block;
+}
+
+.locked-bottom-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom,
+      rgba(244, 242, 240, 1) 0%,
+      rgba(244, 242, 240, 0.98) 20%,
+      rgba(244, 242, 240, 0.9) 40%,
+      rgba(244, 242, 240, 0.7) 60%,
+      rgba(244, 242, 240, 0.3) 80%,
+      rgba(244, 242, 240, 0) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dark .locked-bottom-image-overlay {
+  background: linear-gradient(to bottom,
+      rgba(18, 18, 18, 1) 0%,
+      rgba(18, 18, 18, 0.98) 20%,
+      rgba(18, 18, 18, 0.9) 40%,
+      rgba(18, 18, 18, 0.7) 60%,
+      rgba(18, 18, 18, 0.3) 80%,
+      rgba(18, 18, 18, 0) 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .locked-content-wrapper {
+    border-radius: 30px;
+  }
+
+  .locked-dummy-content {
+    padding: 1.5rem;
+    font-size: 1rem;
+  }
+
+  .locked-card {
+    padding: 1.5rem 1.5rem 2rem;
+  }
+
+  .materio-plus-logo img,
+  .post-body .materio-plus-logo img,
+  .locked-content-wrapper .materio-plus-logo img {
+    max-width: 160px;
+  }
+
+  .locked-description {
+    font-size: 0.875rem;
+    padding: 0 0.5rem;
+  }
+
+  .locked-actions {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .locked-btn {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+  }
+
+  .locked-bottom-image img {
+    border-radius: 0 0 30px 30px;
   }
 }

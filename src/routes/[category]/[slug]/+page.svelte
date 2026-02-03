@@ -10,9 +10,7 @@
   } from "../../../lib/utils/postLogic.js";
   import { page } from "$app/stores";
   import { dev } from "$app/environment";
-  import {
-    initializePostBase,
-  } from "../../../lib/utils/postBaseLogic.js";
+  import { initializePostBase } from "../../../lib/utils/postBaseLogic.js";
   import {
     trackPageView,
     trackReadingTime,
@@ -533,11 +531,15 @@
 
       <!-- AI Summary/Ask Card -->
       {#if !data.isLocked}
-        <AISummary 
-          postContent={postContentText} 
-          postTitle={data.title || ""} 
-          canSummarize={data.summarize !== false && data.aiSummarize !== false && (data.accessTier === 'plus' || data.accessTier === 'super')}
-          canAsk={data.summarize !== false && data.aiAsk !== false && (data.accessTier === 'plus' || data.accessTier === 'super')}
+        <AISummary
+          postContent={postContentText}
+          postTitle={data.title || ""}
+          canSummarize={data.summarize !== false &&
+            data.aiSummarize !== false &&
+            (data.accessTier === "plus" || data.accessTier === "super")}
+          canAsk={data.summarize !== false &&
+            data.aiAsk !== false &&
+            (data.accessTier === "plus" || data.accessTier === "super")}
         />
       {/if}
     </div>
@@ -545,27 +547,96 @@
     <div class="post-layout">
       <div class="post-body">
         {#if data.isLocked}
-          <div
-            style="text-align: center; padding: 2rem; max-width: 500px; margin: 0 auto;"
-          >
-            <h1 style="color: #ff8759; margin-bottom: 1rem;">
-              <i class="fa-solid fa-lock"></i> Uh-oh! This Page is Off-limits
-            </h1>
-            <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
-              This Post is only available to Plus and Super users.
-            </p>
-            <p style="color: var(--gray); margin-bottom: 2rem;">
-              Please log in with your Plus or Super account to view this
-              content.
-            </p>
-            <a
-              href={dev
-                ? `http://localhost:1000/account?redirect=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
-                : `https://materioa.vercel.app/account?redirect=${encodeURIComponent("https://insightroom.vercel.app" + $page.url.pathname)}`}
-              style="background: #ff8200; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600;"
-            >
-              Log In
-            </a>
+          <!-- Locked Content with Blurred Dummy Text -->
+          <div class="locked-content-wrapper">
+            <!-- Dummy blurred content behind -->
+            <div class="locked-dummy-content" aria-hidden="true">
+              <h2>Understanding the Core Concepts</h2>
+              <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+                eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              </p>
+              <p>
+                Duis aute irure dolor in reprehenderit in voluptate velit esse
+                cillum dolore eu fugiat nulla pariatur.
+              </p>
+            </div>
+
+            <!-- Gradient overlay that fades from transparent to solid -->
+            <div class="locked-gradient-overlay"></div>
+
+            <!-- Upgrade Card -->
+            <div class="locked-card">
+              <!-- Unlock with label -->
+              <span class="upgrade-label">Unlock with</span>
+
+              <!-- Materio Plus SVG Logo -->
+              <div class="materio-plus-logo">
+                <img src="/assets/img/plus_shim.svg" alt="materio. plus" />
+              </div>
+
+              <!-- Benefits list -->
+              <ul class="locked-benefits">
+                <li>
+                  <i class="fa-solid fa-check"></i> Ad-free, distraction-free reading
+                </li>
+                <li>
+                  <i class="fa-solid fa-check"></i>Unlimited access to all
+                  premium content
+                </li>
+                <li>
+                  <i class="fa-solid fa-check"></i> Full access to AI-powered learning
+                  tools
+                </li>
+                <li>
+                  <i class="fa-solid fa-check"></i> Early access to new articles
+                  and originals
+                </li>
+                <li>
+                  <i class="fa-solid fa-check"></i> Try upcoming features early through
+                  our beta program
+                </li>
+              </ul>
+
+              <!-- Action buttons -->
+              <div class="locked-actions">
+                <a
+                  href={dev
+                    ? `http://localhost:1000/account?redirect=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
+                    : `https://materioa.vercel.app/account?redirect=${encodeURIComponent("https://insightroom.vercel.app" + $page.url.pathname)}`}
+                  class="locked-btn locked-btn-login no-pill"
+                >
+                  <i class="fa-solid fa-user"></i>
+                  Log In
+                </a>
+                <a
+                  href={dev
+                    ? "http://localhost:1000/account/upgrade"
+                    : "https://materioa.vercel.app/account/upgrade"}
+                  class="locked-btn locked-btn-upgrade no-pill"
+                >
+                  <i class="fa-solid fa-bolt"></i>
+                  Upgrade
+                </a>
+              </div>
+            </div>
+
+            <!-- Bottom image section with gradient overlay -->
+            <div class="locked-bottom-image">
+              <div class="locked-bottom-image-overlay"></div>
+              <img
+                src="/assets/img/4ed2a66f.webp"
+                alt=""
+                aria-hidden="true"
+                class="locked-img-light"
+              />
+              <img
+                src="/assets/img/8cba0a2b.webp"
+                alt=""
+                aria-hidden="true"
+                class="locked-img-dark"
+              />
+            </div>
           </div>
         {:else}
           <!-- Capture content for summary (hidden, no IDs to avoid duplicates) -->
@@ -583,15 +654,24 @@
         {/if}
       </div>
 
-      <aside class="post-toc" aria-label="Table of contents">
+      <!-- TOC is generated dynamically by toc.js and moved to sidebar; this placeholder is hidden by default to prevent FOUC -->
+      <aside
+        class="post-toc"
+        aria-label="Table of contents"
+        style="display: none;"
+      >
         <!-- TOC will be generated by JavaScript and moved to sidebar -->
       </aside>
     </div>
   </article>
 </main>
 
-<!-- Site-level TOC sidebar -->
-<div id="site-toc-sidebar" class="site-toc-sidebar" aria-hidden="true">
+<!-- Site-level TOC sidebar - starts with no-transition to prevent flash on load -->
+<div
+  id="site-toc-sidebar"
+  class="site-toc-sidebar no-transition"
+  aria-hidden="true"
+>
   <!-- TOC content will be moved here -->
 </div>
 <div
