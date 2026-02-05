@@ -12,7 +12,6 @@ export function initializePostBase() {
         processAttachmentTags();
         processVideoTags();
         initializePrintEnhancements();
-        initializeScrollToTop();
         initializeSecureMode();
         initializeMermaid();
         initializeMarkmap();
@@ -928,34 +927,7 @@ function toggleVideo(videoId) {
    Scroll To Top & Print
    ========================================= */
 
-function initializeScrollToTop() {
-    if (document.getElementById('scroll-to-top')) return;
 
-    const scrollBtn = document.createElement('button');
-    scrollBtn.id = 'scroll-to-top';
-    scrollBtn.setAttribute('aria-label', 'Scroll to top');
-    scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
-    document.body.appendChild(scrollBtn);
-
-    let scrollTicking = false;
-    window.addEventListener('scroll', function () {
-        if (!scrollTicking) {
-            requestAnimationFrame(function () {
-                if (window.pageYOffset > 300) {
-                    scrollBtn.classList.add('visible');
-                } else {
-                    scrollBtn.classList.remove('visible');
-                }
-                scrollTicking = false;
-            });
-            scrollTicking = true;
-        }
-    }, { passive: true });
-
-    scrollBtn.addEventListener('click', function () {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-}
 
 function initializePrintEnhancements() {
     window.addEventListener('beforeprint', generatePrintElements);

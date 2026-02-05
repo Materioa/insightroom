@@ -408,7 +408,7 @@
   }
 
   .category-pill {
-    font-family: "Manrope", sans-serif;
+    font-family: var(--font-primary);
     background: var(--pill-bg, #f9f8f7);
     border: 1px solid var(--border, #e0e0e0);
     color: var(--text, #666);

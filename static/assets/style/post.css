@@ -454,58 +454,9 @@ body.dark-mode code {
   color: #e0e0e0;
 }
 
-/* Scroll to top button */
-#scroll-to-top {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--primary, #ff8200);
-  border: 2px solid var(--primary, #ff8200);
-  color: white;
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
 
-#scroll-to-top.visible {
-  opacity: 1;
-  visibility: visible;
-}
 
-#scroll-to-top:hover {
-  background: white;
-  color: var(--primary, #ff8200);
-}
 
-#scroll-to-top i {
-  font-size: 15px;
-}
-
-@media (max-width: 768px) {
-  #scroll-to-top {
-    bottom: 90px;
-    /* Stay above the pills on mobile */
-  }
-}
-
-body.dark-mode #scroll-to-top {
-  background: var(--primary, #ff8200);
-  border-color: var(--primary, #ff8200);
-}
-
-body.dark-mode #scroll-to-top:hover {
-  background: #444444;
-  border-color: #555555;
-  color: var(--primary, #ff8200);
-}
 
 /* Print styles for code */
 @media print {

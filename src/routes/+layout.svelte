@@ -11,10 +11,13 @@
   let isHome = $derived($page.url.pathname === "/");
   let bodyClass = $derived(isPost ? "body-post" : isHome ? "blog-layout" : "");
   let isDark = $state(false);
+  let currentTheme = $state("system");
+  let currentFont = $state("default");
 
   $effect(() => {
     if (browser) {
-      document.body.className = bodyClass + (isDark ? " dark dark-mode" : "");
+      document.body.className =
+        bodyClass + (isDark ? " dark dark-mode" : "") + ` font-${currentFont}`;
     }
   });
 
@@ -63,6 +66,7 @@
   /** @param {string} theme */
   function setTheme(theme) {
     if (!browser) return;
+    currentTheme = theme;
     setCookie("theme", theme, 30);
     if (theme === "dark") {
       applyTheme(true);
@@ -76,25 +80,30 @@
     }
   }
 
-  // Make setTheme globally available
+  /** @param {string} font */
+  function setFont(font) {
+    if (!browser) return;
+    currentFont = font;
+    setCookie("font", font, 30);
+  }
+
+  // Make setters globally available
   if (browser) {
     // @ts-ignore
     window.setTheme = setTheme;
+    // @ts-ignore
+    window.setFont = setFont;
   }
 
   onMount(() => {
     // Initialize theme
-    const userTheme = getCookie("theme");
-    if (userTheme === "dark") {
-      applyTheme(true);
-    } else if (userTheme === "light") {
-      applyTheme(false);
-    } else {
-      const systemPrefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-      applyTheme(systemPrefersDark);
-    }
+    const userTheme = getCookie("theme") || "system";
+    currentTheme = userTheme;
+    setTheme(userTheme);
+
+    // Initialize font
+    const userFont = getCookie("font") || "default";
+    currentFont = userFont;
 
     // @ts-ignore
     if (typeof hljs !== "undefined") hljs.highlightAll();
@@ -132,6 +141,16 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
     rel="stylesheet"
+  />
+  <link rel="preconnect" href="https://rsms.me/" />
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css"
   />
 
   <!-- Styles -->
@@ -211,7 +230,14 @@
   {@render children()}
 </main>
 
-<Footer {setTheme} user={data.user} accessTier={data.accessTier} />
+<Footer
+  {setTheme}
+  {currentTheme}
+  {setFont}
+  {currentFont}
+  user={data.user}
+  accessTier={data.accessTier}
+/>
 
 <style>
   /* Default link color for light mode */
@@ -276,5 +302,34 @@
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.04);
     color: var(--text);
+  }
+
+  /* Font switching support */
+  :global(body) {
+    --font-primary: "Manrope", sans-serif;
+  }
+  :global(body.font-secondary) {
+    --font-primary: "Inter", sans-serif;
+    font-feature-settings:
+      "liga" 1,
+      "calt" 1;
+  }
+  @supports (font-variation-settings: normal) {
+    :global(body.font-secondary) {
+      font-family: InterVariable, sans-serif;
+    }
+  }
+  :global(body.font-serif) {
+    --font-primary: "Crimson Pro", serif;
+  }
+  :global(body.font-system) {
+    --font-primary: system-ui, -apple-system, sans-serif;
+  }
+  :global(body.font-dyslexic) {
+    --font-primary: "OpenDyslexicRegular", sans-serif;
+  }
+
+  :global(body) {
+    font-family: var(--font-primary);
   }
 </style>

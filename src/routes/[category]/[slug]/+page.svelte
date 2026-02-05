@@ -279,7 +279,7 @@
 
 <main
   class="post-container"
-  style="font-family: 'Manrope', sans-serif;"
+  style="font-family: var(--font-primary);"
   data-visibility={data.visibility}
   data-category={data.category}
   data-no-ads={data["no-ads"]}
