@@ -434,8 +434,14 @@ document.addEventListener("DOMContentLoaded", function () {
       qrContainer.appendChild(hiddenQR.firstChild.cloneNode(true));
       console.log('QR code cloned successfully');
     } else {
-      qrContainer.innerHTML = '<div style="font-size: 5px; word-break: break-all; text-align: center;">' + window.location.href + '</div>';
-      console.log('Using fallback QR (text URL)');
+      // Fallback: generate QR using qrserver.com API if hidden QR isn't ready
+      const currentUrl = encodeURIComponent(window.location.href);
+      const qrImg = document.createElement('img');
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${currentUrl}&format=png`;
+      qrImg.style.cssText = 'width: 90px; height: 90px; display: block;';
+      qrImg.alt = 'QR Code';
+      qrContainer.appendChild(qrImg);
+      console.log('Using fallback QR (qrserver.com API)');
     }
 
     printContainer.appendChild(logoDiv);
@@ -514,64 +520,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// QR Code pre-generation for posts (hidden, for print use)
-document.addEventListener("DOMContentLoaded", function () {
-  // Only generate QR for post pages
-  const postContainer = document.querySelector('.post-container');
-  if (!postContainer) return;
+// QR Code pre-generation for posts handled by Svelte component
 
-  // Create hidden QR code container
-  const hiddenQRContainer = document.createElement('div');
-  hiddenQRContainer.id = 'hidden-qr-code';
-  hiddenQRContainer.style.cssText = 'position: absolute; left: -9999px; top: -9999px; visibility: hidden;';
-  document.body.appendChild(hiddenQRContainer);
-
-  // Generate QR code when page loads
-  generateHiddenQRCode();
-
-  function generateHiddenQRCode() {
-    try {
-      // Use Google Charts QR Code API - more reliable
-      const qrSize = 90;
-      const currentUrl = encodeURIComponent(window.location.href);
-      const qrApiUrl = `https://chart.googleapis.com/chart?chs=${qrSize}x${qrSize}&cht=qr&chl=${currentUrl}&choe=UTF-8`;
-
-      // Create img element for QR code
-      const qrImg = document.createElement('img');
-      qrImg.src = qrApiUrl;
-      qrImg.style.cssText = 'width: 90px; height: 90px; display: block;';
-      qrImg.alt = 'QR Code for ' + window.location.href;
-
-      // Add to hidden container when loaded
-      qrImg.onload = function () {
-
-        hiddenQRContainer.appendChild(qrImg);
-      };
-
-      qrImg.onerror = function () {
-
-        // Fallback to qr-server.com API
-        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${currentUrl}`;
-        const fallbackImg = document.createElement('img');
-        fallbackImg.src = fallbackUrl;
-        fallbackImg.style.cssText = 'width: 90px; height: 90px; display: block;';
-        fallbackImg.alt = 'QR Code for ' + window.location.href;
-
-        fallbackImg.onload = function () {
-
-          hiddenQRContainer.appendChild(fallbackImg);
-        };
-
-        fallbackImg.onerror = function () {
-
-        };
-      };
-
-    } catch (error) {
-
-    }
-  }
-});
 
 document.addEventListener('keydown', function (e) {
   const key = e.key.toLowerCase();

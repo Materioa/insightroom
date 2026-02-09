@@ -311,6 +311,17 @@
   :global(body.font-secondary) {
     --font-primary: "Inter", sans-serif;
     font-feature-settings:
+      "tnum" 1,
+      "frac" 1,
+      "case" 1,
+      "ss01" 1,
+      "ss02" 1,
+      "cv01" 1,
+      "cv02" 1,
+      "cv03" 1,
+      "cv04" 1,
+      "cv05" 1,
+      "cvo9" 1,
       "liga" 1,
       "calt" 1;
   }
@@ -323,7 +334,7 @@
     --font-primary: "Crimson Pro", serif;
   }
   :global(body.font-system) {
-    --font-primary: system-ui, -apple-system, sans-serif;
+    --font-primary: sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
   }
   :global(body.font-dyslexic) {
     --font-primary: "OpenDyslexicRegular", sans-serif;

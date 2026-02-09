@@ -932,24 +932,6 @@ function toggleVideo(videoId) {
 function initializePrintEnhancements() {
     window.addEventListener('beforeprint', generatePrintElements);
     window.addEventListener('afterprint', cleanupPrintElements);
-
-    // Hidden QR Code Generation
-    const postContainer = document.querySelector('.post-container');
-    if (postContainer && !document.getElementById('hidden-qr-code')) {
-        const hiddenQR = document.createElement('div');
-        hiddenQR.id = 'hidden-qr-code';
-        hiddenQR.style.cssText = 'position: absolute; left: -9999px; top: -9999px; visibility: hidden;';
-        document.body.appendChild(hiddenQR);
-
-        const qrSize = 90;
-        const currentUrl = encodeURIComponent(window.location.href);
-        const qrUrl = `https://chart.googleapis.com/chart?chs=${qrSize}x${qrSize}&cht=qr&chl=${currentUrl}&choe=UTF-8`;
-
-        const img = document.createElement('img');
-        img.src = qrUrl;
-        img.style.cssText = 'width: 90px; height: 90px; display: block;';
-        img.onload = () => hiddenQR.appendChild(img);
-    }
 }
 
 function generatePrintElements() {
@@ -980,8 +962,18 @@ function generatePrintElements() {
     qrContainer.style.cssText = 'width: 90px; height: 90px; margin-top: 0; z-index: 1;';
 
     const hiddenQR = document.getElementById('hidden-qr-code');
-    if (hiddenQR && hiddenQR.firstChild) {
-        qrContainer.appendChild(hiddenQR.firstChild.cloneNode(true));
+    const qrSource = hiddenQR ? hiddenQR.querySelector('svg, canvas, img') : null;
+
+    if (qrSource) {
+        qrContainer.appendChild(qrSource.cloneNode(true));
+    } else {
+        // Fallback: generate QR using qrserver.com API if hidden QR isn't ready
+        const currentUrl = encodeURIComponent(window.location.href);
+        const qrImg = document.createElement('img');
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${currentUrl}&format=png`;
+        qrImg.style.cssText = 'width: 90px; height: 90px; display: block;';
+        qrImg.alt = 'QR Code';
+        qrContainer.appendChild(qrImg);
     }
 
     qrSection.appendChild(qrTitle);

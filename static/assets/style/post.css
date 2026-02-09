@@ -469,6 +469,41 @@ body.dark-mode code {
     font-size: 0.85em !important;
     page-break-inside: avoid;
   }
+
+  /* Print styles for tables */
+  .post-body table {
+    display: table !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-collapse: collapse !important;
+    overflow: visible !important;
+    page-break-inside: auto !important;
+  }
+
+  .post-body table tr {
+    page-break-inside: avoid !important;
+  }
+
+  .post-body table th,
+  .post-body table td {
+    border: 1px solid #333 !important;
+    padding: 8px !important;
+    text-align: left !important;
+    white-space: normal !important;
+    min-width: auto !important;
+    word-break: break-word !important;
+  }
+
+  .post-body table th {
+    background-color: #f5f5f5 !important;
+    font-weight: bold !important;
+    color: #333 !important;
+  }
+
+  .post-body table td {
+    background-color: #ffffff !important;
+    color: #333 !important;
+  }
 }
 
 /* Table of Contents (right-side) */

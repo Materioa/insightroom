@@ -11,6 +11,7 @@
   import { page } from "$app/stores";
   import { dev } from "$app/environment";
   import { initializePostBase } from "../../../lib/utils/postBaseLogic.js";
+  import QRCodeGenerator from "$lib/components/QRCodeGenerator.svelte";
   import {
     trackPageView,
     trackReadingTime,
@@ -664,6 +665,16 @@
       </aside>
     </div>
   </article>
+
+  <!-- Hidden QR code for print header -->
+  <div id="hidden-qr-code" style="position: absolute; left: -9999px; top: -9999px; visibility: hidden;">
+    <QRCodeGenerator 
+      data={$page.url.href} 
+      size={90} 
+      hideActions={true} 
+      hideContainer={true} 
+    />
+  </div>
 </main>
 
 <!-- Site-level TOC sidebar - starts with no-transition to prevent flash on load -->

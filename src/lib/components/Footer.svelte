@@ -729,6 +729,12 @@
     background: rgba(255, 255, 255, 0.08);
   }
 
+  @media print {
+    .global-scroll-controls {
+      display: none !important;
+    }
+  }
+
   @media (max-width: 768px) {
     .profile-pill-container {
       bottom: 20px;

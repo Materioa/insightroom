@@ -26,6 +26,7 @@
 		"gray-matter": "^4.0.3",
 		"jsonwebtoken": "^9.0.3",
 		"marked": "^17.0.1",
+		"qr-code-styling": "^1.6.0-alpha.1",
 		"rehype-raw": "^7.0.0",
 		"remark-gfm": "^4.0.1"
 	}
