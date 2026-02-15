@@ -8,7 +8,7 @@ excerpt: This resource provides overview about Android, its Architecture, Versio
   AVD, Directory structure and Manifest files
 attachment: true
 semester: 6
-subject: Mobile Application Development
+subject: Mobile App Development
 category: Originals
 summarize: true
 ---
