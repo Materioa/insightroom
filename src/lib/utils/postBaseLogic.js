@@ -943,23 +943,23 @@ function generatePrintElements() {
     const printContainer = document.createElement('div');
     printContainer.className = 'print-only-element print-page-header';
     printContainer.style.cssText = `
-    display: none; width: 100%; height: 120px; margin-bottom: 10px; position: relative;
-    border-bottom: 1px solid #ddd; padding-top: 8px; padding-bottom: 8px;
+    display: none; width: 100%; height: 170px; margin-bottom: 10px; position: relative;
+    border-bottom: 1px solid #ddd; padding-top: 0px; padding-bottom: 8px; overflow: visible;
   `;
 
     const logoDiv = document.createElement('div');
-    logoDiv.style.cssText = 'position: absolute; left: 0; top: 33px;';
+    logoDiv.style.cssText = 'position: absolute; left: 0; top: 50%; transform: translateY(-50%);';
     logoDiv.innerHTML = '<img src="/assets/printables/header.svg" alt="Materio" style="height: 32px; width: auto;">';
 
     const qrSection = document.createElement('div');
-    qrSection.style.cssText = 'position: absolute; right: 0; top: -3px; text-align: center; display: flex; flex-direction: column; align-items: center;';
+    qrSection.style.cssText = 'position: absolute; right: 0; top: 8px; text-align: center; display: flex; flex-direction: column; align-items: center;';
 
     const qrTitle = document.createElement('div');
     qrTitle.style.cssText = 'font-family: "Libre Baskerville", serif; font-size: 9px; color: #666; margin: 0 0 6px 0; z-index: 2;';
     qrTitle.textContent = 'Scan to read online';
 
     const qrContainer = document.createElement('div');
-    qrContainer.style.cssText = 'width: 90px; height: 90px; margin-top: 0; z-index: 1;';
+    qrContainer.style.cssText = 'width: 120px; height: 120px; margin-top: 0; z-index: 1;';
 
     const hiddenQR = document.getElementById('hidden-qr-code');
     const qrSource = hiddenQR ? hiddenQR.querySelector('svg, canvas, img') : null;
@@ -970,8 +970,8 @@ function generatePrintElements() {
         // Fallback: generate QR using qrserver.com API if hidden QR isn't ready
         const currentUrl = encodeURIComponent(window.location.href);
         const qrImg = document.createElement('img');
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${currentUrl}&format=png`;
-        qrImg.style.cssText = 'width: 90px; height: 90px; display: block;';
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${currentUrl}&format=png`;
+        qrImg.style.cssText = 'width: 120px; height: 120px; display: block;';
         qrImg.alt = 'QR Code';
         qrContainer.appendChild(qrImg);
     }
@@ -990,6 +990,8 @@ function generatePrintElements() {
       @media print {
         .print-page-header { display: block !important; }
         .print-only-element { display: block !important; }
+        @page :first { margin-top: 0.15in; }
+        @page { margin-top: 0.75in; }
       }
       @media screen {
         .print-only-element { display: none !important; }

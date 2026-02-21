@@ -372,11 +372,11 @@ document.addEventListener("DOMContentLoaded", function () {
     printContainer.style.cssText = `
           display: none;
           width: 100%;
-          height: 120px; /* increased height so header contents aren't clipped */
+          height: 170px; /* increased height so header contents aren't clipped */
           margin-bottom: 10px;
           position: relative;
           border-bottom: 1px solid #ddd;
-          padding-top: 8px; /* ensure content doesn't touch page margin */
+          padding-top: 0px; /* ensure content doesn't touch page margin */
           padding-bottom: 8px;
         `;
 
@@ -384,7 +384,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const logoDiv = document.createElement('div');
     // Move logo slightly further down so it aligns with the QR title and code
     // Additional 4px downward adjustment requested
-    logoDiv.style.cssText = 'position: absolute; left: 0; top: 33px;';
+    logoDiv.style.cssText = 'position: absolute; left: 0; top: 50%; transform: translateY(-50%);';
     logoDiv.innerHTML = '<img src="/assets/printables/header.svg" alt="Materio" style="height: 32px; width: auto;">';
 
     // QR section on the right - just placeholder for print
@@ -392,7 +392,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Move QR so its top aligns with the logo on the left
     // Use flex column so the title remains visible above the QR image
     // Move QR down by 4px for better alignment with the logo
-    qrSection.style.cssText = 'position: absolute; right: 0; top: -3px; text-align: center; display: flex; flex-direction: column; align-items: center;';
+    qrSection.style.cssText = 'position: absolute; right: 0; top: 8px; text-align: center; display: flex; flex-direction: column; align-items: center;';
 
     // QR title
     const qrTitle = document.createElement('div');
@@ -403,7 +403,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // QR container - will use the pre-generated one
     const qrContainer = document.createElement('div');
     qrContainer.id = 'print-qr-display';
-    qrContainer.style.cssText = 'width: 90px; height: 90px; margin-top: 0; z-index: 1;';
+    qrContainer.style.cssText = 'width: 120px; height: 120px; margin-top: 0; z-index: 1;';
 
     // Append title then QR
     qrSection.appendChild(qrTitle);
@@ -437,8 +437,8 @@ document.addEventListener("DOMContentLoaded", function () {
       // Fallback: generate QR using qrserver.com API if hidden QR isn't ready
       const currentUrl = encodeURIComponent(window.location.href);
       const qrImg = document.createElement('img');
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${currentUrl}&format=png`;
-      qrImg.style.cssText = 'width: 90px; height: 90px; display: block;';
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${currentUrl}&format=png`;
+      qrImg.style.cssText = 'width: 120px; height: 120px; display: block;';
       qrImg.alt = 'QR Code';
       qrContainer.appendChild(qrImg);
       console.log('Using fallback QR (qrserver.com API)');
@@ -488,7 +488,7 @@ document.addEventListener("DOMContentLoaded", function () {
             
             /* Reduce top margins significantly for first page, normal for others */
             @page :first {
-              margin-top: 0.5in;
+              margin-top: 0.15in;
             }
             
             @page {

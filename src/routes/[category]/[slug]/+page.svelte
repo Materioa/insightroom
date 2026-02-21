@@ -667,12 +667,15 @@
   </article>
 
   <!-- Hidden QR code for print header -->
-  <div id="hidden-qr-code" style="position: absolute; left: -9999px; top: -9999px; visibility: hidden;">
-    <QRCodeGenerator 
-      data={$page.url.href} 
-      size={90} 
-      hideActions={true} 
-      hideContainer={true} 
+  <div
+    id="hidden-qr-code"
+    style="position: absolute; left: -999px; top: -999px; visibility: hidden;"
+  >
+    <QRCodeGenerator
+      data={$page.url.href}
+      size={120}
+      hideActions={true}
+      hideContainer={true}
     />
   </div>
 </main>
