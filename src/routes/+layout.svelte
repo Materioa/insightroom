@@ -204,11 +204,9 @@
     }
   </script>
 
-  <!-- FontAwesome -->
-  <link
-    rel="stylesheet"
-    href="https://site-assets.fontawesome.com/releases/v7.0.0/css/all.css"
-  />
+  <!-- Materioa Kit -->
+  <script src="https://materioa.github.io/kit/6a787c7335.js" crossorigin="anonymous"></script>
+
   <!-- Google Analytics -->
   <script
     async

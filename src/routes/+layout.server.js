@@ -1,4 +1,6 @@
 /** @type {import('./$types').LayoutServerLoad} */
+import { redirect, isRedirect } from '@sveltejs/kit';
+
 export const load = async ({ cookies, fetch, url }) => {
     // Use localhost in development, production URL otherwise
     const isDev = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
@@ -21,7 +23,8 @@ export const load = async ({ cookies, fetch, url }) => {
             if (exchangeResponse.ok) {
                 const exchangeData = await exchangeResponse.json();
                 const token = exchangeData.token;
-                const user = exchangeData.user;
+                // Handle both response formats: wrapped in 'user' property or direct user data
+                const user = exchangeData.user || exchangeData;
 
                 // Store the token in cookies
                 cookies.set('materio_auth_token', token, {
@@ -43,15 +46,18 @@ export const load = async ({ cookies, fetch, url }) => {
                 // Clean the URL by removing the handoff parameter and redirect
                 const cleanUrl = new URL(url);
                 cleanUrl.searchParams.delete('handoff');
+                const cleanPath = cleanUrl.pathname + cleanUrl.search;
 
-                // Use throw redirect to redirect to clean URL
-                const { redirect } = await import('@sveltejs/kit');
-                throw redirect(302, cleanUrl.pathname + cleanUrl.search);
+                // Throw redirect to clean URL
+                throw redirect(302, cleanPath);
             }
         } catch (error) {
-            // Re-throw redirects
-            const { isRedirect } = await import('@sveltejs/kit');
-            if (isRedirect(error)) throw error;
+            // Re-throw redirects (SvelteKit's Redirect is not an Error instance)
+            if (isRedirect(error)) {
+                throw error;
+            }
+            // Log other errors for debugging
+            console.error('Handoff exchange error:', error);
         }
     }
 
@@ -74,7 +80,8 @@ export const load = async ({ cookies, fetch, url }) => {
 
         if (response.ok) {
             const userData = await response.json();
-            const user = userData.user;
+            // Handle both response formats: wrapped in 'user' property or direct user data
+            const user = userData.user || userData;
 
             // Determine access tier
             let accessTier = 'normal';

@@ -90,22 +90,8 @@ function initializeCodeBlocks() {
             pre.insertBefore(langLabel, codeBlock);
         }
 
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'code-copy-btn';
-        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> ';
-        copyBtn.setAttribute('aria-label', 'Copy code to clipboard');
-
-        copyBtn.addEventListener('click', function () {
-            const code = codeBlock.textContent || '';
-            navigator.clipboard.writeText(code).then(() => {
-                copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> ';
-                setTimeout(() => {
-                    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> ';
-                }, 2000);
-            }).catch(() => fallbackCopyToClipboard(code, copyBtn));
-        });
-
-        pre.appendChild(copyBtn);
+        // Copy functionality now handled via custom context menu
+        // No visible copy button needed
     });
 }
 
@@ -1016,27 +1002,255 @@ function initializeSecureMode() {
             e.stopPropagation();
         }
     }, true);
+    
+    // Custom context menu implementation
     document.addEventListener('contextmenu', function (e) {
         /** @type {HTMLElement} */
         // @ts-ignore
         const target = e.target;
         if (!target) return;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) e.preventDefault();
+        
+        // Allow default context menu for input and textarea
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+            return;
+        }
+        
+        // Show custom context menu for rest of the page
+        e.preventDefault();
+        showCustomContextMenu(e.clientX, e.clientY);
     });
-    document.body.style.userSelect = 'none';
-    // @ts-ignore
-    document.body.style.webkitUserSelect = 'none';
-    document.addEventListener('selectstart', blockIfNotInput);
-    document.addEventListener('dragstart', blockIfNotInput);
+    
+    // Hide custom context menu on click
+    document.addEventListener('click', hideCustomContextMenu);
+    document.addEventListener('scroll', hideCustomContextMenu);
 }
 
-/** @param {Event} e */
-function blockIfNotInput(e) {
-    /** @type {HTMLElement} */
-    // @ts-ignore
-    const target = e.target;
-    if (!target) return;
+/**
+ * Show custom context menu with Copy and Ask options
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ */
+function showCustomContextMenu(x, y) {
+    // Get selected text
+    const selection = window.getSelection();
+    const selectedText = selection ? selection.toString().trim() : '';
+    
+    // Remove existing context menu
+    const existing = document.getElementById('custom-context-menu');
+    if (existing) existing.remove();
+    
+    // Create context menu container
+    const menu = document.createElement('div');
+    menu.id = 'custom-context-menu';
+    menu.style.cssText = `
+        position: fixed;
+        top: ${y}px;
+        left: ${x}px;
+        background: var(--card-bg, #f9f9f9);
+        border: 1px solid var(--border, #ddd);
+        border-radius: 12px;
+        corner-shape: squircle;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        z-index: 10000;
+        min-width: 150px;
+        overflow: hidden;
+    `;
+    
+    // Add Copy option if text is selected
+    if (selectedText) {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'context-menu-item';
+        copyBtn.innerHTML = 'Copy';
+        copyBtn.style.cssText = `
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text, #333);
+        `;
+        copyBtn.onmouseenter = () => copyBtn.style.background = 'rgba(255, 132, 0, 0.1)';
+        copyBtn.onmouseleave = () => copyBtn.style.background = 'transparent';
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(selectedText).then(() => {
+                hideCustomContextMenu();
+            }).catch(err => {
+                console.error('Copy failed:', err);
+            });
+        };
+        menu.appendChild(copyBtn);
+    }
+    
+    // Check if user has ask privileges (check if AISummary component is available with canAsk=true)
+    const hasAskPrivileges = checkAskPrivileges();
+    
+    // Add Ask option if text is selected and user has privileges
+    if (selectedText && hasAskPrivileges) {
+        // Add separator if there's a copy button
+        if (selectedText) {
+            const separator = document.createElement('div');
+            separator.style.cssText = 'height: 1px; background: var(--border, #ddd);';
+            menu.appendChild(separator);
+        }
+        
+        const askBtn = document.createElement('button');
+        askBtn.className = 'context-menu-item';
+        askBtn.innerHTML = 'Ask AI';
+        askBtn.style.cssText = `
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text, #333);
+            font-weight: 400;
+        `;
+        askBtn.onmouseenter = () => askBtn.style.background = 'rgba(255, 132, 0, 0.15)';
+        askBtn.onmouseleave = () => askBtn.style.background = 'transparent';
+        askBtn.onclick = () => {
+            hideCustomContextMenu();
+            sendSelectedToAI(selectedText);
+        };
+        menu.appendChild(askBtn);
+    }
+    
+    // If no options are available, don't show menu
+    if (menu.children.length === 0) {
+        return;
+    }
+    
+    // Append to body
+    document.body.appendChild(menu);
+    
+    // Adjust position if menu goes off-screen
+    setTimeout(() => {
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            menu.style.left = (x - rect.width) + 'px';
+        }
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = (y - rect.height) + 'px';
+        }
+    }, 0);
+}
 
-    const tag = target.tagName;
-    if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !target.isContentEditable) e.preventDefault();
+/**
+ * Hide custom context menu
+ */
+function hideCustomContextMenu() {
+    const menu = document.getElementById('custom-context-menu');
+    if (menu) menu.remove();
+}
+
+/**
+ * Check if user has ask privileges by checking if AISummary component is available
+ * @returns {boolean}
+ */
+function checkAskPrivileges() {
+    // Check if there's an AI summary component visible
+    const aiSummary = document.querySelector('[data-ai-summary-available]');
+    if (aiSummary) {
+        const canAsk = aiSummary.getAttribute('data-can-ask');
+        return canAsk !== 'false';
+    }
+    // Fallback: check if we have localStorage flag for permissions
+    const userHasPrivileges = localStorage.getItem('has_ask_privileges') === 'true';
+    return userHasPrivileges;
+}
+
+/**
+ * Send selected text to AI summarizer's ask chat
+ * @param {string} selectedText
+ */
+function sendSelectedToAI(selectedText) {
+    // Dispatch custom event that AISummary component can listen to
+    const event = new CustomEvent('ask-ai-selection', {
+        detail: { text: selectedText }
+    });
+    document.dispatchEvent(event);
+}
+
+/**
+ * Show temporary feedback message
+ * @param {string} message
+ */
+function showContextMenuFeedback(message) {
+    const feedback = document.createElement('div');
+    feedback.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #ff8200;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(255, 130, 0, 0.3);
+        z-index: 10001;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    feedback.innerHTML = `<i class="fa-solid fa-check"></i>${message}`;
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        feedback.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => feedback.remove(), 300);
+    }, 2000);
+}
+
+// Add animations (only in browser, not during SSR)
+if (typeof document !== 'undefined' && !document.getElementById('context-menu-styles')) {
+    const style = document.createElement('style');
+    style.id = 'context-menu-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        #custom-context-menu {
+        }
+        
+        .context-menu-item i {
+            display: none;
+        }
+        
+        body.dark #custom-context-menu {
+            background: var(--card-bg, #1e1e1e);
+            border-color: var(--border, #333);
+        }
+        
+        body.dark .context-menu-item {
+            color: var(--text, #eee);
+        }
+    `;
+    document.head.appendChild(style);
 }

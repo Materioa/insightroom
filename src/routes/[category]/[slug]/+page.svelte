@@ -141,22 +141,50 @@
           if (a.querySelector("img")) return;
           if (a.closest("code, pre")) return;
           if (!a.classList.contains("link-pill")) a.classList.add("link-pill");
-          if (!a.querySelector("i.fa-arrow-up-right")) {
-            const i = document.createElement("i");
-            i.className = "fa-regular fa-arrow-up-right";
-            a.appendChild(i);
+
+          // Reuse previously appended link icon if present to avoid duplicates.
+          const lastChild = a.lastElementChild;
+          if (
+            lastChild instanceof HTMLElement &&
+            lastChild.tagName === "I" &&
+            (lastChild.classList.contains("fa-arrow-up-right") ||
+              lastChild.classList.contains("fa-link-simple"))
+          ) {
+            lastChild.classList.add("link-pill-icon");
           }
+
+          /** @type {HTMLElement | null} */
+          let icon = a.querySelector("i.link-pill-icon");
+          if (!icon) {
+            icon = document.createElement("i");
+            icon.className = "link-pill-icon fa-regular";
+            a.appendChild(icon);
+          }
+
           try {
-            const href = a.getAttribute("href");
-            if (href) {
-              const url = new URL(href, window.location.href);
-              if (url.origin && url.origin !== window.location.origin) {
-                a.setAttribute("target", "_blank");
-                a.setAttribute("rel", "noopener noreferrer");
-              }
+            const href = (a.getAttribute("href") || "").trim();
+            const isHashLink = href.startsWith("#");
+            const url = href ? new URL(href, window.location.href) : null;
+            const isExternal =
+              !!url && !isHashLink && url.origin !== window.location.origin;
+
+            if (isExternal) {
+              a.setAttribute("target", "_blank");
+              a.setAttribute("rel", "noopener noreferrer");
+              icon.className = "link-pill-icon fa-regular fa-arrow-up-right";
+              icon.style.transform = "none";
+              icon.style.display = "inline-block";
+            } else {
+              a.removeAttribute("target");
+              a.removeAttribute("rel");
+              icon.className = "link-pill-icon fa-regular fa-link-simple";
+              icon.style.transform = "rotate(-20deg)";
+              icon.style.display = "inline-block";
             }
           } catch (e) {
-            // ignore parse errors
+            icon.className = "link-pill-icon fa-regular fa-link-simple";
+            icon.style.transform = "rotate(-20deg)";
+            icon.style.display = "inline-block";
           }
         });
       });
@@ -669,7 +697,7 @@
   <!-- Hidden QR code for print header -->
   <div
     id="hidden-qr-code"
-    style="position: absolute; left: -999px; top: -999px; visibility: hidden;"
+    style="position: absolute; left: -9999px; top: -9999px; visibility: hidden;"
   >
     <QRCodeGenerator
       data={$page.url.href}

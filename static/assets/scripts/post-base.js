@@ -113,31 +113,8 @@ document.addEventListener('DOMContentLoaded', function () {
       pre.insertBefore(langLabel, codeBlock);
     }
 
-    // Create copy button
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'code-copy-btn';
-    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> ';
-    copyBtn.setAttribute('aria-label', 'Copy code to clipboard');
-
-    // Add click handler
-    copyBtn.addEventListener('click', function () {
-      const code = codeBlock.textContent;
-
-      navigator.clipboard.writeText(code).then(() => {
-        copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> ';
-        // copyBtn.style.background = '#28a745';
-
-        setTimeout(() => {
-          copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> ';
-          copyBtn.style.background = '';
-        }, 2000);
-      }).catch(() => {
-        // Fallback for older browsers
-        fallbackCopyToClipboard(code, copyBtn);
-      });
-    });
-
-    pre.appendChild(copyBtn);
+    // Copy functionality now handled via custom context menu
+    // No visible copy button needed
   });
 });
 

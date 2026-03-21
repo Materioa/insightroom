@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { tick, onMount } from "svelte";
 
   /** @type {{ postContent: string, postTitle: string, canSummarize?: boolean, canAsk?: boolean }} */
@@ -13,22 +13,20 @@
   const shouldRender = $derived(canSummarize || canAsk);
 
   // State
-  let activeMode = $state(""); // "" | "summary" | "ask"
-  let isLoading = $state(false);
-  let summaryText = $state("");
-  let displayedSummary = $state("");
-  /** @type {Array<{role: string, content: string, displayed?: string}>} */
-  let chatMessages = $state([]);
-  let userInput = $state("");
-  let followUpInput = $state("");
-  let errorMessage = $state("");
-  let summaryGenerated = $state(false);
-  let isTyping = $state(false);
-  let isFollowUp = $state(false);
-  let shouldStop = $state(false);
-  let isClosing = $state(false);
-  /** @type {AbortController | null} */
-  let abortController = $state(null);
+  let activeMode: string = $state(""); // "" | "summary" | "ask"
+  let isLoading: boolean = $state(false);
+  let summaryText: string = $state("");
+  let displayedSummary: string = $state("");
+  let chatMessages: Array<{role: string, content: string, displayed?: string}> = $state([]);
+  let userInput: string = $state("");
+  let followUpInput: string = $state("");
+  let errorMessage: string = $state("");
+  let summaryGenerated: boolean = $state(false);
+  let isTyping: boolean = $state(false);
+  let isFollowUp: boolean = $state(false);
+  let shouldStop: boolean = $state(false);
+  let isClosing: boolean = $state(false);
+  let abortController: AbortController | null = $state(null);
   let currentModelIndex = $state(0);
 
   const API_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -59,6 +57,41 @@
       });
     }
   });
+  
+  // Set up privileges for context menu and listen for ask-ai-selection event
+  onMount(() => {
+    // Set data attributes to indicate this component is available for AI operations
+    const rootElement = document.querySelector('[data-ai-summary-component]');
+    if (rootElement) {
+      rootElement.setAttribute('data-ai-summary-available', 'true');
+      rootElement.setAttribute('data-can-ask', String(canAsk));
+    }
+    
+    // Also set on document for fallback detection
+    if (canAsk) {
+      localStorage.setItem('has_ask_privileges', 'true');
+    }
+    
+    // Listen for ask-ai-selection event from context menu
+    const handleAskSelection = (event: CustomEvent) => {
+      const selectedText = event.detail?.text || '';
+      if (selectedText && canAsk) {
+        // Switch to ask mode and add selected text as initial message
+        activeMode = 'ask';
+        userInput = selectedText;
+        
+        // Scroll to AI summary or bring it into view
+        rootElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+    
+    document.addEventListener('ask-ai-selection', handleAskSelection as EventListener);
+    
+    return () => {
+      document.removeEventListener('ask-ai-selection', handleAskSelection as EventListener);
+    };
+  });
+  
   // @ts-ignore
   const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 
@@ -69,7 +102,7 @@
    * @param {number} speed
    * @returns {Promise<void>}
    */
-  async function typeWriter(fullText, updateFn, speed = 12) {
+  async function typeWriter(fullText: string, updateFn: (text: string) => void, speed: number = 12) {
     isTyping = true;
     let currentText = "";
     for (let i = 0; i < fullText.length; i++) {
@@ -89,12 +122,14 @@
    * @param {string} systemPrompt
    * @param {Array<{role: string, content: string}>} messages
    * @param {number} modelIndex - Starting model index for fallback
+  /**
+   * Send chat message to AI
    * @returns {Promise<string>}
    */
   async function sendChatMessage(
-    systemPrompt,
-    messages,
-    modelIndex = currentModelIndex,
+    systemPrompt: string,
+    messages: Array<{role: string, content: string}>,
+    modelIndex: number = currentModelIndex,
   ) {
     const model = MODELS[modelIndex];
     if (!model) {
@@ -280,17 +315,16 @@ For summarizing:
    * @param {string} text
    * @returns {string}
    */
-  function parseMarkdown(text) {
+  function parseMarkdown(text: string): string {
     if (!text) return "";
 
     let result = text;
 
     // Store code blocks temporarily to protect them from other transformations
-    /** @type {string[]} */
-    const codeBlocks = [];
+    const codeBlocks: string[] = [];
 
     // Code blocks with language (```lang ... ```)
-    result = result.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
+    result = result.replace(/```(\w+)?\n([\s\S]*?)```/g, (_: string, lang: string, code: string) => {
       const langClass = lang ? ` class="language-${lang}"` : "";
       const escapedCode = code
         .replace(/&/g, "&amp;")
@@ -305,27 +339,21 @@ For summarizing:
     // Tables
     result = result.replace(
       /(?:^|\n)((?:\|[^\n]+\|\n)+)/g,
-      (match, tableContent) => {
-        /** @type {string[]} */
+      (match: string, tableContent: string) => {
         const rows = tableContent.trim().split("\n");
         if (rows.length < 2) return match;
 
         let html = '<table class="ai-table">';
 
         rows.forEach(
-          (/** @type {string} */ row, /** @type {number} */ index) => {
+          (row: string, index: number) => {
             // Skip separator row (|---|---|)
             if (/^\|[\s\-:]+\|$/.test(row.trim())) return;
 
-            /** @type {string[]} */
             const cells = row
               .split("|")
               .filter(
-                (
-                  /** @type {string} */ _,
-                  /** @type {number} */ i,
-                  /** @type {string[]} */ arr,
-                ) => i > 0 && i < arr.length - 1,
+                (_: string, i: number, arr: string[]) => i > 0 && i < arr.length - 1,
               );
             const tag = index === 0 ? "th" : "td";
 
@@ -507,7 +535,7 @@ ${postContent.slice(0, 8000)}`;
    * @param {KeyboardEvent} event
    * @param {"question" | "followup"} type
    */
-  function handleKeyPress(event, type) {
+  function handleKeyPress(event: KeyboardEvent, type: "question" | "followup") {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (type === "question") {
@@ -547,7 +575,7 @@ ${postContent.slice(0, 8000)}`;
 </svelte:head>
 
 {#if shouldRender}
-  <div class="ai-card">
+  <div class="ai-card" data-ai-summary-component>
     <!-- Action Buttons Row -->
     <div class="ai-actions-row">
       {#if canSummarize}
