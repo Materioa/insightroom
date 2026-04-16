@@ -35,6 +35,12 @@
         footerOffset = 0;
       }
     }
+
+    // Expose footer offset globally so floating UI can stay in sync.
+    document.documentElement.style.setProperty(
+      "--global-footer-offset",
+      `${footerOffset}px`,
+    );
   }
 
   onMount(() => {
@@ -48,6 +54,7 @@
     return () => {
       window.removeEventListener("scroll", updateScrollInfo);
       window.removeEventListener("resize", updateScrollInfo);
+      document.documentElement.style.setProperty("--global-footer-offset", "0px");
     };
   });
 

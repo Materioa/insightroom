@@ -10,11 +10,45 @@
 
   {#if isPost}
     <button
-      class="toc-toggle"
-      aria-label="Toggle table of contents"
-      title="Toggle table of contents"
+      class="toc-mobile-toggle"
+      data-state="closed"
+      aria-label="Open table of contents"
+      title="Open table of contents"
     >
-      <i class="fa-light fa-sidebar"></i>
+      <span class="toc-mobile-icon toc-mobile-icon-menu" aria-hidden="true">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          color="currentColor"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M 20 19 L 10 19" />
+          <path d="M 20 12 L 4 12" />
+          <path d="M 20 5 L 4 5" />
+        </svg>
+      </span>
+      <span class="toc-mobile-icon toc-mobile-icon-close" aria-hidden="true">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M6 6L18 18" />
+          <path d="M18 6L6 18" />
+        </svg>
+      </span>
     </button>
   {/if}
 

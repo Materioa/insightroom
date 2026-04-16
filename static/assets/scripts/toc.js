@@ -123,7 +123,35 @@
     }
   }
 
-  // Move `.post-toc` into `#site-toc-sidebar` and wire toggle handlers
+  function isDesktopViewport() {
+    return window.matchMedia('(min-width: 981px)').matches;
+  }
+
+  function closeTOCStates() {
+    document.body.classList.remove('toc-open');
+    document.body.classList.remove('toc-hover-open');
+    document.body.classList.remove('toc-sheet-open');
+
+    const sidebar = document.getElementById('site-toc-sidebar');
+    const overlay = document.getElementById('site-toc-overlay');
+    if (sidebar) sidebar.setAttribute('aria-hidden', 'true');
+    if (overlay) overlay.setAttribute('aria-hidden', 'true');
+
+    if (sidebar) {
+      sidebar.style.setProperty('--toc-sheet-drag', '0px');
+    }
+    const handle = document.getElementById('site-toc-sheet-handle');
+    if (handle) {
+      handle.setAttribute('data-drag', 'idle');
+    }
+
+    const mobileToggle = document.querySelector('.toc-mobile-toggle');
+    if (mobileToggle) {
+      mobileToggle.setAttribute('data-state', 'closed');
+    }
+  }
+
+  // Move `.post-toc` into `#site-toc-sidebar` and initialize shell
   function wireTOCSidebar() {
     const siteSidebar = document.getElementById('site-toc-sidebar');
     const postToc = document.querySelector('.post-toc');
@@ -152,89 +180,6 @@
       });
     });
 
-    // Use event delegation for the toggle button to handle Svelte hydration/replacement
-    if (!window._tocHandlersAttached) {
-      window._tocHandlersAttached = true;
-
-      document.addEventListener('click', function (e) {
-        const toggleBtn = e.target.closest('.toc-toggle');
-        if (toggleBtn) {
-          e.preventDefault();
-          const sidebar = document.getElementById('site-toc-sidebar');
-          const overlay = document.getElementById('site-toc-overlay');
-
-          const isOpen = document.body.classList.contains('toc-open');
-
-          if (isOpen) {
-            // Close
-            document.body.classList.remove('toc-open');
-            if (sidebar) sidebar.setAttribute('aria-hidden', 'true');
-            if (overlay) overlay.setAttribute('aria-hidden', 'true');
-
-            const icon = toggleBtn.querySelector('i');
-            if (icon) {
-              icon.classList.remove('fa-regular');
-              icon.classList.add('fa-light');
-            }
-          } else {
-            // Open
-            document.body.classList.add('toc-open');
-            if (sidebar) sidebar.setAttribute('aria-hidden', 'false');
-            if (overlay) overlay.setAttribute('aria-hidden', 'false');
-
-            const icon = toggleBtn.querySelector('i');
-            if (icon) {
-              icon.classList.remove('fa-light');
-              icon.classList.add('fa-regular');
-            }
-
-            // Center active
-            setTimeout(() => { centerActiveInSidebar('auto'); }, 120);
-          }
-        }
-      });
-
-      // Close on ESC
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && document.body.classList.contains('toc-open')) {
-          document.body.classList.remove('toc-open');
-          const sidebar = document.getElementById('site-toc-sidebar');
-          const overlay = document.getElementById('site-toc-overlay');
-          if (sidebar) sidebar.setAttribute('aria-hidden', 'true');
-          if (overlay) overlay.setAttribute('aria-hidden', 'true');
-
-          // Reset icon
-          const toggleBtn = document.querySelector('.toc-toggle');
-          if (toggleBtn) {
-            const icon = toggleBtn.querySelector('i');
-            if (icon) {
-              icon.classList.remove('fa-regular');
-              icon.classList.add('fa-light');
-            }
-          }
-        }
-      });
-
-      // Handle overlay click (if not handled by Svelte)
-      document.addEventListener('click', function (e) {
-        if (e.target.id === 'site-toc-overlay' && document.body.classList.contains('toc-open')) {
-          document.body.classList.remove('toc-open');
-          const sidebar = document.getElementById('site-toc-sidebar');
-          if (sidebar) sidebar.setAttribute('aria-hidden', 'true');
-          e.target.setAttribute('aria-hidden', 'true');
-
-          // Reset icon
-          const toggleBtn = document.querySelector('.toc-toggle');
-          if (toggleBtn) {
-            const icon = toggleBtn.querySelector('i');
-            if (icon) {
-              icon.classList.remove('fa-regular');
-              icon.classList.add('fa-light');
-            }
-          }
-        }
-      });
-    }
     // run auto-render on the sidebar so $$...$$ is converted
     if (typeof window.renderMathInElement === 'function') {
       window.renderMathInElement(siteSidebar, {
@@ -245,6 +190,221 @@
         throwOnError: false
       });
     }
+  }
+
+  function buildTOCRail() {
+    const rail = document.getElementById('toc-scroll-rail');
+    const sidebar = document.getElementById('site-toc-sidebar');
+    const mobileToggle = document.querySelector('.toc-mobile-toggle');
+    if (!rail || !sidebar) return;
+
+    const links = Array.from(sidebar.querySelectorAll('.toc a'));
+    rail.innerHTML = '';
+
+    if (!links.length) {
+      if (mobileToggle) mobileToggle.setAttribute('data-has-toc', 'false');
+      rail.style.display = 'none';
+      closeTOCStates();
+      return;
+    }
+
+    if (mobileToggle) mobileToggle.setAttribute('data-has-toc', 'true');
+    rail.style.display = 'flex';
+
+    links.forEach((link, index) => {
+      const marker = document.createElement('button');
+      marker.type = 'button';
+      marker.className = 'toc-rail-line';
+
+      const text = (link.textContent || '').trim();
+      const levelClass = (link.parentElement && link.parentElement.className) || '';
+      let level = 2;
+      const levelMatch = levelClass.match(/toc-level-(\d+)/);
+      if (levelMatch) {
+        const parsed = parseInt(levelMatch[1], 10);
+        if (!isNaN(parsed)) level = parsed;
+      }
+
+      const baseLength = Math.min(58, Math.max(24, 16 + text.length * 1.1));
+      const levelPenalty = level === 3 ? 7 : level >= 4 ? 10 : 0;
+      marker.style.setProperty('--toc-line-width', `${Math.max(10, Math.min(28, baseLength - levelPenalty))}px`);
+
+      const href = link.getAttribute('href') || '';
+      marker.setAttribute('data-target', href);
+      marker.setAttribute('aria-label', text ? `Jump to ${text}` : `Jump to section ${index + 1}`);
+
+      marker.addEventListener('click', function () {
+        const id = href.replace(/^#/, '');
+        const target = getTargetById(id);
+        if (!target) return;
+
+        const top = target.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top, behavior: 'smooth' });
+      });
+
+      rail.appendChild(marker);
+    });
+
+  }
+
+  function wireDesktopHoverTOC() {
+    const rail = document.getElementById('toc-scroll-rail');
+    const sidebar = document.getElementById('site-toc-sidebar');
+    const overlay = document.getElementById('site-toc-overlay');
+    if (!rail || !sidebar) return;
+
+    let closeTimeout = null;
+
+    const open = function () {
+      if (!isDesktopViewport()) return;
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+      }
+      document.body.classList.add('toc-hover-open');
+      document.body.classList.remove('toc-sheet-open');
+      sidebar.setAttribute('aria-hidden', 'false');
+      if (overlay) overlay.setAttribute('aria-hidden', 'true');
+    };
+
+    const close = function () {
+      if (!isDesktopViewport()) return;
+      closeTimeout = setTimeout(function () {
+        document.body.classList.remove('toc-hover-open');
+        sidebar.setAttribute('aria-hidden', 'true');
+      }, 120);
+    };
+
+    rail.addEventListener('mouseenter', open);
+    rail.addEventListener('mouseleave', close);
+
+    sidebar.addEventListener('mouseenter', open);
+    sidebar.addEventListener('mouseleave', close);
+
+    // Ensure desktop starts in rail-visible mode on every initialization.
+    if (isDesktopViewport()) {
+      document.body.classList.remove('toc-hover-open');
+      sidebar.setAttribute('aria-hidden', 'true');
+    }
+
+    if (!window._tocDesktopResizeHandler) {
+      window._tocDesktopResizeHandler = function () {
+        if (!isDesktopViewport()) {
+          document.body.classList.remove('toc-hover-open');
+        } else {
+          document.body.classList.remove('toc-sheet-open');
+        }
+      };
+      window.addEventListener('resize', window._tocDesktopResizeHandler);
+    }
+  }
+
+  function wireMobileTOCSheet() {
+    if (window._tocMobileHandlersAttached) return;
+    window._tocMobileHandlersAttached = true;
+
+    document.addEventListener('click', function (e) {
+      const toggleBtn = e.target.closest('.toc-mobile-toggle');
+      if (!toggleBtn) return;
+
+      if (isDesktopViewport()) return;
+
+      e.preventDefault();
+      const sidebar = document.getElementById('site-toc-sidebar');
+      const overlay = document.getElementById('site-toc-overlay');
+      const isOpen = document.body.classList.contains('toc-sheet-open');
+      if (isOpen) {
+        closeTOCStates();
+        return;
+      }
+
+      document.body.classList.remove('toc-hover-open');
+      document.body.classList.add('toc-sheet-open');
+      if (sidebar) sidebar.setAttribute('aria-hidden', 'false');
+      if (overlay) overlay.setAttribute('aria-hidden', 'false');
+      if (sidebar) sidebar.style.setProperty('--toc-sheet-drag', '0px');
+      toggleBtn.setAttribute('data-state', 'open');
+
+      const handle = document.getElementById('site-toc-sheet-handle');
+      if (handle) {
+        handle.setAttribute('data-drag', 'idle');
+      }
+
+      setTimeout(() => { centerActiveInSidebar('auto'); }, 100);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target.id === 'site-toc-overlay' && document.body.classList.contains('toc-sheet-open')) {
+        closeTOCStates();
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && (document.body.classList.contains('toc-sheet-open') || document.body.classList.contains('toc-hover-open'))) {
+        closeTOCStates();
+      }
+    });
+  }
+
+  function wireBottomSheetDrag() {
+    if (window._tocSheetDragAttached) return;
+    window._tocSheetDragAttached = true;
+
+    const sidebar = document.getElementById('site-toc-sidebar');
+    const handle = document.getElementById('site-toc-sheet-handle');
+    if (!sidebar || !handle) return;
+
+    let dragging = false;
+    let startY = 0;
+    let deltaY = 0;
+    let pointerId = null;
+
+    const setHandleStateForDelta = function (delta) {
+      if (delta < -10) {
+        handle.setAttribute('data-drag', 'up');
+      } else if (delta > 10) {
+        handle.setAttribute('data-drag', 'down');
+      } else {
+        handle.setAttribute('data-drag', 'idle');
+      }
+    };
+
+    const onPointerMove = function (event) {
+      if (!dragging || pointerId !== event.pointerId) return;
+      deltaY = event.clientY - startY;
+      const clamped = Math.max(-70, Math.min(220, deltaY));
+      sidebar.style.setProperty('--toc-sheet-drag', `${clamped}px`);
+      setHandleStateForDelta(clamped);
+    };
+
+    const onPointerEnd = function (event) {
+      if (!dragging || pointerId !== event.pointerId) return;
+      dragging = false;
+      pointerId = null;
+
+      const shouldDismiss = deltaY > 110;
+      sidebar.style.setProperty('--toc-sheet-drag', '0px');
+      handle.setAttribute('data-drag', 'idle');
+
+      if (shouldDismiss) {
+        closeTOCStates();
+      }
+    };
+
+    handle.addEventListener('pointerdown', function (event) {
+      if (isDesktopViewport()) return;
+      if (!document.body.classList.contains('toc-sheet-open')) return;
+      dragging = true;
+      pointerId = event.pointerId;
+      startY = event.clientY;
+      deltaY = 0;
+      handle.setPointerCapture(event.pointerId);
+      handle.setAttribute('data-drag', 'idle');
+    });
+
+    handle.addEventListener('pointermove', onPointerMove);
+    handle.addEventListener('pointerup', onPointerEnd);
+    handle.addEventListener('pointercancel', onPointerEnd);
   }
 
   // Center the currently active TOC link inside the sidebar (used on open and on load)
@@ -276,6 +436,7 @@
     if (!sidebar || !postBody) return;
 
     const links = Array.from(sidebar.querySelectorAll('.toc a'));
+    const railLines = Array.from(document.querySelectorAll('#toc-scroll-rail .toc-rail-line'));
     if (!links.length) return;
 
     // Map link -> target heading ID (store IDs to handle hydration/replacement)
@@ -301,6 +462,20 @@
       links.forEach((a, i) => {
         if (i === index) a.classList.add('active'); else a.classList.remove('active');
       });
+      railLines.forEach((line, i) => {
+        if (i === index) line.classList.add('active'); else line.classList.remove('active');
+      });
+
+      const railEl = document.getElementById('toc-scroll-rail');
+      const activeRailLine = railLines[index];
+      if (railEl && activeRailLine) {
+        try {
+          const targetTop = activeRailLine.offsetTop - (railEl.clientHeight / 2) + (activeRailLine.offsetHeight / 2);
+          railEl.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+        } catch (e) {
+          // Silent fail
+        }
+      }
 
       // Only scroll sidebar if explicitly requested (e.g., on TOC open, not during page scroll)
       // This prevents scroll fighting between page scroll and sidebar scroll
@@ -404,6 +579,18 @@
     } catch (e) {
       console.error('Error wiring TOC sidebar:', e);
     }
+    try {
+      buildTOCRail();
+    } catch (e) { }
+    try {
+      wireDesktopHoverTOC();
+    } catch (e) { }
+    try {
+      wireMobileTOCSheet();
+    } catch (e) { }
+    try {
+      wireBottomSheetDrag();
+    } catch (e) { }
     try {
       wireTOCActiveTracking();
     } catch (e) { }

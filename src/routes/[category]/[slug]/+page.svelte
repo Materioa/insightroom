@@ -709,11 +709,25 @@
 </main>
 
 <!-- Site-level TOC sidebar - starts with no-transition to prevent flash on load -->
+<div id="toc-scroll-rail" class="toc-scroll-rail" aria-hidden="true">
+  <!-- TOC section markers are injected by toc.js -->
+</div>
 <div
   id="site-toc-sidebar"
   class="site-toc-sidebar no-transition"
   aria-hidden="true"
 >
+  <button
+    id="site-toc-sheet-handle"
+    class="site-toc-sheet-handle"
+    type="button"
+    data-drag="idle"
+    aria-label="Drag table of contents sheet"
+  >
+    <span class="sheet-handle-bar" aria-hidden="true"></span>
+    <i class="sheet-handle-icon up fa-regular fa-chevron-up" aria-hidden="true"></i>
+    <i class="sheet-handle-icon down fa-regular fa-chevron-down" aria-hidden="true"></i>
+  </button>
   <!-- TOC content will be moved here -->
 </div>
 <div
@@ -723,7 +737,20 @@
   aria-hidden="true"
   onclick={() => {
     document.body.classList.remove("toc-open");
+    document.body.classList.remove("toc-sheet-open");
+    document.body.classList.remove("toc-hover-open");
     const sidebar = document.getElementById("site-toc-sidebar");
-    if (sidebar) sidebar.setAttribute("aria-hidden", "true");
+    if (sidebar) {
+      sidebar.setAttribute("aria-hidden", "true");
+      sidebar.style.setProperty("--toc-sheet-drag", "0px");
+    }
+    const handle = document.getElementById("site-toc-sheet-handle");
+    if (handle) {
+      handle.setAttribute("data-drag", "idle");
+    }
+    const mobileToggle = document.querySelector(".toc-mobile-toggle");
+    if (mobileToggle) {
+      mobileToggle.setAttribute("data-state", "closed");
+    }
   }}
 ></div>
