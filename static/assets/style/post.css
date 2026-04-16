@@ -815,7 +815,7 @@ body.dark-mode .toc-rail-line.active {
 
 @media (max-width: 700px) {
   .toc-mobile-toggle {
-    right: 56px;
+    right: 10px;
   }
 }
 
@@ -933,12 +933,12 @@ body.dark-mode .toc-rail-line.active {
   }
 
   .site-header .back-button {
-    right: 14px !important;
+    right: 74px !important;
     font-size: 1.05rem !important;
   }
 
   .toc-mobile-toggle[data-has-toc="true"] {
-    right: 74px;
+    right: 14px;
     width: 32px;
     height: 32px;
   }
@@ -954,7 +954,7 @@ body.dark-mode .toc-rail-line.active {
 
   .site-header .back-button {
     position: absolute !important;
-    right: 10px !important;
+    right: 56px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
     z-index: 1400 !important;
