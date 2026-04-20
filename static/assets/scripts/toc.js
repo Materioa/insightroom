@@ -131,6 +131,7 @@
     document.body.classList.remove('toc-open');
     document.body.classList.remove('toc-hover-open');
     document.body.classList.remove('toc-sheet-open');
+    document.body.classList.remove('toc-sheet-dragging');
 
     const sidebar = document.getElementById('site-toc-sidebar');
     const overlay = document.getElementById('site-toc-overlay');
@@ -320,6 +321,7 @@
 
       document.body.classList.remove('toc-hover-open');
       document.body.classList.add('toc-sheet-open');
+      document.body.classList.remove('toc-sheet-dragging');
       if (sidebar) sidebar.setAttribute('aria-hidden', 'false');
       if (overlay) overlay.setAttribute('aria-hidden', 'false');
       if (sidebar) sidebar.style.setProperty('--toc-sheet-drag', '0px');
@@ -357,24 +359,62 @@
     let dragging = false;
     let startY = 0;
     let deltaY = 0;
+    let currentDrag = 0;
     let pointerId = null;
+    let pendingDelta = 0;
+    let rafId = 0;
+    let lastMoveY = 0;
+    let lastMoveTs = 0;
+    let velocityY = 0;
+
+    const DRAG_UP_LIMIT = -90;
+    const DRAG_DOWN_LIMIT = 260;
+    const DISMISS_DISTANCE = 78;
+    const DISMISS_FLICK_VELOCITY = 0.55;
+
+    const clampDrag = function (rawDelta) {
+      const damped = rawDelta < 0 ? rawDelta * 0.62 : rawDelta * 0.94;
+      return Math.max(DRAG_UP_LIMIT, Math.min(DRAG_DOWN_LIMIT, damped));
+    };
 
     const setHandleStateForDelta = function (delta) {
-      if (delta < -10) {
+      if (delta < -8) {
         handle.setAttribute('data-drag', 'up');
-      } else if (delta > 10) {
+      } else if (delta > 8) {
         handle.setAttribute('data-drag', 'down');
       } else {
         handle.setAttribute('data-drag', 'idle');
       }
     };
 
+    const flushDrag = function () {
+      rafId = 0;
+      currentDrag = clampDrag(pendingDelta);
+      sidebar.style.setProperty('--toc-sheet-drag', `${currentDrag}px`);
+      setHandleStateForDelta(currentDrag);
+    };
+
+    const scheduleDrag = function (rawDelta) {
+      pendingDelta = rawDelta;
+      if (!rafId) {
+        rafId = requestAnimationFrame(flushDrag);
+      }
+    };
+
     const onPointerMove = function (event) {
       if (!dragging || pointerId !== event.pointerId) return;
       deltaY = event.clientY - startY;
-      const clamped = Math.max(-70, Math.min(220, deltaY));
-      sidebar.style.setProperty('--toc-sheet-drag', `${clamped}px`);
-      setHandleStateForDelta(clamped);
+
+      const now = performance.now();
+      const dt = Math.max(1, now - lastMoveTs);
+      velocityY = (event.clientY - lastMoveY) / dt;
+      lastMoveY = event.clientY;
+      lastMoveTs = now;
+
+      scheduleDrag(deltaY);
+      if (event.cancelable) {
+        event.preventDefault();
+      }
     };
 
     const onPointerEnd = function (event) {
@@ -382,9 +422,26 @@
       dragging = false;
       pointerId = null;
 
-      const shouldDismiss = deltaY > 110;
+      document.body.classList.remove('toc-sheet-dragging');
+
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      currentDrag = clampDrag(pendingDelta);
+
+      const shouldDismiss = currentDrag > DISMISS_DISTANCE ||
+        (velocityY > DISMISS_FLICK_VELOCITY && currentDrag > 24);
       sidebar.style.setProperty('--toc-sheet-drag', '0px');
       handle.setAttribute('data-drag', 'idle');
+
+      if (handle.releasePointerCapture) {
+        try {
+          handle.releasePointerCapture(event.pointerId);
+        } catch {
+          // No-op if pointer capture already released.
+        }
+      }
 
       if (shouldDismiss) {
         closeTOCStates();
@@ -398,8 +455,19 @@
       pointerId = event.pointerId;
       startY = event.clientY;
       deltaY = 0;
+      pendingDelta = 0;
+      currentDrag = 0;
+      velocityY = 0;
+      lastMoveY = event.clientY;
+      lastMoveTs = performance.now();
+
+      document.body.classList.add('toc-sheet-dragging');
       handle.setPointerCapture(event.pointerId);
       handle.setAttribute('data-drag', 'idle');
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
     });
 
     handle.addEventListener('pointermove', onPointerMove);

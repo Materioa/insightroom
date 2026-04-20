@@ -724,9 +724,10 @@
     data-drag="idle"
     aria-label="Drag table of contents sheet"
   >
-    <span class="sheet-handle-bar" aria-hidden="true"></span>
-    <i class="sheet-handle-icon up fa-regular fa-chevron-up" aria-hidden="true"></i>
-    <i class="sheet-handle-icon down fa-regular fa-chevron-down" aria-hidden="true"></i>
+    <span class="sheet-handle-chevrons" aria-hidden="true">
+      <i class="sheet-handle-icon up fa-regular fa-chevron-up"></i>
+      <i class="sheet-handle-icon down fa-regular fa-chevron-down"></i>
+    </span>
   </button>
   <!-- TOC content will be moved here -->
 </div>
@@ -739,6 +740,7 @@
     document.body.classList.remove("toc-open");
     document.body.classList.remove("toc-sheet-open");
     document.body.classList.remove("toc-hover-open");
+    document.body.classList.remove("toc-sheet-dragging");
     const sidebar = document.getElementById("site-toc-sidebar");
     if (sidebar) {
       sidebar.setAttribute("aria-hidden", "true");
