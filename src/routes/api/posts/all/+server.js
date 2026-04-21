@@ -8,7 +8,7 @@ export const prerender = false;
 
 const ALLOWED_ORIGINS = new Set([
     'https://materioa.vercel.app',
-    'https://room.getmaterio.app',
+    'https://getmaterio.app',
     'http://localhost:5173',
     'http://localhost:1000'
 ]);
