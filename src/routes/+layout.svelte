@@ -50,6 +50,18 @@
   }
 
   /** @param {boolean} dark */
+  function updateHighlightTheme(dark) {
+    if (!browser) return;
+    const highlightTheme = /** @type {HTMLLinkElement | null} */ (
+      document.getElementById("highlight-theme")
+    );
+    if (!highlightTheme) return;
+    highlightTheme.href = dark
+      ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css"
+      : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-light.min.css";
+  }
+
+  /** @param {boolean} dark */
   function applyTheme(dark) {
     isDark = dark;
     if (browser) {
@@ -61,6 +73,7 @@
         header.classList.toggle("dark-mode", dark);
       }
     }
+    updateHighlightTheme(dark);
   }
 
   /** @param {string} theme */
@@ -162,7 +175,7 @@
   />
   <link
     id="highlight-theme"
-    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-light.min.css"
     rel="stylesheet"
   />
 

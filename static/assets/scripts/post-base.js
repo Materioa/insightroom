@@ -311,7 +311,7 @@ function updateHighlightTheme(isDark) {
     if (isDark) {
       highlightTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css';
     } else {
-      highlightTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css';
+      highlightTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-light.min.css';
     }
   }
 }

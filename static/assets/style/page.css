@@ -148,12 +148,14 @@ body.dark-mode .markdown-body pre {
 .markdown-body blockquote {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
-  background: #fff4e5;
-  border-radius: 12px;
+  background: transparent;
+  border-left: 4px solid #d0d7de;
+  border-radius: 0;
 }
 
 body.dark-mode .markdown-body blockquote {
-  background: #4a3500;
+  background: transparent;
+  border-left-color: #6e7681;
 }
 
 /* GitHub-style Alerts for markdown-body */

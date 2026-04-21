@@ -362,12 +362,17 @@ body {
 
 /* Blockquote styling */
 .post-body blockquote {
-  background: var(--card-bg);
-  padding: 1rem 1.5rem;
+  background: transparent;
+  border-left: 4px solid #d0d7de;
+  padding: 1rem 1.25rem;
   margin: 1.5rem 0;
-  border-radius: 12px;
+  border-radius: 0;
   position: relative;
   font-family: "Libre Baskerville", serif;
+}
+
+body.dark-mode .post-body blockquote {
+  border-left-color: #6e7681;
 }
 
 /* Prevent ads inside blockquotes */
@@ -594,28 +599,22 @@ body.dark-mode .post-body blockquote.info {
 }
 
 .post-body blockquote.quote {
-  background: #f5f5f5;
+  background: transparent;
+  border-left-color: #9ca3af;
   font-style: italic;
-  position: relative;
 }
 
 .post-body blockquote.quote::before {
-  content: '"';
-  font-size: 4rem;
-  position: absolute;
-  top: -10px;
-  left: 10px;
-  color: rgba(0, 0, 0, 0.1);
-  font-family: Georgia, serif;
-  line-height: 1;
+  content: none;
 }
 
 body.dark-mode .post-body blockquote.quote {
-  background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+  background: transparent;
+  border-left-color: #8b949e;
 }
 
 body.dark-mode .post-body blockquote.quote::before {
-  color: rgba(255, 255, 255, 0.1);
+  content: none;
 }
 
 /* Cover image sizing fix */
@@ -724,7 +723,7 @@ pre code {
   overflow-x: auto;
   font-size: 0.9rem;
   line-height: 1.5;
-  font-family: "JetBrains Mono", "Space Mono", monospace;
+  font-family: "JetBrains Mono", monospace;
   min-height: 1.5rem;
 }
 
@@ -789,39 +788,10 @@ pre.single-line .code-language {
   border-bottom-right-radius: 8px;
 }
 
-/* Syntax highlighting adjustments for light mode */
-body:not(.dark) .hljs {
-  background: #f8f9fa !important;
-  color: #212529 !important;
-}
-
-body:not(.dark) .hljs-keyword {
-  color: #d73a49 !important;
-}
-
-body:not(.dark) .hljs-string {
-  color: #032f62 !important;
-}
-
-body:not(.dark) .hljs-comment {
-  color: #6a737d !important;
-}
-
-body:not(.dark) .hljs-number {
-  color: #005cc5 !important;
-}
-
-body:not(.dark) .hljs-function {
-  color: #6f42c1 !important;
-}
-
-body:not(.dark) .hljs-variable {
-  color: #e36209 !important;
-}
-
-/* Dark mode keeps default highlight.js theme */
+/* Keep code container background consistent and let Highlight.js theme control tokens */
+body:not(.dark) .hljs,
 .dark .hljs {
-  background: #1e1e1e !important;
+  background: transparent !important;
 }
 
 /* ===== NEW TOPIC PAGE BREAKS ===== */
@@ -939,7 +909,7 @@ table td code {
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: 800;
-  font-family: "JetBrains Mono", "Space Mono", monospace;
+  font-family: "JetBrains Mono", monospace;
   white-space: nowrap;
 }
 
@@ -1877,7 +1847,7 @@ pre code ::-moz-selection {
   }
 
   pre code {
-    font-family: 'JetBrains Mono', 'Space Mono', 'Courier New', monospace !important;
+    font-family: 'JetBrains Mono', 'Courier New', monospace !important;
     font-size: 9pt !important;
     line-height: 1.4 !important;
     color: #000 !important;
@@ -1906,7 +1876,7 @@ pre code ::-moz-selection {
 
   /* Inline code */
   .post-body code:not(pre code) {
-    font-family: 'Space Mono', 'Courier New', monospace !important;
+    font-family: 'JetBrains Mono', 'Courier New', monospace !important;
     font-size: 9pt !important;
     background: #f0f0f0 !important;
     padding: 1pt 2pt !important;
