@@ -5,6 +5,7 @@ export const prerender = false;
 
 const ALLOWED_ORIGINS = new Set([
     'https://materioa.vercel.app',
+    'https://getmaterio.app',
     'https://room.getmaterio.app',
     'http://localhost:5173',
     'http://localhost:1000'
@@ -14,14 +15,21 @@ const ALLOWED_ORIGINS = new Set([
  * @param {string | null} origin
  */
 function getCorsHeaders(origin) {
-    const allowOrigin = origin && ALLOWED_ORIGINS.has(origin) ? origin : '*';
-
-    return {
-        'Access-Control-Allow-Origin': allowOrigin,
+    /** @type {Record<string, string>} */
+    const headers = {
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         Vary: 'Origin'
     };
+
+    if (origin && ALLOWED_ORIGINS.has(origin)) {
+        headers['Access-Control-Allow-Origin'] = origin;
+        headers['Access-Control-Allow-Credentials'] = 'true';
+    } else {
+        headers['Access-Control-Allow-Origin'] = '*';
+    }
+
+    return headers;
 }
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
