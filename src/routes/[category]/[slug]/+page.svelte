@@ -284,11 +284,11 @@
   />
   <meta
     property="og:image"
-    content={`https://insightroom.vercel.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
+    content={`https://room.getmaterio.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
   />
   <meta
     property="og:url"
-    content={`https://insightroom.vercel.app/blog/${data.slug}`}
+    content={`https://room.getmaterio.app/blog/${data.slug}`}
   />
   <meta property="og:type" content="article" />
   <meta name="description" content={data.excerpt || ""} />
@@ -300,7 +300,7 @@
   <meta name="twitter:description" content={data.excerpt || ""} />
   <meta
     name="twitter:image"
-    content={`https://insightroom.vercel.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
+    content={`https://room.getmaterio.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
   />
   <!-- Standalone TOC script - runs independently of Svelte -->
   <script src="/assets/scripts/toc.js" defer></script>
@@ -632,7 +632,7 @@
                 <a
                   href={dev
                     ? `http://localhost:1000/account?callback=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
-                    : `https://materioa.vercel.app/account?callback=${encodeURIComponent("https://insightroom.vercel.app" + $page.url.pathname)}`}
+                    : `https://materioa.vercel.app/account?callback=${encodeURIComponent("https://room.getmaterio.app" + $page.url.pathname)}`}
                   class="locked-btn locked-btn-login no-pill"
                 >
                   <i class="fa-solid fa-user"></i>

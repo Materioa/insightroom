@@ -6,6 +6,13 @@ import { dev } from '$app/environment';
 
 export const prerender = false;
 
+const ALLOWED_ORIGINS = new Set([
+    'https://materioa.vercel.app',
+    'https://room.getmaterio.app',
+    'http://localhost:5173',
+    'http://localhost:1000'
+]);
+
 /**
  * @param {string | null} origin
  */
@@ -13,10 +20,11 @@ function getCorsHeaders(origin) {
     /** @type {Record<string, string>} */
     const headers = {
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        Vary: 'Origin'
     };
 
-    if (origin) {
+    if (origin && ALLOWED_ORIGINS.has(origin)) {
         headers['Access-Control-Allow-Origin'] = origin;
         headers['Access-Control-Allow-Credentials'] = 'true';
     } else {
@@ -62,7 +70,7 @@ export function GET({ request, cookies }) {
     const posts = getAllPosts();
     const baseUrl = dev
         ? 'http://localhost:5173'
-        : 'https://insightroom.vercel.app';
+        : 'https://room.getmaterio.app';
 
     // Map all posts (including hidden/drafts)
     const apiPosts = posts.map(post => {
