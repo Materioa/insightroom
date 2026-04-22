@@ -12,19 +12,16 @@
   import { dev } from "$app/environment";
   import { initializePostBase } from "../../../lib/utils/postBaseLogic.js";
   import QRCodeGenerator from "$lib/components/QRCodeGenerator.svelte";
-  import {
-    trackPageView,
-    trackReadingTime,
-    trackFeatureUsage,
-    flushEvents,
-  } from "$lib/utils/analytics.js";
+
   import AISummary from "$lib/components/AISummary.svelte";
 
   /** @type {{ data: any }} */
   let { data } = $props();
   // State for content binding
+  /** @type {HTMLElement | undefined} */
   let contentElement = $state();
   let postContentText = $state("");
+  let decodedContent = $state("");
 
   /** @param {string|undefined|null} dateStr */
   function formatDate(dateStr) {
@@ -129,7 +126,62 @@
   }
 
   onMount(() => {
-    // Enhanced post links script
+    async function init() {
+      // Fetch post content dynamically to keep view-source clean
+      if (!data.isLocked) {
+        try {
+          const category = encodeURIComponent(data.category || "");
+          const slug = encodeURIComponent(data.slug || "");
+          const res = await fetch(`/api/posts/content/${category}/${slug}`);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          const result = await res.json();
+          decodedContent = result.html;
+
+          // Now that content is in the DOM, initialize features
+          setTimeout(async () => {
+            enhancePostLinks(".post-body");
+            enhancePostLinks(".post-content");
+            
+            // Highlight code blocks, excluding diagram classes
+            // @ts-ignore
+            if (typeof hljs !== "undefined") {
+              const codeBlocks = document.querySelectorAll('pre code');
+              codeBlocks.forEach((block) => {
+                const lang = block.className;
+                const diagramLangs = ['language-mermaid', 'language-markmap', 'language-graphviz', 'language-dot', 'language-flashcards'];
+                if (diagramLangs.some(d => lang.includes(d))) return;
+                // @ts-ignore
+                hljs.highlightElement(block);
+              });
+            }
+            
+            // @ts-ignore
+            if (typeof mermaid !== "undefined") {
+              // @ts-ignore
+              mermaid.initialize({ startOnLoad: false, theme: 'default' });
+              // @ts-ignore
+              await mermaid.run();
+            }
+
+            addHeadingAnchorLinks();
+            
+            // @ts-ignore
+            if (typeof window.initTOC === "function") {
+              // @ts-ignore
+              window.initTOC();
+            }
+
+            initializeListenComponent();
+            renderMath();
+            initializePostBase();
+          }, 0);
+
+        } catch (e) {
+          console.error("Failed to load post content:", e);
+        }
+      }
+    }
+
     /** @param {string} rootSelector */
     function enhancePostLinks(rootSelector) {
       const roots = document.querySelectorAll(rootSelector);
@@ -142,7 +194,6 @@
           if (a.closest("code, pre")) return;
           if (!a.classList.contains("link-pill")) a.classList.add("link-pill");
 
-          // Reuse previously appended link icon if present to avoid duplicates.
           const lastChild = a.lastElementChild;
           if (
             lastChild instanceof HTMLElement &&
@@ -153,7 +204,6 @@
             lastChild.classList.add("link-pill-icon");
           }
 
-          /** @type {HTMLElement | null} */
           let icon = a.querySelector("i.link-pill-icon");
           if (!icon) {
             icon = document.createElement("i");
@@ -163,105 +213,47 @@
 
           try {
             const href = (a.getAttribute("href") || "").trim();
-            const isHashLink = href.startsWith("#");
             const url = href ? new URL(href, window.location.href) : null;
-            const isExternal =
-              !!url && !isHashLink && url.origin !== window.location.origin;
-
-            if (isExternal) {
+            if (url && url.origin !== window.location.origin) {
               a.setAttribute("target", "_blank");
               a.setAttribute("rel", "noopener noreferrer");
+              // @ts-ignore
               icon.className = "link-pill-icon fa-regular fa-arrow-up-right";
-              icon.style.transform = "none";
-              icon.style.display = "inline-block";
             } else {
-              a.removeAttribute("target");
-              a.removeAttribute("rel");
+              // @ts-ignore
               icon.className = "link-pill-icon fa-regular fa-link-simple";
+              // @ts-ignore
               icon.style.transform = "rotate(-20deg)";
-              icon.style.display = "inline-block";
             }
           } catch (e) {
+            // @ts-ignore
             icon.className = "link-pill-icon fa-regular fa-link-simple";
-            icon.style.transform = "rotate(-20deg)";
-            icon.style.display = "inline-block";
           }
         });
       });
     }
 
-    enhancePostLinks(".post-body");
-    enhancePostLinks(".post-content");
-
-    // Highlight code blocks
-    // @ts-ignore
-    if (typeof hljs !== "undefined") hljs.highlightAll();
-
-    // Initialize mermaid
-    // @ts-ignore
-    if (typeof mermaid !== "undefined") {
-      // @ts-ignore
-      mermaid.initialize({ startOnLoad: true });
-    }
-
-    // Initialize heading anchors
-    addHeadingAnchorLinks();
-
-    // Initialize TOC via standalone script (toc.js loaded via script tag)
-    // @ts-ignore
-    if (typeof window.initTOC === "function") {
-      // @ts-ignore
-      window.initTOC();
-    }
-
-    // Initialize Listen component
-    initializeListenComponent();
-
-    // Render math
-    // @ts-ignore
-    if (typeof renderMathInElement !== "undefined") {
-      setTimeout(() => {
-        const options = {
-          delimiters: [
-            { left: "$$", right: "$$", display: false },
-            { left: "$", right: "$", display: false },
-            { left: "\\(", right: "\\)", display: false },
-            { left: "\\[", right: "\\]", display: true },
-          ],
-        };
+    function renderMath() {
         // @ts-ignore
-        renderMathInElement(document.body, options);
-        // Explicitly render sidebar in case it was missed
-        const sidebar = document.getElementById("site-toc-sidebar");
-        if (sidebar) {
-          // @ts-ignore
-          renderMathInElement(sidebar, options);
+        if (typeof renderMathInElement !== "undefined") {
+            const options = {
+                delimiters: [
+                    { left: "$$", right: "$$", display: false },
+                    { left: "$", right: "$", display: false },
+                    { left: "\\(", right: "\\)", display: false },
+                    { left: "\\[", right: "\\]", display: true },
+                ],
+            };
+            // @ts-ignore
+            renderMathInElement(document.body, options);
         }
-      }, 100);
     }
 
-    // Initialize Post Base Features (Code Blocks, Print, Security)
-    initializePostBase();
+    init();
 
-    // Track page view for analytics
-    trackPageView({
-      title: data.title || "",
-      slug: $page.params.slug || "",
-      category: $page.params.category || "",
-      contentId: data.slug || $page.params.slug || "",
-    });
-
-    // Track reading time - record start time
     const startTime = Date.now();
-
-    // Cleanup function to track reading time when leaving
     return () => {
       const duration = Math.round((Date.now() - startTime) / 1000);
-      if (duration > 5) {
-        // Only track if spent more than 5 seconds
-        trackReadingTime(data.slug || $page.params.slug, duration);
-        flushEvents(); // Ensure events are sent before navigation
-      }
     };
   });
   $effect(() => {
@@ -674,11 +666,11 @@
             class="summary-capture"
             style="display: none;"
           >
-            <data.content />
+            {@html decodedContent}
           </div>
 
           <div class="post-content-visible">
-            <data.content />
+            {@html decodedContent}
           </div>
         {/if}
       </div>

@@ -10,6 +10,7 @@ export function initializePostBase() {
         initializeCodeBlocks();
         processGitHubCallouts();
         processAttachmentTags();
+        initializeAttachmentCards(); // Initialize previews for server-rendered tags
         processVideoTags();
         initializePrintEnhancements();
         initializeSecureMode();
@@ -569,7 +570,7 @@ function processAttachmentTags() {
     const postBody = document.querySelector('.post-body');
     if (!postBody) return;
 
-    const attachmentPattern = /\[attachment:(.+):([^\]]+)\]/g;
+    const attachmentPattern = /\[attachment:([\s\S]+?):([\s\S]+?)\]/g;
     let replacements = 0;
 
     /** @param {Node} node */

@@ -4,7 +4,13 @@ export const load = async ({ parent }) => {
 
     // Import dynamically to avoid top-level await issues if any (though standard import is fine here)
     const { getAllPosts } = await import('$lib/server/posts.js');
-    const allPosts = getAllPosts();
+    const allPosts = await getAllPosts();
+    console.log('--- DEBUG ALLPOSTS ---');
+    console.log('Is Array?', Array.isArray(allPosts));
+    console.log('Type:', typeof allPosts);
+    if (!Array.isArray(allPosts)) {
+        console.log('allPosts Value:', allPosts);
+    }
 
     // Filter posts based on access tier
     const posts = allPosts.filter(post => {

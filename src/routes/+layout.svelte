@@ -167,6 +167,7 @@
   />
 
   <!-- Styles -->
+  <link rel="stylesheet" href="/assets/style/global.css" />
   <link rel="stylesheet" href="/assets/style/style.css" />
   <link rel="stylesheet" href="/assets/style/post.css" />
   <link
@@ -220,19 +221,7 @@
   <!-- Materioa Kit -->
   <script src="https://materioa.github.io/kit/6a787c7335.js" crossorigin="anonymous"></script>
 
-  <!-- Google Analytics -->
-  <script
-    async
-    src="https://www.googletagmanager.com/gtag/js?id=G-MJ4P8TZNBR"
-  ></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-      dataLayer.push(arguments);
-    }
-    gtag("js", new Date());
-    gtag("config", "G-MJ4P8TZNBR");
-  </script>
+
 </svelte:head>
 
 <Header {isPost} {isHome} />
@@ -250,108 +239,4 @@
   accessTier={data.accessTier}
 />
 
-<style>
-  /* Default link color for light mode */
-  :global(body) {
-    --link: #000000;
-  }
-  :global(body.dark) {
-    --bg: #121212;
-    --text: #eeeeee;
-    --card-bg: #1e1e1e;
-    --border: #333;
-  }
-  :global(.dark .site-header) {
-    background-color: rgba(33, 33, 33, 0.5);
-    background-image: url("/assets/img/materio_new_wh.svg");
-  }
-  :global(body.blog-layout .site-header) {
-    background-image: url("/assets/img/logo-b.svg");
-    background-size: auto 32px;
-  }
-  :global(body.blog-layout.dark .site-header) {
-    background-image: url("/assets/img/logo-w.svg");
-    background-size: auto 32px;
-  }
-  /* Mobile: ensure header is full width and properly sized */
-  @media (max-width: 768px) {
-    :global(body.blog-layout .site-header),
-    :global(body.blog-layout.dark .site-header) {
-      width: 100% !important;
-      max-width: 100% !important;
-    }
-  }
-  /* Use Libre Baskerville for emphasized/italic text in posts */
-  :global(article em),
-  :global(article i),
-  :global(.post-content em),
-  :global(.post-content i),
-  :global(.changelog-excerpt em),
-  :global(.changelog-excerpt i) {
-    font-family: "Libre Baskerville", serif;
-    font-style: italic;
-    font-weight: 400;
-  }
-  /* Link pill styling for in-post links */
-  :global(.post-body a.link-pill),
-  :global(.post-content a.link-pill) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.7rem;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.04);
-    color: var(--link, #0b66c3);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-    line-height: 1;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-  }
-  :global(body.dark .post-body a.link-pill),
-  :global(body.dark .post-content a.link-pill) {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.04);
-    color: var(--text);
-  }
 
-  /* Font switching support */
-  :global(body) {
-    --font-primary: "Manrope", sans-serif;
-  }
-  :global(body.font-secondary) {
-    --font-primary: "Inter", sans-serif;
-    font-feature-settings:
-      "tnum" 1,
-      "frac" 1,
-      "case" 1,
-      "ss01" 1,
-      "ss02" 1,
-      "cv01" 1,
-      "cv02" 1,
-      "cv03" 1,
-      "cv04" 1,
-      "cv05" 1,
-      "cvo9" 1,
-      "liga" 1,
-      "calt" 1;
-  }
-  @supports (font-variation-settings: normal) {
-    :global(body.font-secondary) {
-      font-family: InterVariable, sans-serif;
-    }
-  }
-  :global(body.font-serif) {
-    --font-primary: "Crimson Pro", serif;
-  }
-  :global(body.font-system) {
-    --font-primary: sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
-  }
-  :global(body.font-dyslexic) {
-    --font-primary: "OpenDyslexicRegular", sans-serif;
-  }
-
-  :global(body) {
-    font-family: var(--font-primary);
-  }
-</style>

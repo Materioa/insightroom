@@ -1,127 +1,70 @@
+import { getPostsCollection } from './db.js';
+import { ObjectId } from 'mongodb';
 
-/**
- * @typedef {Object} Post
- * @property {string} slug - The title slug (e.g. 'introduction-to-android-os')
- * @property {string} categorySlug - The category slug (e.g. 'originals')
- * @property {string} date - The date string associated with the post
- * @property {string} url - The URL path to the post (e.g. '/originals/introduction-to-android-os')
- * @property {any} metadata - The frontmatter metadata
- * @property {any} content - The Svelte component content
- * @property {string} path - The file path
- * @property {boolean} hidden - Whether the post is hidden
- * @property {boolean} draft - Whether the post is a draft
- * @property {string} visibility - Visibility status (e.g., 'public', 'private')
- * @property {string|string[]} [categories] - Categories list
- * @property {string} [category] - Single category
- * @property {string} [title] - Post title
- * @property {string} [excerpt] - Post excerpt
- * @property {string} [image] - Cover image URL
- * @property {string} [subject] - Academic subject
- * @property {string} [semester] - Academic semester
- * @property {string[]} [tags] - Post tags
- */
-
-/**
- * Slugifies a string.
- * @param {string} text 
- * @returns {string}
- */
-function slugify(text) {
-    if (!text) return '';
-    return text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '')
-        .replace(/\-\-+/g, '-');
-}
-
-/**
- * Get all posts.
- * @returns {Post[]}
- */
-export function getAllPosts() {
-    const paths = import.meta.glob('/src/posts/*.md', { eager: true });
-
-    return Object.entries(paths).map(([path, file]) => {
-        // Extract filename parts
-        const filename = path.split('/').pop()?.replace('.md', '') ?? '';
-
-        // Parse "YYYY-MM-DD-title"
-        const match = filename.match(/^(\d{4}-\d{2}-\d{2})-(.+)$/);
-        let slug = filename;
-        let dateFromFilename = '';
-
-        if (match) {
-            dateFromFilename = match[1];
-            slug = match[2];
-        }
-
-        // @ts-ignore
-        const metadata = file.metadata || {};
-
-        // Determine category
-        let category = metadata.category;
-        if (!category && metadata.categories) {
-            category = Array.isArray(metadata.categories) ? metadata.categories[0] : metadata.categories;
-        }
-        let categorySlug = slugify(category || 'uncategorized');
-
-        // Handle permalink
-        if (metadata.permalink) {
-            const cleanLink = metadata.permalink.replace(/^\/|\/$/g, '');
-            const parts = cleanLink.split('/');
-            
-            // Extract slug (last part)
-            let permalinkSlug = parts.pop();
-            
-            // Handle :title placeholder
-            if (permalinkSlug === ':title') {
-                permalinkSlug = slug;
-            }
-            
-            slug = permalinkSlug;
-
-            // If there are remaining parts, they form the category
-            if (parts.length > 0) {
-                categorySlug = parts.map((/** @type {string} */ part) => slugify(part)).join('/');
-            }
-        }
-
-        // Determine URL
-        const url = `/${categorySlug}/${slug}`;
-
+export async function getAllPosts() {
+    const collection = await getPostsCollection();
+    const rows = await collection.find({}).sort({ date: -1 }).toArray();
+    
+    return rows.map((/** @type {any} */ row) => {
+        const metadata = row.metadata || {};
+        
         return {
-            slug,
-            categorySlug,
-            date: metadata.date || dateFromFilename,
-            url,
-            // @ts-ignore
+            id: row._id.toString(),
+            slug: row.slug,
+            categorySlug: row.categorySlug,
+            date: row.date,
+            url: `/${row.categorySlug}/${row.slug}`,
             metadata,
-            // (content removed to avoid serialization error)
-            path,
-            hidden: metadata.hidden || false,
-            draft: metadata.draft || false,
-            visibility: metadata.visibility || 'public',
-            category: category,
+            content: row.content,
+            hidden: Boolean(row.hidden),
+            draft: Boolean(row.draft),
+            visibility: row.visibility,
+            category: row.category,
             categories: metadata.categories,
-            ...metadata // Spread other props
+            title: row.title,
+            excerpt: row.excerpt,
+            image: row.image,
+            ...metadata
         };
-    }).sort((a, b) => {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 }
 
 /**
- * Get a specific post by category and slug.
- * @param {string} categorySlug 
- * @param {string} slug 
- * @returns {Post | undefined}
+ * @param {string} categorySlug
+ * @param {string} slug
  */
-export function getPost(categorySlug, slug) {
-    const posts = getAllPosts();
-    // Slugify the incoming category to ensure case-insensitive matching
+export async function getPost(categorySlug, slug) {
+    /** @param {string} text */
+    function slugify(text) {
+        if (!text) return '';
+        return text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
+    }
     const normalizedCategory = slugify(categorySlug);
-    return posts.find(p => p.categorySlug === normalizedCategory && p.slug === slug);
+    
+    const collection = await getPostsCollection();
+    const row = await collection.findOne({ categorySlug: normalizedCategory, slug });
+    
+    if (!row) return undefined;
+    
+    const metadata = row.metadata || {};
+    
+    return {
+        id: row._id.toString(),
+        slug: row.slug,
+        categorySlug: row.categorySlug,
+        date: row.date,
+        url: `/${row.categorySlug}/${row.slug}`,
+        metadata,
+        content: row.content,
+        hidden: Boolean(row.hidden),
+        draft: Boolean(row.draft),
+        visibility: row.visibility,
+        category: row.category,
+        categories: metadata.categories,
+        title: row.title,
+        excerpt: row.excerpt,
+        image: row.image,
+        ...metadata
+    };
 }
+

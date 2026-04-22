@@ -43,7 +43,7 @@ export function OPTIONS({ request }) {
 }
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
-export function GET({ request, cookies }) {
+export async function GET({ request, cookies }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);
 
@@ -67,7 +67,7 @@ export function GET({ request, cookies }) {
         return json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders });
     }
 
-    const posts = getAllPosts();
+    const posts = await getAllPosts();
     const baseUrl = dev
         ? 'http://localhost:5173'
         : 'https://room.getmaterio.app';

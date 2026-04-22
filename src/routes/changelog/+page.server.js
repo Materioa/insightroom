@@ -1,7 +1,7 @@
 /** @type {import('./$types').PageServerLoad} */
 export const load = async () => {
   const { getAllPosts } = await import('$lib/server/posts.js');
-  const allPosts = getAllPosts();
+  const allPosts = await getAllPosts();
 
   const changelogs = allPosts
     .filter(post => {

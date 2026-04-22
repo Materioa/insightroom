@@ -5,10 +5,10 @@ export const load = async ({ params, parent }) => {
     const { accessTier, token } = await parent();
 
     // Import dynamically
-    const { getPost, getAllPosts } = await import('$lib/server/posts.js');
+    const { getPost } = await import('$lib/server/posts.js');
 
     // Find the post specific to the category and slug
-    const post = getPost(params.category, params.slug);
+    const post = await getPost(params.category, params.slug);
 
     if (!post) {
         throw error(404, 'Post not found');
@@ -22,17 +22,20 @@ export const load = async ({ params, parent }) => {
         }
     }
 
-    // Get previous/next posts logic
-    // We strictly use frontmatter 'next_post' and 'previous_post' if defined.
-    // Auto-calculation has been removed as per requirements.
+    // We no longer render or return the content here to keep view-source clean.
+    // The content is fetched on the client side from /api/posts/content/...
 
     return {
-        // @ts-ignore
         ...post.metadata,
+        title: post.title,
+        date: post.date,
+        excerpt: post.excerpt,
+        image: post.image,
         slug: params.slug,
-        category: params.category, // Pass category param to page if needed
-        isLocked, // Pass lock status to UI
-        token, // Pass token to component for AI Summary API calls
-        accessTier // Pass access tier to UI
+        category: params.category,
+        isLocked,
+        token,
+        accessTier,
+        // No 'content' returned here
     };
 };

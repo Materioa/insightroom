@@ -40,17 +40,16 @@ export function OPTIONS({ request }) {
     });
 }
 
-/** @type {import('@sveltejs/kit').RequestHandler} */
-export function GET({ request }) {
+export async function GET({ request }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);
-    const posts = getAllPosts();
+    const posts = await getAllPosts();
     const baseUrl = process.env.NODE_ENV === 'development' 
         ? 'http://localhost:5173' 
         : 'https://room.getmaterio.app';
 
     // Filter and map to requested fields
-    const apiPosts = posts.filter(p => !p.hidden && !p.draft).map(post => {
+    const apiPosts = posts.filter((/** @type {any} */ p) => !p.hidden && !p.draft).map((/** @type {any} */ post) => {
         return {
             title: post.title,
             excerpt: post.excerpt,
