@@ -1,57 +1,64 @@
 <script>
     export let data;
     let posts = data.posts;
+    let searchQuery = '';
+
+    $: filteredPosts = posts.filter(p => 
+        (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.slug || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
 </script>
 
-<div class="admin-container">
-    <div class="admin-header">
-        <h1><i class="fa-solid fa-shapes"></i> Admin CMS</h1>
-        <a href="/admin/editor/new" class="btn-primary"><i class="fa-solid fa-plus" style="margin-right: 0.5rem;"></i> Create New Post</a>
+<svelte:head>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</svelte:head>
+
+<div class="cms-wrapper">
+    <div class="cms-header">
+        <div class="header-left">
+            <h1>Pages</h1>
+            <a href="/admin/editor/new" class="btn btn-orange">New page</a>
+        </div>
+        <div class="header-right">
+            <input type="text" bind:value={searchQuery} placeholder="Search by filename" class="search-input" />
+        </div>
     </div>
 
-    <div class="table-wrapper">
-        <table class="admin-table">
+    <div class="table-container">
+        <table class="cms-table">
             <thead>
                 <tr>
-                    <th>Post Title</th>
-                    <th>Category</th>
-                    <th>Date Published</th>
-                    <th>Status</th>
-                    <th class="actions-header">Actions</th>
+                    <th>FILENAME</th>
+                    <th class="text-right">ACTIONS</th>
                 </tr>
             </thead>
             <tbody>
-                {#each posts as post}
+                {#each filteredPosts as post}
                     <tr>
-                        <td class="col-title">
-                            <span class="title-text">{post.title}</span>
-                            {#if post.slug}
-                                <span class="slug-text">/{post.slug}</span>
-                            {/if}
+                        <td class="col-filename">
+                            <div class="file-info">
+                                <i class="fa-regular fa-file-lines file-icon"></i>
+                                <a href={`/admin/editor/${post.id}`} class="file-link">
+                                    {post.slug || post.id}.md
+                                </a>
+                                {#if post.draft}
+                                    <span class="badge badge-draft">Draft</span>
+                                {:else if post.hidden}
+                                    <span class="badge badge-hidden">Hidden</span>
+                                {:else if post.visibility === 'private'}
+                                    <span class="badge badge-private">Private</span>
+                                {/if}
+                            </div>
                         </td>
-                        <td>{post.category || post.categorySlug || 'Uncategorized'}</td>
-                        <td class="col-date">{post.date}</td>
-                        <td>
-                            {#if post.draft}
-                                <span class="badge badge-draft"><i class="fa-solid fa-pen-ruler"></i> Draft</span>
-                            {:else if post.hidden}
-                                <span class="badge badge-hidden"><i class="fa-solid fa-eye-slash"></i> Hidden</span>
-                            {:else if post.visibility === 'private'}
-                                <span class="badge badge-private"><i class="fa-solid fa-lock"></i> Private</span>
-                            {:else}
-                                <span class="badge badge-public"><i class="fa-solid fa-globe"></i> Public</span>
-                            {/if}
-                        </td>
-                        <td class="col-actions">
-                            <a href={`/admin/editor/${post.id}`} class="btn-sm" title="Edit Post"><i class="fa-solid fa-pen-to-square"></i></a>
-                            <a href={`${post.url}`} target="_blank" class="btn-sm btn-outline" title="View Live"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-                            <button class="btn-sm btn-danger" onclick={() => confirm('Deletion not implemented yet. Delete via database.')} title="Delete Post"><i class="fa-solid fa-trash-can"></i></button>
+                        <td class="col-actions text-right">
+                            <button class="btn btn-gray-sm" onclick={() => confirm('Deletion not implemented yet. Delete via database.')}><i class="fa-solid fa-trash-can"></i> Delete</button>
+                            <a href={`${post.url}`} target="_blank" class="btn btn-gray-sm"><i class="fa-solid fa-eye"></i> View</a>
                         </td>
                     </tr>
                 {/each}
-                {#if posts.length === 0}
+                {#if filteredPosts.length === 0}
                     <tr>
-                        <td colspan="5" class="empty-state">No posts found. Start writing!</td>
+                        <td colspan="2" class="empty-state">No pages found.</td>
                     </tr>
                 {/if}
             </tbody>
@@ -60,193 +67,181 @@
 </div>
 
 <style>
-    .admin-container {
-        padding: 2.5rem 2rem;
-        max-width: 1300px;
-        margin: 0 auto;
-        font-family: var(--font-primary, system-ui, sans-serif);
+    :global(body) {
+        background-color: #f5f5f5;
+        margin: 0;
     }
-    
-    .admin-header {
+
+    .cms-wrapper {
+        font-family: 'Manrope', sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #333;
+    }
+
+    .cms-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2.5rem;
+        margin-bottom: 25px;
     }
 
-    .admin-header h1 {
-        font-size: 2rem;
-        margin: 0;
+    .header-left {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        color: var(--text, #111);
-    }
-    
-    .admin-header h1 i {
-        color: var(--primary, #ff9320);
+        gap: 20px;
     }
 
-    .btn-primary {
-        background: linear-gradient(135deg, var(--primary, #ff9320) 0%, #ff7b00 100%);
-        color: white;
-        padding: 0.85rem 1.75rem;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(255, 147, 32, 0.25);
-        transition: all 0.2s ease;
+    .header-left h1 {
+        font-size: 28px;
+        font-weight: 300;
+        color: #444;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .btn {
         display: inline-flex;
         align-items: center;
-    }
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(255, 147, 32, 0.35);
-    }
-
-    .table-wrapper {
-        background: var(--card-bg, #fff);
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-        border: 1px solid var(--border, #eaeaea);
-        overflow-x: auto;
+        justify-content: center;
+        border-radius: 3px;
+        font-family: 'Manrope', sans-serif;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: opacity 0.2s;
     }
 
-    .admin-table {
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    .btn-orange {
+        background: #f38a00;
+        color: white;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 3px;
+        font-family: 'Manrope', sans-serif;
+        font-size: 14px;
+        width: 200px;
+        outline: none;
+        color: #333;
+    }
+
+    .search-input:focus {
+        border-color: #ccc;
+    }
+
+    .table-container {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .cms-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 900px;
     }
 
-    .admin-table th, .admin-table td {
-        padding: 1.25rem 1.5rem;
+    .cms-table th {
+        background: #333;
+        color: white;
+        font-size: 13px;
+        font-weight: 700;
         text-align: left;
-        border-bottom: 1px solid var(--border, #eaeaea);
-        color: var(--text, #333);
+        padding: 12px 20px;
+        letter-spacing: 0.5px;
+    }
+
+    .cms-table td {
+        padding: 12px 20px;
+        border-bottom: 1px solid #f0f0f0;
         vertical-align: middle;
     }
 
-    .admin-table th {
-        background: var(--hover-bg, #fbfbfb);
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #777;
+    .cms-table tbody tr:nth-child(even) {
+        background: #fcfcfc;
+    }
+    
+    .cms-table tbody tr:hover {
+        background: #f9f9f9;
     }
 
-    .admin-table tbody tr {
-        transition: background-color 0.15s ease;
-    }
-    .admin-table tbody tr:hover {
-        background: var(--hover-bg, #f8f9fa);
+    .text-right {
+        text-align: right !important;
     }
 
-    .col-title {
+    .file-info {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    .title-text {
-        font-weight: 600;
-        font-size: 1.05rem;
-    }
-    .slug-text {
-        font-size: 0.8rem;
-        color: #888;
-        font-family: monospace;
+        align-items: center;
+        gap: 12px;
     }
 
-    .col-date {
-        white-space: nowrap;
-        font-size: 0.9rem;
-        color: #555;
+    .file-icon {
+        color: #999;
+        font-size: 16px;
+    }
+
+    .file-link {
+        color: #333;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    .file-link:hover {
+        color: #f38a00;
+        text-decoration: underline;
     }
 
     .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        padding: 0.35rem 0.65rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 700;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        margin-left: 10px;
     }
     .badge-draft { background: #fffbe6; color: #faad14; border: 1px solid #ffe58f; }
     .badge-hidden { background: #f5f5f5; color: #8c8c8c; border: 1px solid #d9d9d9; }
     .badge-private { background: #fff0f6; color: #eb2f96; border: 1px solid #ffadd2; }
-    .badge-public { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
 
-    .actions-header {
-        text-align: right;
-    }
-    
-    .col-actions {
-        text-align: right;
-        white-space: nowrap;
-    }
-
-    .btn-sm {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        text-decoration: none;
-        background: #f0f0f0;
-        color: #444;
-        font-size: 1rem;
-        border: none;
-        cursor: pointer;
-        margin-left: 0.5rem;
-        transition: all 0.2s ease;
-    }
-    .btn-sm:hover { background: #e0e0e0; color: #111; transform: translateY(-1px); }
-
-    .btn-outline { background: transparent; border: 1px solid #ddd; }
-    .btn-outline:hover { background: #f9f9f9; border-color: #bbb; }
-
-    .btn-danger {
-        background: #fff1f0;
-        color: #ff4d4f;
-        border: 1px solid #ffa39e;
-    }
-    .btn-danger:hover {
-        background: #ff4d4f;
+    .btn-gray-sm {
+        background: #9ea3a8;
         color: white;
+        padding: 6px 12px;
+        font-size: 13px;
+        gap: 6px;
+        margin-left: 8px;
     }
 
     .empty-state {
         text-align: center;
-        padding: 4rem !important;
+        padding: 40px !important;
         color: #888;
         font-style: italic;
     }
 
-    :global(.dark) .admin-container h1 { color: #fff; }
-    :global(.dark) .table-wrapper {
-        background: #1e1e1e;
-        border: 1px solid #333;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    }
-    :global(.dark) .admin-table th { background: #222; border-color: #333; color: #aaa;}
-    :global(.dark) .admin-table td { border-color: #333; color: #ddd; }
-    :global(.dark) .admin-table tbody tr:hover { background: #252525; }
-    :global(.dark) .slug-text { color: #777; }
-    :global(.dark) .col-date { color: #999; }
-    
-    :global(.dark) .badge-draft { background: rgba(250, 173, 20, 0.1); border-color: rgba(250, 173, 20, 0.3); }
-    :global(.dark) .badge-hidden { background: rgba(140, 140, 140, 0.1); border-color: rgba(140, 140, 140, 0.3); }
-    :global(.dark) .badge-private { background: rgba(235, 47, 150, 0.1); border-color: rgba(235, 47, 150, 0.3); }
-    :global(.dark) .badge-public { background: rgba(82, 196, 26, 0.1); border-color: rgba(82, 196, 26, 0.3); }
-    
-    :global(.dark) .btn-sm { background: #333; color: #ddd; }
-    :global(.dark) .btn-sm:hover { background: #444; color: #fff; }
-    :global(.dark) .btn-outline { background: transparent; border-color: #444; }
-    :global(.dark) .btn-outline:hover { background: #2a2a2a; border-color: #666; }
-    :global(.dark) .btn-danger { background: rgba(255, 77, 79, 0.15); border-color: rgba(255, 77, 79, 0.3); color: #ff7875; }
-    :global(.dark) .btn-danger:hover { background: #a8071a; color: #fff; border-color: #a8071a; }
+    /* Dark Mode */
+    :global(.dark) .cms-wrapper { color: #eee; }
+    :global(.dark) .header-left h1 { color: #eee; }
+    :global(.dark) .search-input { background: #1e1e1e; border-color: #333; color: #eee; }
+    :global(.dark) .table-container { background: #1e1e1e; border-color: #333; }
+    :global(.dark) .cms-table th { background: #252525; border-color: #333; }
+    :global(.dark) .cms-table td { border-bottom-color: #333; }
+    :global(.dark) .cms-table tbody tr:nth-child(even) { background: #222; }
+    :global(.dark) .cms-table tbody tr:hover { background: #2a2a2a; }
+    :global(.dark) .file-link { color: #eee; }
+    :global(.dark) .file-link:hover { color: #f38a00; }
+    :global(.dark) .btn-gray-sm { background: #444; }
+    :global(.dark) .btn-gray-sm:hover { background: #555; }
 </style>

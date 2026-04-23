@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
+    import { Marked } from 'marked';
 
     export let data;
 
@@ -34,9 +35,21 @@
         .filter(k => !coreKeys.includes(k))
         .map(key => ({ key, value: String(post.metadata[key]) }));
 
+    /** @param {Date} d */
+    function getLocalISOString(d) {
+        const tzoffset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16);
+    }
+
     let category = post.metadata.category || '';
-    let date = post.metadata.date || new Date().toISOString().split('T')[0];
+    let date = post.metadata.date 
+        ? getLocalISOString(new Date(post.metadata.date))
+        : getLocalISOString(new Date());
     let excerpt = post.metadata.excerpt || '';
+
+    function setDateToNow() {
+        date = getLocalISOString(new Date());
+    }
 
     function addMetadataField() {
         metadataArray = [...metadataArray, { key: '', value: '' }];
@@ -47,11 +60,46 @@
         metadataArray = metadataArray.filter((_, i) => i !== index);
     }
 
+    /** @type {number} */
+    let draggedIndex = -1;
+
+    /**
+     * @param {DragEvent} e
+     * @param {number} index
+     */
+    function handleDragStart(e, index) {
+        draggedIndex = index;
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+    }
+
+    /**
+     * @param {DragEvent} e
+     * @param {number} index
+     */
+    function handleDragOver(e, index) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    }
+
+    /**
+     * @param {DragEvent} e
+     * @param {number} targetIndex
+     */
+    function handleDrop(e, targetIndex) {
+        e.preventDefault();
+        if (draggedIndex !== -1 && draggedIndex !== targetIndex) {
+            const newArray = [...metadataArray];
+            const item = newArray.splice(draggedIndex, 1)[0];
+            newArray.splice(targetIndex, 0, item);
+            metadataArray = newArray;
+        }
+        draggedIndex = -1;
+    }
+
     /** @type {HTMLTextAreaElement} */
     let textareaEl;
     let isUploading = false;
     let uploadStatus = '';
-    
     let coverUploading = false;
 
     /** @param {DragEvent} e */
@@ -110,15 +158,6 @@
         isUploading = false;
     }
 
-    /** @param {DragEvent} e */
-    async function handleCoverDrop(e) {
-        e.preventDefault();
-        const files = e.dataTransfer?.files;
-        if (files && files.length) {
-            await uploadCover(files[0]);
-        }
-    }
-
     /** @param {Event} e */
     async function handleCoverSelect(e) {
         const target = /** @type {HTMLInputElement} */ (e.target);
@@ -158,27 +197,17 @@
         coverUploading = false;
     }
 
-    function removeCover() {
-        image = '';
-    }
-
     /** @param {string} text */
     function insertAtCursor(text) {
         if (!textareaEl) return;
-        const startPos = textareaEl.selectionStart;
-        const endPos = textareaEl.selectionEnd;
-        content = content.substring(0, startPos) + text + content.substring(endPos, content.length);
-        
-        setTimeout(() => {
-            textareaEl.focus();
-            textareaEl.selectionStart = startPos + text.length;
-            textareaEl.selectionEnd = startPos + text.length;
-        }, 0);
+        textareaEl.focus();
+        document.execCommand('insertText', false, text);
     }
 
     /** @param {string} type */
     function insertFormatting(type) {
         if (!textareaEl) return;
+        textareaEl.focus();
         const startPos = textareaEl.selectionStart;
         const endPos = textareaEl.selectionEnd;
         const selectedText = content.substring(startPos, endPos) || (type === 'table' ? '' : 'text');
@@ -187,17 +216,14 @@
         if (type === 'bold') insertText = `**${selectedText}**`;
         else if (type === 'italic') insertText = `*${selectedText}*`;
         else if (type === 'heading') insertText = `\n### ${selectedText}\n`;
-        else if (type === 'link') insertText = `[${selectedText}](url)`;
         else if (type === 'code') insertText = `\`${selectedText}\``;
         else if (type === 'quote') insertText = `\n> ${selectedText}\n`;
-        else if (type === 'list') insertText = `\n- ${selectedText}\n`;
+        else if (type === 'list-ul') insertText = `\n- ${selectedText}\n`;
+        else if (type === 'list-ol') insertText = `\n1. ${selectedText}\n`;
+        else if (type === 'link') insertText = `[${selectedText}](url)`;
         else if (type === 'table') insertText = `\n| Header 1 | Header 2 |\n| -------- | -------- |\n| Cell 1   | Cell 2   |\n`;
 
-        content = content.substring(0, startPos) + insertText + content.substring(endPos, content.length);
-        
-        setTimeout(() => {
-            textareaEl.focus();
-        }, 0);
+        document.execCommand('insertText', false, insertText);
     }
 
     async function savePost() {
@@ -242,389 +268,691 @@
             alert('Error saving: ' + result.error);
         }
     }
+
+    async function deletePost() {
+        if (id === 'new') {
+            window.location.href = '/admin';
+            return;
+        }
+        if (confirm('Are you sure you want to delete this post?')) {
+            const res = await fetch(`/api/admin/posts?id=${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                alert('Deleted successfully');
+                window.location.href = '/admin';
+            } else {
+                alert('Failed to delete');
+            }
+        }
+    }
+
+    let isPreviewMode = false;
+    let previewHtml = '';
+    let isFullscreen = false;
+
+    async function togglePreview() {
+        isPreviewMode = !isPreviewMode;
+        if (isPreviewMode) {
+            const customMarked = new Marked({ gfm: true, breaks: true });
+            let rawContent = content || '';
+            
+            const attachmentRegex = /\[attachment:([\s\S]+?):([\s\S]+?)\]/g;
+            rawContent = rawContent.replace(attachmentRegex, (/** @type {string} */ match, /** @type {string} */ url, /** @type {string} */ title) => {
+                const cleanUrl = url.trim();
+                const cleanTitle = title.trim();
+                const fileExt = cleanUrl.split('.').pop()?.toUpperCase() || 'FILE';
+                const rndId = 'attachment-' + Math.random().toString(36).substr(2, 5);
+                return `<div class="attachment-card" data-file-path="${cleanUrl}" data-attachment-id="${rndId}">
+                    <div class="attachment-details">
+                        <div class="attachment-title">${cleanTitle}</div>
+                        <div class="attachment-meta"><span class="file-type">${fileExt}</span></div>
+                    </div>
+                </div>`;
+            });
+
+            const videoRegex = /\[video:([\s\S]+?)\]/g;
+            rawContent = rawContent.replace(videoRegex, (/** @type {string} */ match, /** @type {string} */ vparams) => {
+                const parts = vparams.split(':');
+                const videoUrl = parts[0].trim();
+                return `<div class="video-embed"><video muted loop autoplay playsinline src="${videoUrl}"></video></div>`;
+            });
+
+            previewHtml = await customMarked.parse(rawContent);
+        }
+    }
 </script>
 
-<div class="editor-container">
-    <div class="editor-header">
-        <h1>{id === 'new' ? '✨ Create Post' : '✏️ Edit Post'}</h1>
-        <div class="actions">
-            <a href="/admin" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Tracker</a>
-            <button class="btn btn-primary" onclick={savePost}><i class="fa-solid fa-floppy-disk"></i> Save Post</button>
-        </div>
-    </div>
+<svelte:head>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</svelte:head>
 
-    <div class="editor-layout">
-        <div class="main-content">
-            <!-- Title -->
-            <div class="form-group">
-                <input type="text" class="input-title" placeholder="Post Title..." bind:value={title} />
+<div class="cms-wrapper" class:fullscreen={isFullscreen}>
+    <div class="cms-layout">
+        
+        <!-- Main Form Column -->
+        <div class="cms-main">
+            <div class="breadcrumbs">
+                <h2>
+                    <a href="/admin" class="home-link"><i class="fa-solid fa-house"></i> Posts</a> / 
+                    <span class="light">insightroom-admin</span>
+                </h2>
             </div>
 
-            <!-- Toolbar & Editor -->
-            <div class="editor-box">
+            <!-- Path Field -->
+            <div class="field-group path-group">
+                <label for="slug">Path <i class="fa-solid fa-circle-info info-icon"></i></label>
+                <input id="slug" type="text" class="input-path" bind:value={slug} placeholder="2023-01-01-my-post.md" />
+            </div>
+
+            <!-- Title Field -->
+            <div class="field-group title-group">
+                <label for="title">Title</label>
+                <input id="title" type="text" class="input-title" bind:value={title} placeholder="Jekyll Admin!" />
+            </div>
+
+            <!-- Editor Toolbar & Textarea -->
+            <div class="editor-container">
                 <div class="toolbar">
-                    <button class="tool-btn" onclick={() => insertFormatting('heading')} title="Heading"><i class="fa-solid fa-heading"></i></button>
                     <button class="tool-btn" onclick={() => insertFormatting('bold')} title="Bold"><i class="fa-solid fa-bold"></i></button>
                     <button class="tool-btn" onclick={() => insertFormatting('italic')} title="Italic"><i class="fa-solid fa-italic"></i></button>
-                    <span class="divider"></span>
-                    <button class="tool-btn" onclick={() => insertFormatting('quote')} title="Quote"><i class="fa-solid fa-quote-left"></i></button>
-                    <button class="tool-btn" onclick={() => insertFormatting('list')} title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
-                    <button class="tool-btn" onclick={() => insertFormatting('table')} title="Table"><i class="fa-solid fa-table"></i></button>
-                    <span class="divider"></span>
-                    <button class="tool-btn" onclick={() => insertFormatting('link')} title="Link"><i class="fa-solid fa-link"></i></button>
-                    <button class="tool-btn" onclick={() => insertFormatting('code')} title="Code"><i class="fa-solid fa-code"></i></button>
+                    <button class="tool-btn" onclick={() => insertFormatting('heading')} title="Heading"><i class="fa-solid fa-heading"></i></button>
                     
                     <span class="divider"></span>
-                    <div class="upload-wrapper">
-                        <label class="tool-btn upload-btn" title="Upload Media">
-                            <input type="file" accept="image/*,video/*" hidden onchange={handleFileSelect} />
-                            <i class="fa-solid fa-paperclip"></i> Media
-                        </label>
-                    </div>
+                    
+                    <button class="tool-btn" onclick={() => insertFormatting('code')} title="Code"><i class="fa-solid fa-code"></i></button>
+                    <button class="tool-btn" onclick={() => insertFormatting('quote')} title="Quote"><i class="fa-solid fa-quote-left"></i></button>
+                    <button class="tool-btn" onclick={() => insertFormatting('list-ul')} title="Bulleted List"><i class="fa-solid fa-list-ul"></i></button>
+                    <button class="tool-btn" onclick={() => insertFormatting('list-ol')} title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+                    
+                    <span class="divider"></span>
+                    
+                    <button class="tool-btn" onclick={() => insertFormatting('link')} title="Link"><i class="fa-solid fa-link"></i></button>
+                    <label class="tool-btn" title="Image / Media" style="cursor: pointer;">
+                        <input type="file" accept="image/*,video/*" hidden onchange={handleFileSelect} />
+                        <i class="fa-regular fa-image"></i>
+                    </label>
+                    <button class="tool-btn" onclick={() => insertFormatting('table')} title="Table"><i class="fa-solid fa-table"></i></button>
+                    
+                    <span class="divider"></span>
+                    
+                    <button class="tool-btn {isPreviewMode ? 'active' : ''}" onclick={togglePreview} title="Preview"><i class="fa-regular fa-eye"></i></button>
+                    <button class="tool-btn" onclick={() => isFullscreen = !isFullscreen} title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+                    <button class="tool-btn" onclick={savePost} title="Save"><i class="fa-regular fa-floppy-disk"></i></button>
+
                     {#if isUploading}
                         <span class="upload-status"><i class="fa-solid fa-spinner fa-spin"></i> {uploadStatus}</span>
                     {/if}
                 </div>
-
-                <textarea
-                    class="content-textarea"
-                    bind:this={textareaEl}
-                    bind:value={content}
-                    placeholder="Write your markdown content here...&#10;Drag and drop images here to directly upload them inside your body!"
-                    ondrop={handleFileDrop}
-                    ondragover={(e) => e.preventDefault()}
-                ></textarea>
-            </div>
-        </div>
-
-        <div class="sidebar">
-            <div class="settings-box">
-                <h3><i class="fa-solid fa-gear"></i> Settings</h3>
                 
-                <div class="form-group">
-                    <label for="input-slug">Slug Path</label>
-                    <input id="input-slug" type="text" bind:value={slug} placeholder="my-awesome-post" />
+                {#if isPreviewMode}
+                    <div class="preview-box">
+                        {@html previewHtml}
+                    </div>
+                {:else}
+                    <textarea
+                        class="content-textarea"
+                        bind:this={textareaEl}
+                        bind:value={content}
+                        ondrop={handleFileDrop}
+                        ondragover={(e) => e.preventDefault()}
+                    ></textarea>
+                {/if}
+            </div>
+
+            <!-- Metadata Section Below Editor -->
+            <div class="metadata-section">
+                
+                <div class="meta-card">
+                    <div class="meta-header">
+                        <div class="meta-key">category</div>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </div>
+                    <div class="meta-body">
+                        <input type="text" bind:value={category} class="meta-input" placeholder="e.g. Tutorials" />
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="input-category">Category</label>
-                    <input id="input-category" type="text" bind:value={category} placeholder="e.g. Tutorials" />
+                <div class="meta-card">
+                    <div class="meta-header">
+                        <div class="meta-key">date</div>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </div>
+                    <div class="meta-body" style="display: flex; gap: 8px;">
+                        <input type="datetime-local" bind:value={date} class="meta-input" />
+                        <button type="button" class="btn btn-gray-sm" style="margin: 0;" onclick={setDateToNow} title="Set to current time">
+                            <i class="fa-solid fa-clock"></i> Now
+                        </button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="input-date">Date Published</label>
-                    <input id="input-date" type="date" bind:value={date} />
+                <div class="meta-card">
+                    <div class="meta-header">
+                        <div class="meta-key">visibility</div>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </div>
+                    <div class="meta-body">
+                        <select bind:value={visibility} class="meta-input">
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="input-visibility">Visibility Tier</label>
-                    <select id="input-visibility" bind:value={visibility}>
-                        <option value="public">🌍 Public (Everyone)</option>
-                        <option value="private">🔒 Private (Plus & Super)</option>
-                    </select>
+                <div class="meta-card">
+                    <div class="meta-header">
+                        <div class="meta-key">status</div>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </div>
+                    <div class="meta-body checkbox-group">
+                        <label><input type="checkbox" bind:checked={draft} /> Draft</label>
+                        <label><input type="checkbox" bind:checked={hidden} /> Hidden</label>
+                    </div>
                 </div>
 
-                <div class="form-group checkboxes">
-                    <label><input type="checkbox" bind:checked={draft} /> Draft Mode</label>
-                    <label><input type="checkbox" bind:checked={hidden} /> Hidden (Unlisted)</label>
+                <div class="meta-card">
+                    <div class="meta-header">
+                        <div class="meta-key">excerpt</div>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </div>
+                    <div class="meta-body">
+                        <textarea bind:value={excerpt} class="meta-input" rows="3" placeholder="Brief summary..."></textarea>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <span class="label-heading">Cover Image</span>
-                    {#if image}
-                        <div class="cover-preview">
-                            <img src={image} alt="Cover Preview" />
-                            <div class="cover-actions">
-                                <label class="btn-sm btn-outline" style="cursor: pointer;" aria-label="Upload new cover image">
-                                    <input type="file" accept="image/*,video/*" hidden onchange={handleCoverSelect} />
-                                    <i class="fa-solid fa-pen"></i> Update
-                                </label>
-                                <button class="btn-sm btn-danger" onclick={removeCover}><i class="fa-solid fa-trash-can"></i> Clear</button>
+                <div class="meta-card">
+                    <div class="meta-header">
+                        <div class="meta-key">cover_image</div>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </div>
+                    <div class="meta-body">
+                        <input type="text" bind:value={image} class="meta-input" placeholder="Image URL..." />
+                        <div style="margin-top: 10px;">
+                            <label class="btn-new-meta" style="cursor: pointer; display: inline-block;">
+                                <input type="file" accept="image/*,video/*" hidden onchange={handleCoverSelect} />
+                                <i class="fa-solid fa-upload"></i> Upload Cover
+                            </label>
+                            {#if coverUploading}
+                                <span style="margin-left: 10px; font-size: 14px; color: #777;">Uploading...</span>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom User-Added Frontmatter -->
+                <div class="draggable-container">
+                    {#each metadataArray as item, i}
+                        <div class="meta-card"
+                             draggable="true"
+                             ondragstart={(e) => handleDragStart(e, i)}
+                             ondragover={(e) => handleDragOver(e, i)}
+                             ondrop={(e) => handleDrop(e, i)}
+                             aria-label="Draggable metadata field"
+                             role="listitem">
+                            <div class="meta-header">
+                                <div class="meta-key-edit">
+                                    <span class="index">{i + 1}.</span>
+                                    <i class="fa-solid fa-arrows-up-down-left-right drag-icon"></i>
+                                    <input type="text" bind:value={item.key} class="meta-input-inline" placeholder="key_name" aria-label="Field key" />
+                                    <button class="btn-icon" onclick={() => removeMetadataField(i)} aria-label="Remove field"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <i class="fa-solid fa-chevron-down chevron"></i>
+                            </div>
+                            <div class="meta-body">
+                                <input type="text" bind:value={item.value} class="meta-input" aria-label="Field value" />
                             </div>
                         </div>
-                    {:else}
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div class="cover-dropzone" ondrop={handleCoverDrop} ondragover={(e) => e.preventDefault()} role="region" aria-label="Cover image dropzone">
-                            <label class="dropzone-label">
-                                <input type="file" accept="image/*,video/*" hidden onchange={handleCoverSelect} />
-                                {#if coverUploading}
-                                    <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-                                    <p>Uploading...</p>
-                                {:else}
-                                    <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
-                                    <p>Drag & Drop or click to browse</p>
-                                {/if}
-                            </label>
-                        </div>
-                    {/if}
-                    <input id="input-image" type="text" bind:value={image} placeholder="...or insert url physically" style="margin-top: 0.5rem; font-size: 0.8rem;" />
+                    {/each}
                 </div>
-                
-                <div class="form-group">
-                    <label for="input-excerpt">Excerpt / Meta Description</label>
-                    <textarea id="input-excerpt" bind:value={excerpt} rows="3" placeholder="Brief summary..."></textarea>
-                </div>
-            </div>
 
-            <div class="settings-box">
-                <h3><i class="fa-solid fa-tags"></i> Custom Variables</h3>
-                <p class="help-text">Inject arbitrary frontmatter variables into your template.</p>
-                
-                {#each metadataArray as item, i}
-                    <div class="metadata-row">
-                        <input type="text" placeholder="Key" bind:value={item.key} aria-label="Metadata Key" />
-                        <input type="text" placeholder="Value" bind:value={item.value} aria-label="Metadata Value" />
-                        <button class="btn-icon btn-danger" onclick={() => removeMetadataField(i)} aria-label="Remove variable"><i class="fa-solid fa-xmark"></i></button>
+                <div class="new-meta-row">
+                    <button class="btn-new-meta" onclick={addMetadataField}>
+                        <i class="fa-solid fa-circle-plus"></i> New metadata field
+                    </button>
+                    <div class="special-keys">
+                        <i class="fa-solid fa-circle-info"></i> Special Keys
                     </div>
-                {/each}
-                
-                <button class="btn btn-outline" onclick={addMetadataField}><i class="fa-solid fa-plus"></i> Add Variable</button>
+                </div>
+
             </div>
         </div>
+        
+        <!-- Sidebar Actions Column -->
+        <div class="cms-sidebar">
+            <div class="header-actions">
+                <button class="btn btn-green" onclick={savePost}><i class="fa-regular fa-floppy-disk"></i> Save</button>
+                <button class="btn btn-gray" onclick={togglePreview}><i class="fa-regular {isPreviewMode ? 'fa-pen-to-square' : 'fa-eye'}"></i> {isPreviewMode ? 'Edit' : 'View'}</button>
+                <button class="btn btn-gray" onclick={deletePost}><i class="fa-regular fa-trash-can"></i> Delete</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
 <style>
-    .editor-container {
-        padding: 2.5rem 2rem;
-        max-width: 1500px;
-        margin: 0 auto;
-        font-family: var(--font-primary, system-ui, sans-serif);
-    }
-
-    .editor-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-
-    .editor-header h1 {
-        font-size: 2rem;
+    :global(body) {
+        background-color: #f5f5f5;
         margin: 0;
-        color: var(--text, #111);
     }
 
-    .actions {
+    .cms-wrapper {
+        font-family: 'Manrope', sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #333;
+    }
+
+    /* Fullscreen specific */
+    .cms-wrapper.fullscreen {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+        z-index: 9999;
+        background: #f5f5f5;
+        overflow-y: auto;
+    }
+
+    .cms-wrapper.fullscreen .cms-layout {
+        padding: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+        height: 100%;
+    }
+    
+    .cms-wrapper.fullscreen .editor-container {
+        height: calc(100vh - 250px);
         display: flex;
-        gap: 0.75rem;
+        flex-direction: column;
+    }
+    
+    .cms-wrapper.fullscreen .content-textarea,
+    .cms-wrapper.fullscreen .preview-box {
+        flex: 1;
+        height: 100%;
+    }
+
+    /* Layout */
+    .cms-layout {
+        display: flex;
+        gap: 30px;
+        align-items: flex-start;
+    }
+
+    .cms-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cms-sidebar {
+        width: 120px;
+        flex-shrink: 0;
+        margin-top: 60px; /* Align roughly with the editor input */
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+        margin-bottom: 30px;
+    }
+
+    .breadcrumbs h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 400;
+        color: #444;
+    }
+
+    .breadcrumbs .home-link {
+        color: inherit;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .breadcrumbs .home-link i {
+        font-size: 18px;
+        margin-right: 6px;
+    }
+
+    .breadcrumbs .light {
+        color: #6c757d;
+    }
+
+    /* Buttons */
+    .header-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
     }
 
     .btn {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
-        border-radius: 10px;
-        text-decoration: none;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 4px;
+        font-family: 'Manrope', sans-serif;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
+        transition: opacity 0.2s;
+        text-decoration: none;
+        width: 100%;
+    }
+    
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    .btn-green {
+        background-color: #7bc143;
+        color: white;
+    }
+
+    .btn-gray {
+        background-color: #9ea3a8;
+        color: white;
+    }
+
+    /* Input Fields */
+    .field-group {
+        margin-bottom: 20px;
+    }
+
+    .field-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .info-icon {
+        color: #555;
+        font-size: 12px;
+        margin-left: 4px;
+    }
+
+    .input-path {
+        width: 100%;
+        background: transparent;
         border: none;
-        font-size: 0.95rem;
-        transition: all 0.2s ease;
-    }
-
-    .btn-primary { 
-        background: linear-gradient(135deg, var(--primary, #ff9320) 0%, #ff7b00 100%);
-        color: white; 
-        box-shadow: 0 4px 12px rgba(255, 147, 32, 0.25);
-    }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255, 147, 32, 0.35); }
-    
-    .btn-secondary { background: #f0f0f0; color: #444; }
-    .btn-secondary:hover { background: #e0e0e0; color: #111; }
-    
-    .btn-outline { background: transparent; border: 1px dashed #ccc; width: 100%; margin-top: 0.5rem; color: #555; }
-    .btn-outline:hover { background: #f9f9f9; border-color: #999; color: #111; }
-
-    .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; }
-    
-    .btn-danger { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffa39e; }
-    .btn-danger:hover { background: #ff4d4f; color: white; }
-    
-    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.4rem; }
-
-    .editor-layout {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 2rem;
-    }
-
-    .main-content {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
+        border-bottom: 1px solid #ccc;
+        padding: 5px 0;
+        font-family: 'Manrope', sans-serif;
+        font-size: 15px;
+        color: #333;
+        outline: none;
     }
 
     .input-title {
         width: 100%;
-        font-size: 2.2rem;
-        font-weight: 800;
-        padding: 1.25rem 1.5rem;
-        border: 1px solid var(--border, #eaeaea);
-        border-radius: 12px;
-        background: var(--card-bg, #fff);
-        color: var(--text, #111);
-        box-sizing: border-box;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-        transition: border-color 0.2s ease;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid #f3c200;
+        padding: 5px 0;
+        font-family: 'Manrope', sans-serif;
+        font-size: 42px;
+        font-weight: 400;
+        color: #222;
+        outline: none;
     }
-    .input-title:focus { outline: none; border-color: var(--primary, #ff9320); }
 
-    .editor-box {
-        border: 1px solid var(--border, #eaeaea);
-        border-radius: 12px;
-        background: var(--card-bg, #fff);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        height: 75vh;
-        min-height: 600px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    /* Editor Box */
+    .editor-container {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
 
     .toolbar {
-        padding: 0.6rem 0.8rem;
-        border-bottom: 1px solid var(--border, #eaeaea);
-        background: var(--hover-bg, #fcfcfc);
         display: flex;
-        gap: 0.4rem;
+        padding: 8px 12px;
+        border-bottom: 1px solid #ddd;
+        background: #fafafa;
         align-items: center;
+        gap: 2px;
         flex-wrap: wrap;
     }
-
-    .divider { width: 1px; height: 20px; background: #ddd; margin: 0 0.2rem; }
 
     .tool-btn {
         background: transparent;
         border: none;
-        border-radius: 6px;
-        width: 34px;
-        height: 34px;
+        color: #666;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
+        border-radius: 3px;
         cursor: pointer;
-        font-size: 1rem;
-        color: #555;
-        transition: all 0.2s ease;
+        font-size: 14px;
+        transition: background 0.1s;
     }
-    
-    .tool-btn:hover { background: #efefef; color: #111; transform: translateY(-1px); }
 
-    .upload-wrapper { position: relative; }
-    .upload-btn { width: auto; padding: 0 0.8rem; gap: 0.4rem; font-size: 0.9rem; font-weight: 500; background: rgba(255,147,32,0.1); color: var(--primary, #ff9320); }
-    .upload-btn:hover { background: rgba(255,147,32,0.2); color: var(--primary, #e68010); }
+    .tool-btn:hover, .tool-btn.active {
+        background: #eee;
+        color: #333;
+    }
 
-    .upload-status { font-size: 0.85rem; color: var(--primary, #ff9320); display: flex; align-items: center; gap: 0.4rem; margin-left: 0.5rem; }
+    .divider {
+        width: 1px;
+        height: 20px;
+        background: #ddd;
+        margin: 0 8px;
+    }
 
     .content-textarea {
-        flex: 1;
         width: 100%;
-        padding: 1.5rem 2rem;
+        min-height: 400px;
         border: none;
-        resize: none;
-        font-family: 'Consolas', 'Monaco', monospace;
-        font-size: 1.05rem;
-        line-height: 1.7;
-        background: transparent;
-        color: var(--text, #333);
+        padding: 20px;
+        font-family: 'Manrope', sans-serif;
+        font-size: 15px;
+        line-height: 1.6;
+        color: #333;
+        resize: vertical;
+        box-sizing: border-box;
         outline: none;
-        box-sizing: border-box;
     }
 
-    .sidebar .settings-box {
-        background: var(--card-bg, #fff);
-        border: 1px solid var(--border, #eaeaea);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    .preview-box {
+        min-height: 400px;
+        padding: 20px;
+        font-family: 'Manrope', sans-serif;
+        line-height: 1.6;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow-x: auto;
     }
-
-    .sidebar h3 { margin-top: 0; margin-bottom: 1.25rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text, #111); }
-    .sidebar h3 i { color: var(--primary, #ff9320); }
-
-    .form-group { margin-bottom: 1.25rem; }
-    .form-group label, .form-group .label-heading { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-group input[type="text"],
-    .form-group input[type="date"],
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 0.7rem 0.8rem;
-        border: 1px solid var(--border, #ccc);
-        border-radius: 8px;
-        background: #fbfbfb;
-        color: var(--text, #333);
-        box-sizing: border-box;
-        font-family: inherit;
-        transition: border-color 0.2s ease;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary, #ff9320); background: #fff; }
     
-    .checkboxes label { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; margin-bottom: 0.6rem; text-transform: none; font-size: 0.95rem; color: #333; cursor: pointer; }
+    :global(.preview-box table) {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+        border-collapse: collapse;
+    }
+    
+    :global(.preview-box table th), :global(.preview-box table td) {
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+    }
 
-    /* Cover Area */
-    .dropzone-label {
+    /* Metadata Section */
+    .metadata-section {
+        margin-top: 40px;
+    }
+
+    .draggable-container {
         display: flex;
         flex-direction: column;
+    }
+
+    .meta-card {
+        border: 1px solid #e5e5e5;
+        border-radius: 4px;
+        background: #fbfbfb;
+        margin-bottom: 15px;
+        padding: 15px;
+    }
+
+    .meta-header {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
+        margin-bottom: 10px;
+    }
+
+    .meta-key {
+        background: white;
+        border: 1px solid #e5e5e5;
+        padding: 6px 12px;
+        border-radius: 3px;
+        font-weight: 700;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .chevron {
+        color: #ccc;
+        font-size: 14px;
+    }
+
+    .meta-body {
         width: 100%;
+    }
+
+    .meta-input {
+        width: 100%;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 3px;
+        padding: 10px 12px;
+        font-family: 'Manrope', sans-serif;
+        font-size: 14px;
+        box-sizing: border-box;
+        outline: none;
+        resize: vertical;
+    }
+    
+    .meta-input:focus {
+        border-color: #ccc;
+    }
+
+    .meta-key-edit {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .index {
+        color: #f38a00;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .drag-icon {
+        color: #ccc;
+        cursor: grab;
+    }
+
+    .drag-icon:active {
+        cursor: grabbing;
+    }
+
+    .meta-input-inline {
+        background: white;
+        border: 1px solid #e5e5e5;
+        padding: 6px 12px;
+        border-radius: 3px;
+        font-weight: 600;
+        font-size: 14px;
+        font-family: 'Manrope', sans-serif;
+        outline: none;
+    }
+
+    .btn-icon {
+        background: transparent;
+        border: none;
+        color: #ccc;
+        cursor: pointer;
+    }
+    
+    .btn-icon:hover {
+        color: #ff4d4f;
+    }
+
+    .checkbox-group {
+        display: flex;
+        gap: 20px;
+        padding: 5px 0;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
         cursor: pointer;
     }
 
-    .cover-dropzone {
+    .new-meta-row {
         display: flex;
-        flex-direction: column;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 2rem 1.5rem;
-        border: 2px dashed #ccc;
-        border-radius: 12px;
-        background: #fafafa;
-        color: #888;
-        transition: all 0.2s ease;
-        text-align: center;
+        margin-top: 20px;
     }
-    .cover-dropzone:hover { border-color: var(--primary, #ff9320); color: var(--primary, #ff9320); background: rgba(255,147,32,0.02); }
-    .cover-dropzone p { margin: 0; font-size: 0.85rem; }
-    
-    .cover-preview { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #eaeaea; }
-    .cover-preview img { display: block; width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; }
-    .cover-actions { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); opacity: 0; display: flex; align-items: center; justify-content: center; gap: 1rem; transition: opacity 0.2s ease; }
-    .cover-preview:hover .cover-actions { opacity: 1; }
-    
-    .metadata-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .metadata-row input { flex: 1; min-width: 0; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; background: #fbfbfb; }
-    
-    .help-text { font-size: 0.85rem; color: #777; margin-bottom: 1.25rem; line-height: 1.4; }
 
-    :global(.dark) .input-title,
-    :global(.dark) .editor-box,
-    :global(.dark) .sidebar .settings-box {
-        background: #1e1e1e;
-        border-color: #333;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    .btn-new-meta {
+        background: transparent;
+        border: none;
+        color: #f38a00;
+        font-weight: 700;
+        font-size: 15px;
+        font-family: 'Manrope', sans-serif;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-    :global(.dark) .editor-header h1, :global(.dark) .sidebar h3 { color: #fff; }
-    :global(.dark) .form-group label { color: #aaa; }
-    :global(.dark) .checkboxes label { color: #ddd; }
     
+    .btn-new-meta:hover {
+        text-decoration: underline;
+    }
+
+    .special-keys {
+        font-size: 13px;
+        color: #555;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Dark Mode Support */
+    :global(.dark) .cms-wrapper { color: #eee; }
+    :global(.dark) .cms-wrapper.fullscreen { background: #121212; }
+    :global(.dark) .breadcrumbs h2 { color: #eee; }
+    :global(.dark) .breadcrumbs .light { color: #aaa; }
+    :global(.dark) .input-path { color: #eee; border-color: #444; }
+    :global(.dark) .input-title { color: #fff; border-color: #f38a00; }
+    :global(.dark) .editor-container { background: #1e1e1e; border-color: #333; }
     :global(.dark) .toolbar { background: #252525; border-color: #333; }
-    :global(.dark) .divider { background: #444; }
     :global(.dark) .tool-btn { color: #aaa; }
-    :global(.dark) .tool-btn:hover { background: #333; color: #fff; }
+    :global(.dark) .tool-btn:hover, :global(.dark) .tool-btn.active { background: #333; color: #fff; }
+    :global(.dark) .divider { background: #444; }
+    :global(.dark) .content-textarea { color: #eee; }
+    :global(.dark) .preview-box table th, :global(.dark) .preview-box table td { border-color: #444; }
     
-    :global(.dark) .form-group input, :global(.dark) .form-group select, :global(.dark) .form-group textarea, :global(.dark) .metadata-row input { background: #121212; border-color: #3a3a3a; color: #eee; }
-    :global(.dark) .form-group input:focus, :global(.dark) .form-group select:focus, :global(.dark) .form-group textarea:focus { border-color: var(--primary, #ff9320); }
-    
-    :global(.dark) .btn-secondary { background: #333; color: #eee; }
-    :global(.dark) .btn-secondary:hover { background: #444; }
-    
-    :global(.dark) .cover-dropzone { background: #121212; border-color: #444; }
-    :global(.dark) .cover-dropzone:hover { border-color: var(--primary, #ff9320); }
-    :global(.dark) .cover-preview { border-color: #333; }
+    :global(.dark) .meta-card { background: #1a1a1a; border-color: #333; }
+    :global(.dark) .meta-key { background: #252525; border-color: #333; color: #eee; }
+    :global(.dark) .meta-input, :global(.dark) .meta-input-inline { background: #252525; border-color: #333; color: #eee; }
+    :global(.dark) .meta-input:focus, :global(.dark) .meta-input-inline:focus { border-color: #555; }
+    :global(.dark) .btn-gray { background-color: #444; }
+    :global(.dark) .btn-gray:hover { background-color: #555; }
 </style>

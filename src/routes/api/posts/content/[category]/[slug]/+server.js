@@ -43,56 +43,50 @@ export async function GET({ params, cookies, fetch, url }) {
         return json({ html: '<div class="locked-placeholder">Unauthorized. Please upgrade to see this content.</div>' }, { status: 403 });
     }
 
+    // Pre-process custom shortcodes before parsing with marked
+    let rawContent = post.content || '';
+
+    // Attachment replacement
+    const attachmentRegex = /\[attachment:([\s\S]+?):([\s\S]+?)\]/g;
+    rawContent = rawContent.replace(attachmentRegex, (/** @type {string} */ match, /** @type {string} */ url, /** @type {string} */ title) => {
+        const cleanUrl = url.trim();
+        const cleanTitle = title.trim();
+        const fileExt = cleanUrl.split('.').pop()?.toUpperCase() || 'FILE';
+        const id = 'attachment-' + Math.random().toString(36).substr(2, 5);
+        
+        return `<div class="attachment-card" data-file-path="${cleanUrl}" data-attachment-id="${id}" onclick="window.open('${cleanUrl}', '_blank')">
+            <div class="attachment-details">
+                <div class="attachment-title">${cleanTitle}</div>
+                <div class="attachment-meta"><span class="file-type">${fileExt}</span> • <span class="file-size">Click to view</span></div>
+            </div>
+            <div class="attachment-preview">
+                <canvas id="canvas-${id}" width="100" height="130"></canvas>
+                <img id="img-${id}" style="display: none;" alt="" />
+            </div>
+        </div>`;
+    });
+
+    // Video replacement
+    const videoRegex = /\[video:([\s\S]+?)\]/g;
+    rawContent = rawContent.replace(videoRegex, (/** @type {string} */ match, /** @type {string} */ vparams) => {
+        const parts = vparams.split(':');
+        const videoUrl = parts[0].trim();
+        const isCover = parts[1]?.trim() === 'cover';
+        const id = 'video-' + Math.random().toString(36).substr(2, 5);
+        
+        if (isCover) {
+            return `<div class="video-cover"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
+        }
+        return `<div class="video-embed"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
+    });
+
     // Create a new Marked instance for this request
     const customMarked = new Marked({
         gfm: true,
-        breaks: true,
-        renderer: {
-            // ... (keep the text renderer logic)
-            /** @param {any} token */
-            text(token) {
-                let text = typeof token === 'string' ? token : token.text;
-                
-                // Attachment replacement
-                const attachmentRegex = /\[attachment:([\s\S]+?):([\s\S]+?)\]/g;
-                let newText = text.replace(attachmentRegex, (/** @type {string} */ match, /** @type {string} */ url, /** @type {string} */ title) => {
-                    const cleanUrl = url.trim();
-                    const cleanTitle = title.trim();
-                    const fileExt = cleanUrl.split('.').pop()?.toUpperCase() || 'FILE';
-                    const id = 'attachment-' + Math.random().toString(36).substr(2, 5);
-                    
-                    return `<div class="attachment-card" data-file-path="${cleanUrl}" data-attachment-id="${id}" onclick="window.open('${cleanUrl}', '_blank')">
-                        <div class="attachment-details">
-                            <div class="attachment-title">${cleanTitle}</div>
-                            <div class="attachment-meta"><span class="file-type">${fileExt}</span> • <span class="file-size">Click to view</span></div>
-                        </div>
-                        <div class="attachment-preview">
-                            <canvas id="canvas-${id}" width="100" height="130"></canvas>
-                            <img id="img-${id}" style="display: none;" alt="" />
-                        </div>
-                    </div>`;
-                });
-
-                // Video replacement
-                const videoRegex = /\[video:([\s\S]+?)\]/g;
-                newText = newText.replace(videoRegex, (/** @type {string} */ match, /** @type {string} */ vparams) => {
-                    const parts = vparams.split(':');
-                    const videoUrl = parts[0].trim();
-                    const isCover = parts[1]?.trim() === 'cover';
-                    const id = 'video-' + Math.random().toString(36).substr(2, 5);
-                    
-                    if (isCover) {
-                        return `<div class="video-cover"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
-                    }
-                    return `<div class="video-embed"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
-                });
-
-                return newText;
-            }
-        }
+        breaks: true
     });
 
-    const html = customMarked.parse(post.content || '');
+    const html = customMarked.parse(rawContent);
 
     return json({ html });
 }

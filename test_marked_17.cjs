@@ -1,0 +1,1 @@
+const { Marked } = require('marked'); const m = new Marked({ gfm: true, breaks: true, renderer: { text(token) { let text = typeof token === 'string' ? token : token.text; return text; } } }); console.log(m.parse('This is **bold**, this is \code\, this is *italic*.'));
