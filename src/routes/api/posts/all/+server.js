@@ -43,9 +43,13 @@ export function OPTIONS({ request }) {
 }
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
-export async function GET({ request, cookies }) {
+export async function GET({ request, cookies, url }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);
+
+    // Get limit from query parameter
+    const num = url.searchParams.get('num');
+    const limit = num ? parseInt(num, 10) : null;
 
     // 1. Try Authorization header
     let token = request.headers.get('Authorization')?.split(' ')[1];
@@ -72,8 +76,14 @@ export async function GET({ request, cookies }) {
         ? 'http://localhost:5173'
         : 'https://room.getmaterio.app';
 
+    // Apply limit if specified
+    let finalPosts = posts;
+    if (limit && !isNaN(limit) && limit > 0) {
+        finalPosts = posts.slice(0, limit);
+    }
+
     // Map all posts (including hidden/drafts)
-    const apiPosts = posts.map(post => {
+    const apiPosts = finalPosts.map(post => {
         const imageUrl = post.image
             ? (post.image.startsWith('http') ? post.image : `${baseUrl}${post.image}`)
             : null;
@@ -85,7 +95,7 @@ export async function GET({ request, cookies }) {
             category: post.category,
             categorySlug: post.categorySlug,
             imgUrl: imageUrl,
-            link: `${baseUrl}${post.url}`,
+            link: post.url.startsWith('http') ? post.url : `${baseUrl}${post.url}`,
             subject: post.subject || null,
             semester: post.semester || null,
             tags: post.tags || [],

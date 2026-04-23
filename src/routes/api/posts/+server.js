@@ -40,24 +40,36 @@ export function OPTIONS({ request }) {
     });
 }
 
-export async function GET({ request }) {
+export async function GET({ request, url }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);
+
+    // Get limit from query parameter
+    const num = url.searchParams.get('num');
+    const limit = num ? parseInt(num, 10) : null;
+
     const posts = await getAllPosts();
     const baseUrl = process.env.NODE_ENV === 'development' 
         ? 'http://localhost:5173' 
         : 'https://room.getmaterio.app';
 
     // Filter and map to requested fields
-    const apiPosts = posts.filter((/** @type {any} */ p) => !p.hidden && !p.draft).map((/** @type {any} */ post) => {
+    let filteredPosts = posts.filter((/** @type {any} */ p) => !p.hidden && !p.draft);
+
+    // Apply limit if specified
+    if (limit && !isNaN(limit) && limit > 0) {
+        filteredPosts = filteredPosts.slice(0, limit);
+    }
+
+    const apiPosts = filteredPosts.map((/** @type {any} */ post) => {
         return {
             title: post.title,
             excerpt: post.excerpt,
             date: post.date,
             category: post.category,
             categorySlug: post.categorySlug,
-            imgUrl: post.image ? `${baseUrl}${post.image}` : null,
-            link: `${baseUrl}${post.url}`, // Absolute URL for cross-origin context
+            imgUrl: post.image ? (post.image.startsWith('http') ? post.image : `${baseUrl}${post.image}`) : null,
+            link: post.url.startsWith('http') ? post.url : `${baseUrl}${post.url}`, // Absolute URL for cross-origin context
             subject: post.subject || null,
             semester: post.semester || null,
             tags: post.tags || [],
