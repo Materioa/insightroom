@@ -68,3 +68,42 @@ export async function getPost(categorySlug, slug) {
     };
 }
 
+/**
+ * @param {string} permalink
+ */
+export async function getPostByPermalink(permalink) {
+    const collection = await getPostsCollection();
+    const permalinkNoSlash = permalink.replace(/^\/+/, '');
+    const permalinkWithSlash = '/' + permalinkNoSlash;
+    
+    const row = await collection.findOne({
+        $or: [
+            { "metadata.permalink": permalink },
+            { "metadata.permalink": permalinkNoSlash },
+            { "metadata.permalink": permalinkWithSlash }
+        ]
+    });
+    
+    if (!row) return undefined;
+    
+    const metadata = row.metadata || {};
+    
+    return {
+        id: row._id.toString(),
+        slug: row.slug,
+        categorySlug: row.categorySlug,
+        date: row.date,
+        url: permalinkWithSlash,
+        metadata,
+        content: row.content,
+        hidden: Boolean(row.hidden),
+        draft: Boolean(row.draft),
+        visibility: row.visibility,
+        category: row.category,
+        categories: metadata.categories,
+        title: row.title,
+        excerpt: row.excerpt,
+        image: row.image,
+        ...metadata
+    };
+}

@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getPostsCollection } from '$lib/server/db.js';
+import { getPostsCollection, getDb } from '$lib/server/db.js';
 import { ObjectId } from 'mongodb';
 
 /** @param {string} text */
@@ -31,9 +31,25 @@ export async function POST({ request, cookies }) {
         const visibility = metadata.visibility || 'public';
 
         const collection = await getPostsCollection();
+        const db = await getDb();
+        const versionsCollection = db.collection('post_versions');
 
         if (id && id !== 'new') {
             // Update
+            const oldPost = await collection.findOne({ _id: new ObjectId(id) });
+            if (oldPost) {
+                // Save previous version
+                await versionsCollection.insertOne({
+                    post_id: oldPost._id,
+                    title: oldPost.title,
+                    content: oldPost.content,
+                    metadata: oldPost.metadata,
+                    updated_at: oldPost.updated_at || oldPost.created_at || new Date(),
+                    saved_by_name: metadata.author_name || 'Admin', // Record who is making the change
+                    version_saved_at: new Date()
+                });
+            }
+
             await collection.updateOne(
                 { _id: new ObjectId(id) },
                 {

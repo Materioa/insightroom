@@ -180,43 +180,7 @@
     rel="stylesheet"
   />
 
-  <!-- Scripts -->
-  <script
-    defer
-    src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"
-  ></script>
-  <script
-    defer
-    src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
-  ></script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"
-  ></script>
-  <script
-    src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"
-  ></script>
 
-  <!-- Markmap for mindmaps -->
-  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.18.12"></script>
-  <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.18.12"></script>
-
-  <!-- Graphviz for FSM/automata diagrams -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/@viz-js/viz@3.11.0/lib/viz-standalone.js"
-  ></script>
-  <script
-    src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"
-  ></script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"
-  ></script>
-  <script>
-    if (typeof window !== "undefined" && window.pdfjsLib) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
-    }
-  </script>
 
   <!-- Materioa Kit -->
   <script src="https://materioa.github.io/kit/6a787c7335.js" crossorigin="anonymous"></script>

@@ -5,10 +5,24 @@ export const load = async ({ params, parent }) => {
     const { accessTier, token } = await parent();
 
     // Import dynamically
-    const { getPost } = await import('$lib/server/posts.js');
+    const { getPost, getPostByPermalink } = await import('$lib/server/posts.js');
 
-    // Find the post specific to the category and slug
-    const post = await getPost(params.category, params.slug);
+    const path = params.postPath;
+    let post;
+
+    // 1. Try to parse as category/slug
+    const segments = path.split('/');
+    if (segments.length === 2) {
+        post = await getPost(segments[0], segments[1]);
+    }
+
+    // 2. Fallback to permalink
+    if (!post) {
+        post = await getPostByPermalink('/' + path);
+    }
+    if (!post) {
+        post = await getPostByPermalink(path);
+    }
 
     if (!post) {
         throw error(404, 'Post not found');
@@ -31,8 +45,8 @@ export const load = async ({ params, parent }) => {
         date: post.date,
         excerpt: post.excerpt,
         image: post.image,
-        slug: params.slug,
-        category: params.category,
+        slug: post.slug,
+        category: post.category,
         isLocked,
         token,
         accessTier,

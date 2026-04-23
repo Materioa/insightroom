@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from 'svelte-adapter-bun';
 import { mdsvex } from 'mdsvex';
 import remarkGfm from 'remark-gfm';
 

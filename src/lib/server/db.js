@@ -33,8 +33,13 @@ if (process.env.NODE_ENV === 'development') {
  * but for SvelteKit server functions, await getDb() is better. 
  */
 export async function getPostsCollection() {
+    const db = await getDb();
+    return db.collection('posts');
+}
+
+export async function getDb() {
     const connectedClient = await clientPromise;
-    return connectedClient.db('insightroom').collection('posts');
+    return connectedClient.db('insightroom');
 }
 
 export default clientPromise;
