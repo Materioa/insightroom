@@ -7,7 +7,7 @@
 
   let { children, data } = $props();
 
-  let isPost = $derived(!!$page.params.slug);
+  let isPost = $derived(!!$page.params.postPath);
   let isHome = $derived($page.url.pathname === "/");
   let bodyClass = $derived(isPost ? "body-post" : isHome ? "blog-layout" : "");
   let isDark = $state(false);
@@ -16,8 +16,18 @@
 
   $effect(() => {
     if (browser) {
-      document.body.className =
-        bodyClass + (isDark ? " dark dark-mode" : "") + ` font-${currentFont}`;
+      // Manage theme classes
+      document.body.classList.toggle("dark", isDark);
+      document.body.classList.toggle("dark-mode", isDark);
+      
+      // Manage font classes
+      const fontClasses = ["font-default", "font-secondary", "font-serif", "font-system", "font-dyslexic"];
+      fontClasses.forEach(c => document.body.classList.remove(c));
+      document.body.classList.add(`font-${currentFont}`);
+      
+      // Manage layout classes
+      document.body.classList.toggle("body-post", isPost);
+      document.body.classList.toggle("blog-layout", isHome);
     }
   });
 

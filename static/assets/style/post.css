@@ -1255,7 +1255,7 @@ body.dark-mode .post-body table td {
   margin-left: 10px;
   font-size: 0.65em;
   color: #ff8200;
-  opacity: 0;
+  opacity: 0.3;
   transition: opacity 0.2s ease;
   text-decoration: none;
   padding: 4px 8px;
@@ -1269,7 +1269,9 @@ body.dark-mode .post-body table td {
 }
 
 .heading-anchor i {
-  font-weight: 400;
+  font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", "Font Awesome 5 Pro", sans-serif !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
 }
 
 /* Mobile: always show anchor on tap-capable devices */
@@ -1341,5 +1343,24 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
+  /* =========================================
+   NUCLEAR FONT SWITCHER (Final word)
+   ========================================= */
+:root {
+    --font-primary: "Manrope", sans-serif;
 }
+
+body.font-secondary { --font-primary: "Inter", sans-serif !important; }
+body.font-serif { --font-primary: "Crimson Pro", serif !important; }
+body.font-system { --font-primary: system-ui, sans-serif !important; }
+body.font-dyslexic { --font-primary: "OpenDyslexicRegular", sans-serif !important; }
+
+/* Force inheritance on everything that matters */
+body, .post-body, .post-content, .post-title, h1, h2, h3, h4, p, span, li, a {
+    font-family: var(--font-primary) !important;
+}
+
+/* Re-fix the icons which SHOULD NOT use the primary font */
+.heading-anchor i, .fa, .fas, .far, .fal, .fat, .fad, [class*="fa-"] {
+    font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", "Font Awesome 5 Pro", "FontAwesome", sans-serif !important;
+}}

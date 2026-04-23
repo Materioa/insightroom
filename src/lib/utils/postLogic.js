@@ -44,7 +44,7 @@ export function addHeadingAnchorLinks() {
         const anchor = document.createElement('a');
         anchor.className = 'heading-anchor';
         anchor.href = '#' + heading.id;
-        anchor.innerHTML = '<i class="fa-solid fa-link"></i>';
+        anchor.innerHTML = '<i class="fa-regular" style="font-family: \'Font Awesome 6 Pro\', \'Font Awesome 6 Free\', \'Font Awesome 5 Pro\', \'FontAwesome\', sans-serif !important;">\uf0c1</i>';
         anchor.title = 'Copy link to this section';
         anchor.setAttribute('aria-label', 'Copy link to section: ' + heading.textContent);
 

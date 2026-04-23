@@ -579,7 +579,7 @@
                     <button
                         class="tool-btn"
                         onclick={() => insertFormatting("link")}
-                        title="Link"><i class="fa-solid fa-link"></i></button
+                        title="Link"><i class="fa-regular fa-link-simple"></i></button
                     >
                     <label
                         class="tool-btn"

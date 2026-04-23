@@ -119,12 +119,10 @@
     system: "fa-regular fa-computer-classic",
   };
 
-  const currentThemeIcon = $derived(() => {
-    return (
-      themeIcons[/** @type {keyof typeof themeIcons} */ (props.currentTheme)] ||
-      themeIcons.system
-    );
-  });
+  const currentThemeIcon = $derived(
+    themeIcons[/** @type {keyof typeof themeIcons} */ (props.currentTheme)] ||
+      themeIcons.system,
+  );
 
   const fonts = [
     { id: "default", name: "Default", family: "Manrope" },
@@ -213,7 +211,7 @@
       onclick={toggleAppearanceMenu}
       aria-label="Appearance Settings"
     >
-      <i class={currentThemeIcon() + " active-theme-icon"}></i>
+      <i class={currentThemeIcon + " active-theme-icon"}></i>
       <i
         class="fa-regular fa-chevron-up chevron-icon"
         class:rotated={showAppearanceMenu}
