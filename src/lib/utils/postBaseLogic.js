@@ -570,7 +570,7 @@ function processAttachmentTags() {
     const postBody = document.querySelector('.post-body');
     if (!postBody) return;
 
-    const attachmentPattern = /\[attachment:([\s\S]+?):([\s\S]+?)\]/g;
+    const attachmentPattern = /\[attachment:([^\]]+):([^\]:]+)\]/g;
     let replacements = 0;
 
     /** @param {Node} node */
@@ -838,9 +838,8 @@ function processVideoTags() {
         const params = placeholder.dataset.videoParams;
         if (!params) return;
 
-        const parts = params.split(':');
-        const videoPath = parts[0].trim();
-        const isCover = parts[1] && parts[1].trim() === 'cover';
+        const isCover = params.trim().endsWith(':cover');
+        const videoPath = isCover ? params.trim().slice(0, -6).trim() : params.trim();
 
         const videoId = 'video-' + Math.random().toString(36).substr(2, 9);
         const coverClass = isCover ? 'video-cover' : 'video-embed';

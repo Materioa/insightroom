@@ -420,7 +420,7 @@
             const customMarked = new Marked({ gfm: true, breaks: true });
             let rawContent = content || "";
 
-            const attachmentRegex = /\[attachment:([\s\S]+?):([\s\S]+?)\]/g;
+            const attachmentRegex = /\[attachment:([^\]]+):([^\]:]+)\]/g;
             rawContent = rawContent.replace(
                 attachmentRegex,
                 (
@@ -450,8 +450,8 @@
                     /** @type {string} */ match,
                     /** @type {string} */ vparams,
                 ) => {
-                    const parts = vparams.split(":");
-                    const videoUrl = parts[0].trim();
+                    const isCover = vparams.trim().endsWith(':cover');
+                    const videoUrl = isCover ? vparams.trim().slice(0, -6).trim() : vparams.trim();
                     return `<div class="video-embed"><video muted loop autoplay playsinline src="${videoUrl}"></video></div>`;
                 },
             );

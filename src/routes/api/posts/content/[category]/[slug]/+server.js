@@ -47,7 +47,7 @@ export async function GET({ params, cookies, fetch, url }) {
     let rawContent = post.content || '';
 
     // Attachment replacement
-    const attachmentRegex = /\[attachment:([\s\S]+?):([\s\S]+?)\]/g;
+    const attachmentRegex = /\[attachment:([^\]]+):([^\]:]+)\]/g;
     rawContent = rawContent.replace(attachmentRegex, (/** @type {string} */ match, /** @type {string} */ url, /** @type {string} */ title) => {
         const cleanUrl = url.trim();
         const cleanTitle = title.trim();
@@ -69,9 +69,8 @@ export async function GET({ params, cookies, fetch, url }) {
     // Video replacement
     const videoRegex = /\[video:([\s\S]+?)\]/g;
     rawContent = rawContent.replace(videoRegex, (/** @type {string} */ match, /** @type {string} */ vparams) => {
-        const parts = vparams.split(':');
-        const videoUrl = parts[0].trim();
-        const isCover = parts[1]?.trim() === 'cover';
+        const isCover = vparams.trim().endsWith(':cover');
+        const videoUrl = isCover ? vparams.trim().slice(0, -6).trim() : vparams.trim();
         const id = 'video-' + Math.random().toString(36).substr(2, 5);
         
         if (isCover) {

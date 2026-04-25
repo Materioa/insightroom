@@ -1343,24 +1343,56 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  /* =========================================
+
+    /* =========================================
    NUCLEAR FONT SWITCHER (Final word)
    ========================================= */
-:root {
-    --font-primary: "Manrope", sans-serif;
+    :root {
+      --font-primary: "Manrope", sans-serif;
+    }
+
+    body.font-secondary {
+      --font-primary: "Inter", sans-serif !important;
+    }
+
+    body.font-serif {
+      --font-primary: "Crimson Pro", serif !important;
+    }
+
+    body.font-system {
+      --font-primary: system-ui, sans-serif !important;
+    }
+
+    body.font-dyslexic {
+      --font-primary: "OpenDyslexicRegular", sans-serif !important;
+    }
+
+    /* Force inheritance on everything that matters */
+    body,
+    .post-body,
+    .post-content,
+    .post-title,
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    span,
+    li,
+    a {
+      font-family: var(--font-primary) !important;
+    }
+
+    /* Re-fix the icons which SHOULD NOT use the primary font */
+    .heading-anchor i,
+    .fa,
+    .fas,
+    .far,
+    .fal,
+    .fat,
+    .fad,
+    [class*="fa-"] {
+      font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", "Font Awesome 5 Pro", "FontAwesome", sans-serif !important;
+    }
+  }
 }
-
-body.font-secondary { --font-primary: "Inter", sans-serif !important; }
-body.font-serif { --font-primary: "Crimson Pro", serif !important; }
-body.font-system { --font-primary: system-ui, sans-serif !important; }
-body.font-dyslexic { --font-primary: "OpenDyslexicRegular", sans-serif !important; }
-
-/* Force inheritance on everything that matters */
-body, .post-body, .post-content, .post-title, h1, h2, h3, h4, p, span, li, a {
-    font-family: var(--font-primary) !important;
-}
-
-/* Re-fix the icons which SHOULD NOT use the primary font */
-.heading-anchor i, .fa, .fas, .far, .fal, .fat, .fad, [class*="fa-"] {
-    font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", "Font Awesome 5 Pro", "FontAwesome", sans-serif !important;
-}}
