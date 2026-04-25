@@ -1,6 +1,15 @@
 import { getPostsCollection } from './db.js';
 import { ObjectId } from 'mongodb';
 
+/** @param {any} row */
+function getPostUrl(row) {
+    const metadata = row.metadata || {};
+    if (metadata.permalink) {
+        return metadata.permalink.startsWith('/') ? metadata.permalink : `/${metadata.permalink}`;
+    }
+    return row.categorySlug ? `/${row.categorySlug}/${row.slug}` : `/${row.slug}`;
+}
+
 export async function getAllPosts() {
     const collection = await getPostsCollection();
     const rows = await collection.find({}).sort({ date: -1 }).toArray();
@@ -13,7 +22,7 @@ export async function getAllPosts() {
             slug: row.slug,
             categorySlug: row.categorySlug,
             date: row.date,
-            url: `/${row.categorySlug}/${row.slug}`,
+            url: getPostUrl(row),
             metadata,
             content: row.content,
             hidden: Boolean(row.hidden),
@@ -53,7 +62,7 @@ export async function getPost(categorySlug, slug) {
         slug: row.slug,
         categorySlug: row.categorySlug,
         date: row.date,
-        url: `/${row.categorySlug}/${row.slug}`,
+        url: getPostUrl(row),
         metadata,
         content: row.content,
         hidden: Boolean(row.hidden),

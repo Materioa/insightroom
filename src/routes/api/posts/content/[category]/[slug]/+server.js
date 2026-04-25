@@ -31,8 +31,10 @@ export async function GET({ params, cookies, fetch, url }) {
         }
     }
 
-    const { getPost } = await import('$lib/server/posts.js');
-    const post = await getPost(params.category, params.slug);
+    const { getPost, getPostByPermalink } = await import('$lib/server/posts.js');
+    const post = params.category === '_permalink'
+        ? (await getPost('', params.slug)) || (await getPostByPermalink(`/${params.slug}`))
+        : await getPost(params.category, params.slug);
 
     if (!post) {
         throw error(404, 'Post not found');
@@ -79,13 +81,31 @@ export async function GET({ params, cookies, fetch, url }) {
         return `<div class="video-embed"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
     });
 
+    // Artifact replacement - extract artifacts BEFORE markdown parsing to preserve HTML
+    const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
+    /** @type {Record<string, string>} */
+    const artifacts = {};
+    rawContent = rawContent.replace(artifactRegex, (/** @type {string} */ match, /** @type {string} */ content) => {
+        const id = Math.random().toString(36).substr(2, 9);
+        artifacts[id] = content;
+        return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
+    });
+
     // Create a new Marked instance for this request
     const customMarked = new Marked({
         gfm: true,
-        breaks: true
+        breaks: true,
+        pedantic: false
     });
 
-    const html = customMarked.parse(rawContent);
+    const html = await customMarked.parse(rawContent);
+    
+    // Restore artifacts with their HTML intact, no height limits, transparent background
+    let finalHtml = html;
+    Object.entries(artifacts).forEach(([id, content]) => {
+        const artifactHtml = `<div class="artifact-container"><div>${content}</div></div>`;
+        finalHtml = finalHtml.replace(`<div data-artifact-placeholder="${id}"></div>`, artifactHtml);
+    });
 
-    return json({ html });
+    return json({ html: finalHtml });
 }

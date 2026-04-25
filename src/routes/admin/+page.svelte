@@ -2,11 +2,69 @@
     export let data;
     let posts = data.posts;
     let searchQuery = '';
+    /** @type {{ id: number, message: string, type: string }[]} */
+    let toasts = [];
+    let toastId = 0;
+    /** @type {{ title: string, message: string, confirmText: string, cancelText: string, danger: boolean, resolve: (value: boolean) => void } | null} */
+    let confirmToast = null;
 
     $: filteredPosts = posts.filter(p => 
         (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
         (p.slug || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    /** @param {string} message @param {string} [type] @param {number} [timeout] */
+    function showToast(message, type = 'info', timeout = 3500) {
+        const toast = { id: ++toastId, message, type };
+        toasts = [...toasts, toast];
+        if (timeout > 0) setTimeout(() => dismissToast(toast.id), timeout);
+    }
+
+    /** @param {number} id */
+    function dismissToast(id) {
+        toasts = toasts.filter((toast) => toast.id !== id);
+    }
+
+    /** @param {{ title: string, message: string, confirmText?: string, cancelText?: string, danger?: boolean }} options */
+    function requestConfirmation(options) {
+        return new Promise((resolve) => {
+            confirmToast = {
+                title: options.title,
+                message: options.message,
+                confirmText: options.confirmText || 'Confirm',
+                cancelText: options.cancelText || 'Cancel',
+                danger: Boolean(options.danger),
+                resolve,
+            };
+        });
+    }
+
+    /** @param {boolean} value */
+    function resolveConfirmation(value) {
+        if (!confirmToast) return;
+        confirmToast.resolve(value);
+        confirmToast = null;
+    }
+
+    /** @param {any} post */
+    async function deletePost(post) {
+        const shouldDelete = await requestConfirmation({
+            title: 'Delete page?',
+            message: `Delete "${post.title || post.slug}" and its version history?`,
+            confirmText: 'Delete',
+            danger: true,
+        });
+        if (!shouldDelete) return;
+
+        const res = await fetch(`/api/admin/posts?id=${post.id}`, { method: 'DELETE' });
+        if (res.ok) {
+            posts = posts.filter((item) => item.id !== post.id);
+            showToast('Page deleted.', 'success');
+        } else {
+            const result = await res.json().catch(() => ({}));
+            showToast(result.error || 'Failed to delete page.', 'error');
+        }
+    }
 </script>
 
 <svelte:head>
@@ -51,7 +109,7 @@
                             </div>
                         </td>
                         <td class="col-actions text-right">
-                            <button class="btn btn-gray-sm" onclick={() => confirm('Deletion not implemented yet. Delete via database.')}><i class="fa-solid fa-trash-can"></i> Delete</button>
+                            <button class="btn btn-gray-sm" onclick={() => deletePost(post)}><i class="fa-solid fa-trash-can"></i> Delete</button>
                             <a href={`${post.url}`} target="_blank" class="btn btn-gray-sm"><i class="fa-solid fa-eye"></i> View</a>
                         </td>
                     </tr>
@@ -64,6 +122,31 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<div class="toast-region" aria-live="polite" aria-atomic="false">
+    {#if confirmToast}
+        <div class="toast-card confirm" class:danger={confirmToast.danger}>
+            <div class="toast-title">{confirmToast.title}</div>
+            <div class="toast-message">{confirmToast.message}</div>
+            <div class="toast-actions">
+                <button class="toast-btn secondary" onclick={() => resolveConfirmation(false)}>
+                    {confirmToast.cancelText}
+                </button>
+                <button class="toast-btn primary" onclick={() => resolveConfirmation(true)}>
+                    {confirmToast.confirmText}
+                </button>
+            </div>
+        </div>
+    {/if}
+    {#each toasts as toast (toast.id)}
+        <div class="toast-card {toast.type}">
+            <div class="toast-message">{toast.message}</div>
+            <button class="toast-close" onclick={() => dismissToast(toast.id)} aria-label="Dismiss notification">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    {/each}
 </div>
 
 <style>
@@ -231,6 +314,80 @@
         font-style: italic;
     }
 
+    .toast-region {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 5000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: min(360px, calc(100vw - 32px));
+        pointer-events: none;
+    }
+
+    .toast-card {
+        position: relative;
+        padding: 14px 42px 14px 16px;
+        border-radius: 10px;
+        border: 1px solid #e7e1dc;
+        background: #fff;
+        color: #2d2a27;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+        font-size: 14px;
+        line-height: 1.45;
+        pointer-events: auto;
+    }
+
+    .toast-card.success { border-color: #b9e7c2; }
+    .toast-card.error,
+    .toast-card.confirm.danger { border-color: #ffb8b8; }
+    .toast-card.confirm { padding-right: 16px; }
+
+    .toast-title {
+        margin-bottom: 4px;
+        font-weight: 800;
+    }
+
+    .toast-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .toast-btn {
+        border: 0;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-family: 'Manrope', sans-serif;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .toast-btn.secondary {
+        background: #f1eee9;
+        color: #4f4a45;
+    }
+
+    .toast-btn.primary {
+        background: #ff5200;
+        color: #fff;
+    }
+
+    .toast-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #777;
+        cursor: pointer;
+    }
+
     /* Dark Mode */
     :global(.dark) .cms-wrapper { color: #eee; }
     :global(.dark) .header-left h1 { color: #eee; }
@@ -244,4 +401,7 @@
     :global(.dark) .file-link:hover { color: #f38a00; }
     :global(.dark) .btn-gray-sm { background: #444; }
     :global(.dark) .btn-gray-sm:hover { background: #555; }
+    :global(.dark) .toast-card { background: #1f1f1f; border-color: #333; color: #eee; box-shadow: 0 14px 34px rgba(0,0,0,.35); }
+    :global(.dark) .toast-btn.secondary { background: #333; color: #eee; }
+    :global(.dark) .toast-close { color: #aaa; }
 </style>

@@ -24,6 +24,86 @@
   let postContentText = $state("");
   let decodedContent = $state("");
 
+  function defaultAvatar() {
+    return "/assets/img/default-avatar.svg";
+  }
+
+  /** @typedef {{ name: string, avatar: string }} PostAuthor */
+
+  /** @param {any} value */
+  function parseAuthorList(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === "object") return [value];
+    const raw = String(value).trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === "object") return [parsed];
+    } catch {
+      // Plain custom fields can use comma-separated author names.
+    }
+    return raw.split(",").map((name) => name.trim()).filter(Boolean);
+  }
+
+  /** @param {any} author */
+  function normalizeAuthor(author) {
+    if (!author) return null;
+    if (typeof author === "string") {
+      return { name: author, avatar: defaultAvatar() };
+    }
+    const name = author.displayName || author.name || author.username || author.title || author.label;
+    if (!name) return null;
+    return {
+      name,
+      avatar: author.avatar || author.profilePicture || author.image || author.photo || defaultAvatar(),
+    };
+  }
+
+  /** @param {PostAuthor | null} author @returns {author is PostAuthor} */
+  function isPostAuthor(author) {
+    return Boolean(author);
+  }
+
+  function getPostAuthors() {
+    const candidates = [
+      ...parseAuthorList(data.authors),
+      ...parseAuthorList(data.author),
+      ...parseAuthorList(data.editors),
+      ...parseAuthorList(data.editor),
+      ...parseAuthorList(data.collaborators),
+      ...parseAuthorList(data.collaborator),
+    ];
+
+    if (data.author_name || data.author_avatar) {
+      candidates.unshift({
+        name: data.author_name,
+        avatar: data.author_avatar,
+      });
+    }
+
+    const seen = new Set();
+    const authors = candidates
+      .map(normalizeAuthor)
+      .filter(isPostAuthor)
+      .filter((author) => {
+        const key = author.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+    return authors.length ? authors : [{ name: "Materio", avatar: defaultAvatar() }];
+  }
+
+  /** @param {PostAuthor[]} authors */
+  function authorNames(authors) {
+    return authors.map((author) => author.name).join(", ");
+  }
+
+  let postAuthors = $derived(() => getPostAuthors());
+
   /** @param {string|undefined|null} dateStr */
   function formatDate(dateStr) {
     if (!dateStr) return "";
@@ -131,7 +211,7 @@
       // Fetch post content dynamically to keep view-source clean
       if (!data.isLocked) {
         try {
-          const category = encodeURIComponent(data.category || "");
+          const category = encodeURIComponent(data.categorySlug || data.category || "_permalink");
           const slug = encodeURIComponent(data.slug || "");
           const res = await fetch(`/api/posts/content/${category}/${slug}`);
           if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -434,22 +514,27 @@
           <!-- Author Profile Section -->
           <div style="display: flex; align-items: center; gap: 0.8rem;">
             {#if !data["hide_author"]}
-              <div
-                class="author-avatar"
-                style="width: 35px; height: 35px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(0,0,0,0.1);"
-              >
-                <img
-                  src="/assets/img/default-avatar.svg"
-                  alt="Author"
-                  style="width: 100%; height: 100%; object-fit: cover;"
-                />
+              <div class="post-author-stack" aria-label="Authors">
+                {#each postAuthors().slice(0, 4) as author}
+                  <div
+                    class="author-avatar stacked-author-avatar"
+                    title={author.name}
+                    style="width: 35px; height: 35px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(0,0,0,0.1);"
+                  >
+                    <img
+                      src={author.avatar}
+                      alt={author.name}
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    />
+                  </div>
+                {/each}
               </div>
               <div class="author-info">
                 <div
                   class="author-name"
                   style="font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.2;"
                 >
-                  Materio
+                  {authorNames(postAuthors())}
                 </div>
               </div>
             {/if}

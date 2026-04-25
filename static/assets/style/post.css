@@ -61,7 +61,7 @@ body.dark-mode .post-image-frame {
   flex: 1;
   z-index: 1;
   min-width: 0;
-  padding-right: 120px;
+  padding-right: 124px;
 }
 
 .attachment-title {
@@ -80,9 +80,10 @@ body.dark-mode .post-image-frame {
 
 .attachment-preview {
   position: absolute;
-  bottom: -70px;
-  right: 20px;
-  transform: rotate(8deg);
+  top: calc(50% + 18px);
+  right: 16px;
+  transform: translateY(-50%) rotate(8deg);
+  transform-origin: center;
   border: 1px solid #ccc;
   background: #fffbea;
   width: 100px;
@@ -92,6 +93,7 @@ body.dark-mode .post-image-frame {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 /* Video embed styles */
@@ -210,7 +212,7 @@ body.dark-mode .post-image-frame {
   }
 
   .attachment-details {
-    padding-right: 90px;
+    padding-right: 96px;
   }
 
   .attachment-title {
@@ -226,7 +228,6 @@ body.dark-mode .post-image-frame {
     width: 80px;
     height: 100px;
     right: 10px;
-    bottom: -50px;
   }
 
   /* Video responsive adjustments */
@@ -264,7 +265,7 @@ body.dark-mode .post-image-frame {
   }
 
   .attachment-details {
-    padding-right: 70px;
+    padding-right: 74px;
   }
 
   .attachment-title {
@@ -279,7 +280,6 @@ body.dark-mode .post-image-frame {
     width: 60px;
     height: 80px;
     right: 8px;
-    bottom: -40px;
   }
 }
 
@@ -323,14 +323,35 @@ body.dark-mode .post-image-frame {
 
 .attachment-preview canvas {
   width: 100%;
-  height: 100%;
+  height: 100% !important;
   object-fit: cover;
+  display: block;
 }
 
 .attachment-preview img {
   width: 100%;
-  height: 100%;
+  height: 100% !important;
   object-fit: cover;
+  display: block;
+}
+
+/* Artifact container styles */
+.artifact-container {
+  margin: 2rem 0;
+  position: relative;
+  background: transparent;
+}
+
+.artifact-container > div {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: auto;
+  background: transparent;
+}
+
+.artifact-container > div > * {
+  flex: 1;
 }
 
 /* Dark mode styles for attachments */
@@ -339,9 +360,28 @@ body.dark-mode .attachment-card {
   border-color: transparent;
 }
 
+body.dark-mode .artifact-container > div {
+  background: transparent;
+}
+
 /* Author Profile Styles */
+.post-author-stack {
+  display: flex;
+  align-items: center;
+}
+
 .author-avatar {
   transition: transform 0.2s ease;
+}
+
+.stacked-author-avatar {
+  flex-shrink: 0;
+  background: #111;
+  border-color: #e7e3df !important;
+}
+
+.stacked-author-avatar + .stacked-author-avatar {
+  margin-left: -10px;
 }
 
 .author-avatar:hover {
@@ -360,6 +400,10 @@ body.dark-mode .attachment-card {
 /* Dark mode author styles */
 body.dark-mode .author-avatar {
   border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+body.dark-mode .stacked-author-avatar {
+  border-color: #1a1a1a !important;
 }
 
 body.dark-mode .author-info .author-name {
@@ -1139,7 +1183,7 @@ body {
 .post-body video,
 .post-body canvas,
 .attachment-card,
-.attachment-card * {
+.attachment-card *:not(.attachment-preview):not(.attachment-preview *) {
   max-width: 100% !important;
   height: auto !important;
 }

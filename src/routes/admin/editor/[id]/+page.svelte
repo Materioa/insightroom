@@ -112,6 +112,206 @@
     let isUploading = false;
     let uploadStatus = "";
     let coverUploading = false;
+    /** @type {{ id: number, message: string, type: string }[]} */
+    let toasts = [];
+    let toastId = 0;
+    /** @type {{ title: string, message: string, confirmText: string, cancelText: string, danger: boolean, resolve: (value: boolean) => void } | null} */
+    let confirmToast = null;
+
+    /** @param {string} message @param {string} [type] @param {number} [timeout] */
+    function showToast(message, type = "info", timeout = 3500) {
+        const toast = { id: ++toastId, message, type };
+        toasts = [...toasts, toast];
+        if (timeout > 0) {
+            setTimeout(() => dismissToast(toast.id), timeout);
+        }
+    }
+
+    /** @param {number} id */
+    function dismissToast(id) {
+        toasts = toasts.filter((toast) => toast.id !== id);
+    }
+
+    /**
+     * @param {{ title: string, message: string, confirmText?: string, cancelText?: string, danger?: boolean }} options
+     */
+    function requestConfirmation(options) {
+        return new Promise((resolve) => {
+            confirmToast = {
+                title: options.title,
+                message: options.message,
+                confirmText: options.confirmText || "Confirm",
+                cancelText: options.cancelText || "Cancel",
+                danger: Boolean(options.danger),
+                resolve,
+            };
+        });
+    }
+
+    /** @param {boolean} value */
+    function resolveConfirmation(value) {
+        if (!confirmToast) return;
+        confirmToast.resolve(value);
+        confirmToast = null;
+    }
+
+    function defaultAvatar() {
+        return "/assets/img/default-avatar.svg";
+    }
+
+    /** @typedef {{ name: string, avatar: string }} HistoryAuthor */
+
+    /** @param {any} value */
+    function parseAuthorList(value) {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (typeof value === "object") return [value];
+        const raw = String(value).trim();
+        if (!raw) return [];
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+            if (parsed && typeof parsed === "object") return [parsed];
+        } catch {
+            // Custom tags often use comma-separated names.
+        }
+        return raw.split(",").map((name) => name.trim()).filter(Boolean);
+    }
+
+    /** @param {any} author */
+    function normalizeAuthor(author) {
+        if (!author) return null;
+        if (typeof author === "string") {
+            return { name: author, avatar: defaultAvatar() };
+        }
+        const name = author.displayName || author.name || author.username || author.title || author.label;
+        if (!name) return null;
+        return {
+            name,
+            avatar: author.avatar || author.profilePicture || author.image || author.photo || defaultAvatar(),
+        };
+    }
+
+    /** @param {HistoryAuthor | null} author @returns {author is HistoryAuthor} */
+    function isHistoryAuthor(author) {
+        return Boolean(author);
+    }
+
+    /** @param {any} source */
+    function getAuthors(source) {
+        const metadata = source?.metadata || source || {};
+        const candidates = [
+            ...parseAuthorList(metadata.authors),
+            ...parseAuthorList(metadata.author),
+            ...parseAuthorList(metadata.editors),
+            ...parseAuthorList(metadata.editor),
+            ...parseAuthorList(metadata.collaborators),
+            ...parseAuthorList(metadata.collaborator),
+        ];
+
+        if (metadata.author_name || metadata.author_avatar) {
+            candidates.unshift({
+                name: metadata.author_name,
+                avatar: metadata.author_avatar,
+            });
+        }
+
+        if (source?.saved_by_name || source?.saved_by_avatar) {
+            candidates.unshift({
+                name: source.saved_by_display_name || source.saved_by_name,
+                avatar: source.saved_by_avatar,
+            });
+        }
+
+        const seen = new Set();
+        return candidates
+            .map(normalizeAuthor)
+            .filter(isHistoryAuthor)
+            .filter((author) => {
+                const key = author.name.toLowerCase();
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+    }
+
+    /** @param {any} version */
+    function versionAuthors(version) {
+        const authors = getAuthors(version);
+        return authors.length ? authors : [{ name: "Admin", avatar: defaultAvatar() }];
+    }
+
+    /** @param {HistoryAuthor[]} authors */
+    function authorNames(authors) {
+        return authors.map((author) => author.name).join(", ");
+    }
+
+    /** @param {string} key */
+    function isAuthorMetadataKey(key) {
+        return ["authors", "author", "editors", "editor", "collaborators", "collaborator"].includes(key.trim().toLowerCase());
+    }
+
+    /** @param {string} value */
+    function editableAuthors(value) {
+        const authors = parseAuthorList(value)
+            .map(normalizeAuthor)
+            .filter(isHistoryAuthor);
+        return authors.length ? authors : [{ name: "", avatar: "" }];
+    }
+
+    /** @param {HistoryAuthor[]} authors */
+    function serializeAuthors(authors) {
+        const cleanAuthors = authors
+            .map((author) => ({
+                displayName: author.name.trim(),
+                avatar: author.avatar.trim(),
+            }))
+            .filter((author) => author.displayName || author.avatar);
+        return JSON.stringify(cleanAuthors, null, 2);
+    }
+
+    /**
+     * @param {number} fieldIndex
+     * @param {number} authorIndex
+     * @param {"name" | "avatar"} field
+     * @param {string} value
+     */
+    function updateAuthorMetadataField(fieldIndex, authorIndex, field, value) {
+        const authors = editableAuthors(metadataArray[fieldIndex].value);
+        authors[authorIndex] = { ...authors[authorIndex], [field]: value };
+        metadataArray = metadataArray.map((item, index) =>
+            index === fieldIndex ? { ...item, value: serializeAuthors(authors) } : item,
+        );
+    }
+
+    /** @param {number} fieldIndex */
+    function addAuthorMetadataRow(fieldIndex) {
+        const authors = editableAuthors(metadataArray[fieldIndex].value);
+        metadataArray = metadataArray.map((item, index) =>
+            index === fieldIndex
+                ? { ...item, value: serializeAuthors([...authors, { name: "", avatar: "" }]) }
+                : item,
+        );
+    }
+
+    /** @param {number} fieldIndex @param {number} authorIndex */
+    function removeAuthorMetadataRow(fieldIndex, authorIndex) {
+        const authors = editableAuthors(metadataArray[fieldIndex].value).filter((_, index) => index !== authorIndex);
+        metadataArray = metadataArray.map((item, index) =>
+            index === fieldIndex ? { ...item, value: serializeAuthors(authors) } : item,
+        );
+    }
+
+    $: historyAuthors = (() => {
+        const seen = new Set();
+        const all = [...getAuthors(post), ...versions.flatMap((version) => getAuthors(version))];
+        return all.filter((author) => {
+            const key = author.name.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    })();
 
     /** @param {DragEvent} e */
     async function handleFileDrop(e) {
@@ -137,7 +337,7 @@
             !file.type.startsWith("image/") &&
             !file.type.startsWith("video/")
         ) {
-            alert("Only images and videos are allowed.");
+            showToast("Only images and videos are allowed.", "warning");
             return;
         }
 
@@ -158,14 +358,15 @@
                 const markdownImage = `\n![${file.name}](${result.url})\n`;
                 insertAtCursor(markdownImage);
                 uploadStatus = "Uploaded successfully!";
+                showToast("Media uploaded.", "success");
                 setTimeout(() => (uploadStatus = ""), 3000);
             } else {
-                alert(result.error || "Upload failed");
+                showToast(result.error || "Upload failed", "error");
                 uploadStatus = "";
             }
         } catch (err) {
             console.error(err);
-            alert("Upload failed");
+            showToast("Upload failed", "error");
             uploadStatus = "";
         }
 
@@ -187,7 +388,7 @@
             !file.type.startsWith("image/") &&
             !file.type.startsWith("video/")
         ) {
-            alert("Only images and videos are allowed for cover.");
+            showToast("Only images and videos are allowed for cover.", "warning");
             return;
         }
 
@@ -204,12 +405,13 @@
             const result = await res.json();
             if (result.url) {
                 image = result.url;
+                showToast("Cover uploaded.", "success");
             } else {
-                alert(result.error || "Upload failed");
+                showToast(result.error || "Upload failed", "error");
             }
         } catch (err) {
             console.error(err);
-            alert("Upload failed");
+            showToast("Upload failed", "error");
         }
         coverUploading = false;
     }
@@ -247,6 +449,11 @@
     }
 
     async function savePost() {
+        if (!title.trim()) {
+            showToast("Title is required.", "warning");
+            return;
+        }
+
         /** @type {Record<string, any>} */
         const payloadMetadata = {
             category,
@@ -272,14 +479,15 @@
             metadata: {
                 ...payloadMetadata,
                 author_name:
+                    data.user?.displayName ||
                     post.metadata.author_name ||
                     data.user?.name ||
                     data.user?.username ||
                     "Materio Admin",
                 author_avatar:
-                    post.metadata.author_avatar ||
-                    data.user?.avatar ||
                     data.user?.profilePicture ||
+                    data.user?.avatar ||
+                    post.metadata.author_avatar ||
                     "/assets/img/default-avatar.svg",
             },
         };
@@ -292,12 +500,14 @@
 
         const result = await res.json();
         if (result.success) {
-            alert("Saved successfully!");
+            showToast("Saved successfully.", "success");
             if (id === "new") {
-                window.location.href = `/admin/editor/${result.id}`;
+                setTimeout(() => {
+                    window.location.href = `/admin/editor/${result.id}`;
+                }, 500);
             }
         } else {
-            alert("Error saving: " + result.error);
+            showToast("Error saving: " + result.error, "error");
         }
     }
 
@@ -306,15 +516,23 @@
             window.location.href = "/admin";
             return;
         }
-        if (confirm("Are you sure you want to delete this post?")) {
+        const shouldDelete = await requestConfirmation({
+            title: "Delete post?",
+            message: "This will permanently delete this post and its version history.",
+            confirmText: "Delete",
+            danger: true,
+        });
+        if (shouldDelete) {
             const res = await fetch(`/api/admin/posts?id=${id}`, {
                 method: "DELETE",
             });
             if (res.ok) {
-                alert("Deleted successfully");
-                window.location.href = "/admin";
+                showToast("Deleted successfully.", "success");
+                setTimeout(() => {
+                    window.location.href = "/admin";
+                }, 500);
             } else {
-                alert("Failed to delete");
+                showToast("Failed to delete.", "error");
             }
         }
     }
@@ -331,7 +549,7 @@
 
     async function viewHistory() {
         if (id === "new") {
-            alert("Save the post first to view history.");
+            showToast("Save the post first to view history.", "warning");
             return;
         }
         showHistory = true;
@@ -343,10 +561,11 @@
             if (data.success) {
                 versions = data.versions;
             } else {
-                alert("Failed to load history");
+                showToast("Failed to load history.", "error");
             }
         } catch (e) {
             console.error(e);
+            showToast("Failed to load history.", "error");
         }
         loadingHistory = false;
     }
@@ -456,13 +675,35 @@
                 },
             );
 
+            // Artifact replacement - extract artifacts BEFORE markdown parsing to preserve HTML
+            const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
+            /** @type {Record<string, string>} */
+            const artifacts = {};
+            rawContent = rawContent.replace(artifactRegex, (/** @type {string} */ match, /** @type {string} */ contentArtifact) => {
+                const id = Math.random().toString(36).substr(2, 9);
+                artifacts[id] = contentArtifact;
+                return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
+            });
+
             previewHtml = await customMarked.parse(rawContent);
+            
+            // Restore artifacts with their HTML intact, no height limits, transparent background
+            Object.entries(artifacts).forEach(([id, content]) => {
+                const artifactHtml = `<div class="artifact-container"><div>${content}</div></div>`;
+                previewHtml = previewHtml.replace(`<div data-artifact-placeholder="${id}"></div>`, artifactHtml);
+            });
         }
     }
 
     $: permalinkField = metadataArray.find(m => m.key === 'permalink');
     $: permalink = permalinkField && permalinkField.value ? permalinkField.value : null;
-    $: liveUrl = permalink ? (permalink.startsWith('/') || permalink.startsWith('http') ? permalink : `/${permalink}`) : `/${category || 'blog'}/${slug}`;
+    $: liveUrl = permalink
+        ? (permalink.startsWith('/') || permalink.startsWith('http') ? permalink : `/${permalink}`)
+        : draft
+            ? `/draft/${slug}`
+            : category
+                ? `/${category}/${slug}`
+                : `/${slug}`;
 
 </script>
 
@@ -795,12 +1036,59 @@
                                 <i class="fa-solid fa-chevron-down chevron"></i>
                             </div>
                             <div class="meta-body">
-                                <input
-                                    type="text"
-                                    bind:value={item.value}
-                                    class="meta-input"
-                                    aria-label="Field value"
-                                />
+                                {#if isAuthorMetadataKey(item.key)}
+                                    <div class="author-field-editor">
+                                        {#each editableAuthors(item.value) as author, authorIndex}
+                                            <div class="author-field-row">
+                                                <input
+                                                    type="text"
+                                                    value={author.name}
+                                                    class="meta-input"
+                                                    placeholder="Display name"
+                                                    aria-label="Author display name"
+                                                    oninput={(e) =>
+                                                        updateAuthorMetadataField(
+                                                            i,
+                                                            authorIndex,
+                                                            "name",
+                                                            e.currentTarget.value,
+                                                        )}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={author.avatar}
+                                                    class="meta-input"
+                                                    placeholder="Avatar URL"
+                                                    aria-label="Author avatar URL"
+                                                    oninput={(e) =>
+                                                        updateAuthorMetadataField(
+                                                            i,
+                                                            authorIndex,
+                                                            "avatar",
+                                                            e.currentTarget.value,
+                                                        )}
+                                                />
+                                                <button
+                                                    class="btn-icon"
+                                                    onclick={() => removeAuthorMetadataRow(i, authorIndex)}
+                                                    aria-label="Remove author"
+                                                >
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        {/each}
+                                        <button class="btn-new-meta" onclick={() => addAuthorMetadataRow(i)}>
+                                            <i class="fa-solid fa-circle-plus"></i> Add author
+                                        </button>
+                                    </div>
+                                {:else}
+                                    <input
+                                        type="text"
+                                        bind:value={item.value}
+                                        class="meta-input"
+                                        aria-label="Field value"
+                                    />
+                                {/if}
                             </div>
                         </div>
                     {/each}
@@ -891,6 +1179,7 @@
                     {:else}
                         <ul class="version-list">
                             {#each versions as v}
+                                {@const authors = versionAuthors(v)}
                                 <li class:active={selectedVersion === v}>
                                     <button
                                         class="version-btn"
@@ -903,12 +1192,37 @@
                                             {formatVersionDate(v.version_saved_at)}
                                         </div>
                                         <div class="v-author">
-                                            {formatVersionTime(v.version_saved_at)} - {v.saved_by_name || "Admin"}
+                                            <span>{formatVersionTime(v.version_saved_at)} -</span>
+                                            {#if authors.length > 1}
+                                                <span class="author-stack mini" aria-label="Authors">
+                                                    {#each authors.slice(0, 3) as author}
+                                                        <img src={author.avatar} alt={author.name} class="history-avatar stacked" />
+                                                    {/each}
+                                                </span>
+                                                <span>{authorNames(authors)}</span>
+                                            {:else}
+                                                <img
+                                                    src={authors[0].avatar}
+                                                    alt={authors[0].name}
+                                                    class="history-avatar"
+                                                />
+                                                <span>{authors[0].name}</span>
+                                            {/if}
                                         </div>
                                     </button>
                                 </li>
                             {/each}
                         </ul>
+                        {#if historyAuthors.length > 1}
+                            <div class="history-authors">
+                                <div class="history-authors-label">{authorNames(historyAuthors)}</div>
+                                <div class="author-stack">
+                                    {#each historyAuthors.slice(0, 5) as author}
+                                        <img src={author.avatar} alt={author.name} title={author.name} class="history-avatar large stacked" />
+                                    {/each}
+                                </div>
+                            </div>
+                        {/if}
                     {/if}
                 </div>
                 <div
@@ -991,6 +1305,31 @@
         </div>
     </div>
 {/if}
+
+<div class="toast-region" aria-live="polite" aria-atomic="false">
+    {#if confirmToast}
+        <div class="toast-card confirm" class:danger={confirmToast.danger}>
+            <div class="toast-title">{confirmToast.title}</div>
+            <div class="toast-message">{confirmToast.message}</div>
+            <div class="toast-actions">
+                <button class="toast-btn secondary" onclick={() => resolveConfirmation(false)}>
+                    {confirmToast.cancelText}
+                </button>
+                <button class="toast-btn primary" onclick={() => resolveConfirmation(true)}>
+                    {confirmToast.confirmText}
+                </button>
+            </div>
+        </div>
+    {/if}
+    {#each toasts as toast (toast.id)}
+        <div class="toast-card {toast.type}">
+            <div class="toast-message">{toast.message}</div>
+            <button class="toast-close" onclick={() => dismissToast(toast.id)} aria-label="Dismiss notification">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    {/each}
+</div>
 
 <style>
     :global(body) {
@@ -1289,6 +1628,19 @@
         flex-direction: column;
     }
 
+    .author-field-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .author-field-row {
+        display: grid;
+        grid-template-columns: minmax(140px, 0.8fr) minmax(180px, 1.2fr) 32px;
+        gap: 8px;
+        align-items: center;
+    }
+
     /* Modals */
     .modal-overlay {
         position: fixed;
@@ -1337,14 +1689,18 @@
     .history-sidebar {
         width: 250px;
         border-right: 1px solid #eee;
-        overflow-y: auto;
         background: #fafafa;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     .version-list {
         list-style: none;
         padding: 0;
         margin: 0;
+        flex: 1;
+        overflow-y: auto;
     }
 
     .version-list li {
@@ -1373,8 +1729,59 @@
         margin-bottom: 4px;
     }
     .v-author {
+        display: flex;
+        align-items: center;
+        gap: 5px;
         font-size: 12px;
         color: #666;
+    }
+
+    .history-avatar {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid #e7e3df;
+        background: #111;
+        flex-shrink: 0;
+    }
+
+    .history-avatar.large {
+        width: 44px;
+        height: 44px;
+        border: 2px solid #e7e3df;
+    }
+
+    .author-stack {
+        display: flex;
+        align-items: center;
+    }
+
+    .author-stack.mini {
+        margin-left: 2px;
+    }
+
+    .history-avatar.stacked + .history-avatar.stacked {
+        margin-left: -8px;
+    }
+
+    .author-stack .history-avatar.large + .history-avatar.large {
+        margin-left: -12px;
+    }
+
+    .history-authors {
+        padding: 14px 15px 16px;
+        border-top: 1px solid #eee;
+        background: #fafafa;
+    }
+
+    .history-authors-label {
+        margin-bottom: 8px;
+        color: #666;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
     .history-main {
@@ -1644,9 +2051,120 @@
     :global(body.dark) .content-textarea {
         color: #eee;
     }
-    :global(body.dark) .preview-box table th,
-    :global(body.dark) .preview-box table td {
-        border-color: #444;
+
+    .toast-region {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 5000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: min(360px, calc(100vw - 32px));
+        pointer-events: none;
+    }
+
+    .toast-card {
+        position: relative;
+        padding: 14px 42px 14px 16px;
+        border-radius: 10px;
+        border: 1px solid #e7e1dc;
+        background: #fff;
+        color: #2d2a27;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+        font-family: "Manrope", sans-serif;
+        font-size: 14px;
+        line-height: 1.45;
+        pointer-events: auto;
+    }
+
+    .toast-card.success {
+        border-color: #b9e7c2;
+    }
+
+    .toast-card.warning {
+        border-color: #ffe08a;
+    }
+
+    .toast-card.error {
+        border-color: #ffb8b8;
+    }
+
+    .toast-card.confirm {
+        padding-right: 16px;
+    }
+
+    .toast-card.confirm.danger {
+        border-color: #ffb8b8;
+    }
+
+    .toast-title {
+        margin-bottom: 4px;
+        font-weight: 800;
+        font-size: 14px;
+    }
+
+    .toast-message {
+        color: inherit;
+    }
+
+    .toast-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .toast-btn {
+        border: 0;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-family: "Manrope", sans-serif;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .toast-btn.secondary {
+        background: #f1eee9;
+        color: #4f4a45;
+    }
+
+    .toast-btn.primary {
+        background: #ff5200;
+        color: #fff;
+    }
+
+    .toast-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #777;
+        cursor: pointer;
+    }
+
+    :global(body.dark) .toast-card {
+        background: #1f1f1f;
+        border-color: #333;
+        color: #eee;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+    }
+
+    :global(body.dark) .toast-btn.secondary {
+        background: #333;
+        color: #eee;
+    }
+
+    :global(body.dark) .toast-close {
+        color: #aaa;
+    }
+
+    :global(body.dark) .history-avatar {
+        border-color: #1a1a1a;
     }
 
     :global(body.dark) .meta-card {

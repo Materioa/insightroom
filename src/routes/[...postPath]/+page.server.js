@@ -14,6 +14,8 @@ export const load = async ({ params, parent }) => {
     const segments = path.split('/');
     if (segments.length === 2) {
         post = await getPost(segments[0], segments[1]);
+    } else if (segments.length === 1) {
+        post = await getPost('', segments[0]);
     }
 
     // 2. Fallback to permalink
@@ -47,6 +49,7 @@ export const load = async ({ params, parent }) => {
         image: post.image,
         slug: post.slug,
         category: post.category,
+        categorySlug: post.categorySlug,
         isLocked,
         token,
         accessTier,

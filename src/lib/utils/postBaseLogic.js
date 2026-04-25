@@ -718,19 +718,19 @@ function generateImagePreview(filePath, canvas, img) {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = 100;
-        canvas.height = 130;
-        const aspectRatio = img.width / img.height;
-        let drawWidth = 100;
-        let drawHeight = 100 / aspectRatio;
-        if (drawHeight > 130) {
-            drawHeight = 130;
-            drawWidth = 130 * aspectRatio;
-        }
-        const x = (100 - drawWidth) / 2;
-        const y = (130 - drawHeight) / 2;
+        const width = 100;
+        const height = 130;
+        canvas.width = width;
+        canvas.height = height;
+        const naturalWidth = img.naturalWidth || img.width;
+        const naturalHeight = img.naturalHeight || img.height;
+        const scale = Math.min(width / naturalWidth, height / naturalHeight);
+        const drawWidth = naturalWidth * scale;
+        const drawHeight = naturalHeight * scale;
+        const x = (width - drawWidth) / 2;
+        const y = (height - drawHeight) / 2;
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, 100, 130);
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, x, y, drawWidth, drawHeight);
     };
     img.onerror = () => generateGenericPreview('IMG', canvas, canvas.getContext('2d'));
@@ -750,15 +750,29 @@ async function generatePDFPreview(filePath, canvas) {
         // @ts-ignore
         const pdf = await pdfjsLib.getDocument(filePath).promise;
         const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 0.4 });
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = 100;
-        canvas.height = 130;
-        const scale = Math.min(100 / viewport.width, 130 / viewport.height);
-        const scaledViewport = page.getViewport({ scale: scale });
-        await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+        const width = 100;
+        const height = 130;
+        canvas.width = width;
+        canvas.height = height;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+
+        const viewport = page.getViewport({ scale: 1 });
+        const scale = Math.min(width / viewport.width, height / viewport.height);
+        const scaledViewport = page.getViewport({ scale });
+        const scratchCanvas = document.createElement('canvas');
+        scratchCanvas.width = Math.ceil(scaledViewport.width);
+        scratchCanvas.height = Math.ceil(scaledViewport.height);
+        const scratchCtx = scratchCanvas.getContext('2d');
+        if (!scratchCtx) return;
+
+        await page.render({ canvasContext: scratchCtx, viewport: scaledViewport }).promise;
+        const x = (width - scratchCanvas.width) / 2;
+        const y = (height - scratchCanvas.height) / 2;
+        ctx.drawImage(scratchCanvas, x, y);
     } catch (error) {
         console.error('PDF preview error:', error);
         generateGenericPreview('PDF', canvas, canvas.getContext('2d'));
