@@ -23,6 +23,7 @@
   let contentElement = $state();
   let postContentText = $state("");
   let decodedContent = $state("");
+  let isLoading = $state(true);
 
   function defaultAvatar() {
     return "/assets/img/default-avatar.svg";
@@ -217,6 +218,7 @@
           if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           const result = await res.json();
           decodedContent = result.html;
+          isLoading = false;
 
           // Now that content is in the DOM, initialize features
           setTimeout(async () => {
@@ -255,7 +257,10 @@
 
         } catch (e) {
           console.error("Failed to load post content:", e);
+          isLoading = false;
         }
+      } else {
+        isLoading = false;
       }
     }
 
@@ -333,9 +338,12 @@
       const duration = Math.round((Date.now() - startTime) / 1000);
     };
   });
+
   $effect(() => {
-    if (contentElement && contentElement.textContent) {
-      postContentText = contentElement.textContent;
+    if (decodedContent && contentElement) {
+      tick().then(() => {
+        postContentText = contentElement.textContent || "";
+      });
     }
   });
 </script>
@@ -401,62 +409,74 @@
       <div
         style="display: flex; justify-content: center; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;"
       >
-        <div
-          class="post-date-pill"
-          style="border-radius: 20px; padding: 0.4rem 0.8rem; font-size: 12px;"
-        >
-          {formatDate(data.date)}
-          {#if categories()}
-            • {categories()}
+        {#if isLoading}
+          <div class="skeleton" style="width: 140px; height: 28px; border-radius: 20px;"></div>
+        {:else}
+          <div
+            class="post-date-pill"
+            style="border-radius: 20px; padding: 0.4rem 0.8rem; font-size: 12px;"
+          >
+            {formatDate(data.date)}
+            {#if categories()}
+              • {categories()}
+            {/if}
+            <span class="reading-time">• {data.readingTime || 1} min read</span>
+          </div>
+
+          <!-- Print-only clean meta information -->
+          <div class="print-meta" style="display: none;">
+            {formatDate(data.date)}
+            {#if categories()}
+              • {categories()}
+            {/if}
+            <span class="reading-time">• {data.readingTime || 1} minute read</span
+            >
+          </div>
+
+          <!-- Previous Post Button -->
+          {#if data["previous_post"]}
+            <a
+              href={data["previous_post"]}
+              class="post-nav-button"
+              style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
+              title="Previous Post"
+            >
+              <i class="fa-solid fa-chevron-left" style="font-size: 12px;"></i>
+            </a>
           {/if}
-          <span class="reading-time">• {data.readingTime || 1} min read</span>
-        </div>
 
-        <!-- Print-only clean meta information -->
-        <div class="print-meta" style="display: none;">
-          {formatDate(data.date)}
-          {#if categories()}
-            • {categories()}
+          <!-- Next Post Button -->
+          {#if data["next_post"]}
+            <a
+              href={data["next_post"]}
+              class="post-nav-button"
+              style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
+              title="Next Post"
+            >
+              <i class="fa-solid fa-chevron-right" style="font-size: 12px;"></i>
+            </a>
           {/if}
-          <span class="reading-time">• {data.readingTime || 1} minute read</span
-          >
-        </div>
-
-        <!-- Previous Post Button -->
-        {#if data["previous_post"]}
-          <a
-            href={data["previous_post"]}
-            class="post-nav-button"
-            style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
-            title="Previous Post"
-          >
-            <i class="fa-solid fa-chevron-left" style="font-size: 12px;"></i>
-          </a>
-        {/if}
-
-        <!-- Next Post Button -->
-        {#if data["next_post"]}
-          <a
-            href={data["next_post"]}
-            class="post-nav-button"
-            style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
-            title="Next Post"
-          >
-            <i class="fa-solid fa-chevron-right" style="font-size: 12px;"></i>
-          </a>
         {/if}
       </div>
 
-      <p class="post-title" style="font-size: 32px; font-weight: bold;">
-        {data.title}
-        {#if data.visibility === "private"}
-          <span class="private-badge"
-            ><i class="fa-solid fa-lock"></i> Private</span
-          >
+      <div class="post-title" style="font-size: 32px; font-weight: bold; min-height: 40px; display: flex; align-items: center; justify-content: center;">
+        {#if isLoading}
+          <div class="skeleton" style="width: 80%; height: 32px; border-radius: 8px;"></div>
+        {:else}
+          {data.title}
+          {#if data.visibility === "private"}
+            <span class="private-badge"
+              ><i class="fa-solid fa-lock"></i> Private</span
+            >
+          {/if}
         {/if}
-      </p>
+      </div>
 
-      {#if data.excerpt}
+      {#if isLoading}
+        <div style="margin-top: 0.8rem; display: flex; justify-content: center;">
+          <div class="skeleton" style="width: 60%; height: 20px; border-radius: 4px;"></div>
+        </div>
+      {:else if data.excerpt}
         <p
           class="post-description"
           style="font-size: 14px; margin-top: 0.5rem; color: var(--gray);"
@@ -465,7 +485,11 @@
         </p>
       {/if}
 
-      {#if data.image}
+      {#if isLoading}
+        <div style="display: block; position: relative; margin: 1.5rem auto; max-width: 700px;">
+          <div class="skeleton" style="width: 100%; height: 400px; border-radius: 17px;"></div>
+        </div>
+      {:else if data.image}
         <div
           style="display: block; position: relative; margin: 1.5rem auto; max-width: 700px;"
         >
@@ -505,8 +529,21 @@
         </div>
       {/if}
 
-      <!-- Author and Share Row -->
-      {#if !data["hide_author_share_row"]}
+      {#if isLoading}
+        <div
+          class="author-share-row"
+          style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem auto; max-width: 700px; padding: 0 1rem;"
+        >
+          <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <div class="skeleton" style="width: 35px; height: 35px; border-radius: 50%;"></div>
+            <div class="skeleton" style="width: 80px; height: 14px; border-radius: 4px;"></div>
+          </div>
+          <div style="display: flex; gap: 1rem;">
+             <div class="skeleton" style="width: 60px; height: 24px; border-radius: 20px;"></div>
+             <div class="skeleton" style="width: 20px; height: 20px; border-radius: 4px;"></div>
+          </div>
+        </div>
+      {:else if !data["hide_author_share_row"]}
         <div
           class="author-share-row"
           style="display: flex; justify-content: space-between; align-items: center; margin: 0.5rem auto; max-width: 700px; padding: 0 1rem;"
@@ -647,16 +684,25 @@
 
       <!-- AI Summary/Ask Card -->
       {#if !data.isLocked}
-        <AISummary
-          postContent={postContentText}
-          postTitle={data.title || ""}
-          canSummarize={data.summarize !== false &&
-            data.aiSummarize !== false &&
-            (data.accessTier === "plus" || data.accessTier === "super")}
-          canAsk={data.summarize !== false &&
-            data.aiAsk !== false &&
-            (data.accessTier === "plus" || data.accessTier === "super")}
-        />
+        {#if isLoading}
+          <div class="ai-card" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+             <div class="ai-actions-row" style="background: transparent; border: none; gap: 0.75rem;">
+                <div class="skeleton" style="flex: 1; height: 42px; border-radius: 32px;"></div>
+                <div class="skeleton" style="flex: 1; height: 42px; border-radius: 32px;"></div>
+             </div>
+          </div>
+        {:else}
+          <AISummary
+            postContent={postContentText}
+            postTitle={data.title || ""}
+            canSummarize={data.summarize !== false &&
+              data.aiSummarize !== false &&
+              (data.accessTier === "plus" || data.accessTier === "super")}
+            canAsk={data.summarize !== false &&
+              data.aiAsk !== false &&
+              (data.accessTier === "plus" || data.accessTier === "super")}
+          />
+        {/if}
       {/if}
     </div>
 
@@ -753,6 +799,18 @@
                 class="locked-img-dark"
               />
             </div>
+          </div>
+        {:else if isLoading}
+          <div class="post-body">
+            <div class="skeleton" style="width: 100%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
+            <div class="skeleton" style="width: 95%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
+            <div class="skeleton" style="width: 98%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
+            <div class="skeleton" style="width: 92%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
+            <div class="skeleton" style="width: 90%; height: 20px; margin-bottom: 24px; border-radius: 4px;"></div>
+            
+            <div class="skeleton" style="width: 100%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
+            <div class="skeleton" style="width: 96%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
+            <div class="skeleton" style="width: 94%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
           </div>
         {:else}
           <!-- Capture content for summary (hidden, no IDs to avoid duplicates) -->
