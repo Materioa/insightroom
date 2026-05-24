@@ -39,7 +39,8 @@ body.dark-mode .post-image-frame {
   display: flex;
   align-items: flex-start;
   background: #f8f9f8;
-  border-radius: 12px;
+  border-radius: 24px;
+  corner-shape: squircle;
   padding: 16px;
   width: 100%;
   max-width: 100%;
@@ -1295,27 +1296,24 @@ body.dark-mode .post-body table td {
 }
 
 .heading-anchor {
+  position: absolute;
+  right: 100%;
+  margin-right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-block;
-  margin-left: 10px;
   font-size: 0.65em;
   color: #ff8200;
-  opacity: 0.3;
+  opacity: 0;
   transition: opacity 0.2s ease;
   text-decoration: none;
-  padding: 4px 8px;
+  padding: 4px;
   cursor: pointer;
-  vertical-align: middle;
 }
 
 .heading-anchor:hover {
   opacity: 1 !important;
   color: #e67300;
-}
-
-.heading-anchor i {
-  font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", "Font Awesome 5 Pro", sans-serif !important;
-  font-weight: 400 !important;
-  font-style: normal !important;
 }
 
 /* Mobile: always show anchor on tap-capable devices */
@@ -1387,13 +1385,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+}
 
-    /* =========================================
-   NUCLEAR FONT SWITCHER (Final word)
-   ========================================= */
-    :root {
-      --font-primary: "Manrope", sans-serif;
-    }
+/* =========================================
+NUCLEAR FONT SWITCHER (Final word)
+========================================= */
+:root {
+  --font-primary: "Manrope", sans-serif;
+}
 
     body.font-secondary {
       --font-primary: "Inter", sans-serif !important;
@@ -1411,24 +1411,59 @@ body {
       --font-primary: "OpenDyslexicRegular", sans-serif !important;
     }
 
-    /* Force inheritance on everything that matters */
-    body,
-    .post-body,
-    .post-content,
-    .post-title,
-    h1,
-    h2,
-    h3,
-    h4,
-    p,
-    span,
-    li,
-    a {
+    /* Force inheritance on everything that matters ONLY when a custom font theme is active */
+    body.font-secondary,
+    body.font-secondary .post-body,
+    body.font-secondary .post-content,
+    body.font-secondary .post-title,
+    body.font-secondary h1,
+    body.font-secondary h2,
+    body.font-secondary h3,
+    body.font-secondary h4,
+    body.font-secondary p,
+    body.font-secondary span,
+    body.font-secondary li,
+    body.font-secondary a,
+    body.font-serif,
+    body.font-serif .post-body,
+    body.font-serif .post-content,
+    body.font-serif .post-title,
+    body.font-serif h1,
+    body.font-serif h2,
+    body.font-serif h3,
+    body.font-serif h4,
+    body.font-serif p,
+    body.font-serif span,
+    body.font-serif li,
+    body.font-serif a,
+    body.font-system,
+    body.font-system .post-body,
+    body.font-system .post-content,
+    body.font-system .post-title,
+    body.font-system h1,
+    body.font-system h2,
+    body.font-system h3,
+    body.font-system h4,
+    body.font-system p,
+    body.font-system span,
+    body.font-system li,
+    body.font-system a,
+    body.font-dyslexic,
+    body.font-dyslexic .post-body,
+    body.font-dyslexic .post-content,
+    body.font-dyslexic .post-title,
+    body.font-dyslexic h1,
+    body.font-dyslexic h2,
+    body.font-dyslexic h3,
+    body.font-dyslexic h4,
+    body.font-dyslexic p,
+    body.font-dyslexic span,
+    body.font-dyslexic li,
+    body.font-dyslexic a {
       font-family: var(--font-primary) !important;
     }
 
     /* Re-fix the icons which SHOULD NOT use the primary font */
-    .heading-anchor i,
     .fa,
     .fas,
     .far,
@@ -1436,7 +1471,5 @@ body {
     .fat,
     .fad,
     [class*="fa-"] {
-      font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", "Font Awesome 5 Pro", "FontAwesome", sans-serif !important;
+      font-family: var(--_fa-family, "Font Awesome 7 Pro", "Font Awesome 6 Pro", "Font Awesome 5 Pro", "FontAwesome", sans-serif) !important;
     }
-  }
-}

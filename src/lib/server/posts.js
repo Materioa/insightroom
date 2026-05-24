@@ -5,7 +5,14 @@ import { ObjectId } from 'mongodb';
 function getPostUrl(row) {
     const metadata = row.metadata || {};
     if (metadata.permalink) {
-        return metadata.permalink.startsWith('/') ? metadata.permalink : `/${metadata.permalink}`;
+        // Resolve any unresolved template placeholders in the permalink
+        let permalink = metadata.permalink;
+        permalink = permalink.replace(/:slug/gi, row.slug || '');
+        permalink = permalink.replace(/:title/gi, row.slug || '');
+        permalink = permalink.replace(/:category/gi, row.categorySlug || '');
+        // Clean up any double slashes that might result from empty replacements
+        permalink = permalink.replace(/\/\/+/g, '/');
+        return permalink.startsWith('/') ? permalink : `/${permalink}`;
     }
     return row.categorySlug ? `/${row.categorySlug}/${row.slug}` : `/${row.slug}`;
 }
@@ -33,6 +40,7 @@ export async function getAllPosts() {
             title: row.title,
             excerpt: row.excerpt,
             image: row.image,
+            claps: row.claps || 0,
             ...metadata
         };
     });
@@ -73,6 +81,7 @@ export async function getPost(categorySlug, slug) {
         title: row.title,
         excerpt: row.excerpt,
         image: row.image,
+        claps: row.claps || 0,
         ...metadata
     };
 }
@@ -113,6 +122,7 @@ export async function getPostByPermalink(permalink) {
         title: row.title,
         excerpt: row.excerpt,
         image: row.image,
+        claps: row.claps || 0,
         ...metadata
     };
 }

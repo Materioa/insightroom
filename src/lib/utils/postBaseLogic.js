@@ -91,7 +91,26 @@ function initializeCodeBlocks() {
             pre.insertBefore(langLabel, codeBlock);
         }
 
-        // Copy functionality now handled via custom context menu
+        // Restore visible copy button
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-code-button';
+        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> ';
+        copyBtn.setAttribute('aria-label', 'Copy code to clipboard');
+        copyBtn.title = 'Copy code';
+        
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = codeBlock.textContent || '';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> ';
+                    setTimeout(() => copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> ', 2000);
+                }).catch(() => fallbackCopyToClipboard(textToCopy, copyBtn));
+            } else {
+                fallbackCopyToClipboard(textToCopy, copyBtn);
+            }
+        });
+        
+        pre.appendChild(copyBtn);
         // No visible copy button needed
     });
 }
@@ -1017,25 +1036,45 @@ function initializeSecureMode() {
         }
     }, true);
     
-    // Custom context menu implementation
+    // Block native context menu
     document.addEventListener('contextmenu', function (e) {
         /** @type {HTMLElement} */
         // @ts-ignore
         const target = e.target;
         if (!target) return;
-        
-        // Allow default context menu for input and textarea
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
             return;
         }
-        
-        // Show custom context menu for rest of the page
         e.preventDefault();
-        showCustomContextMenu(e.clientX, e.clientY);
     });
     
-    // Hide custom context menu on click
-    document.addEventListener('click', hideCustomContextMenu);
+    // Show context menu when text is selected (on mouseup)
+    document.addEventListener('mouseup', function (e) {
+        // Small delay to let the browser finalize the selection
+        setTimeout(() => {
+            const selection = window.getSelection();
+            const selectedText = selection ? selection.toString().trim() : '';
+            
+            if (selectedText) {
+                // Position near the end of the selection
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                const x = rect.left + (rect.width / 2);
+                const y = rect.top - 8; // just above the selection
+                showCustomContextMenu(x, y);
+            } else {
+                hideCustomContextMenu();
+            }
+        }, 10);
+    });
+    
+    // Hide custom context menu on scroll or click outside
+    document.addEventListener('mousedown', function (e) {
+        const menu = document.getElementById('custom-context-menu');
+        if (menu && !menu.contains(/** @type {Node} */ (e.target))) {
+            hideCustomContextMenu();
+        }
+    });
     document.addEventListener('scroll', hideCustomContextMenu);
 }
 
@@ -1062,33 +1101,39 @@ function showCustomContextMenu(x, y) {
         left: ${x}px;
         background: var(--card-bg, #f9f9f9);
         border: 1px solid var(--border, #ddd);
-        border-radius: 12px;
+        border-radius: 16px;
         corner-shape: squircle;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         z-index: 10000;
-        min-width: 150px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 4px;
+        gap: 4px;
         overflow: hidden;
     `;
     
+    const copySvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    const sparkleSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg>`;
+
     // Add Copy option if text is selected
     if (selectedText) {
         const copyBtn = document.createElement('button');
         copyBtn.className = 'context-menu-item';
-        copyBtn.innerHTML = 'Copy';
+        copyBtn.innerHTML = copySvg;
+        copyBtn.title = 'Copy';
         copyBtn.style.cssText = `
-            display: block;
-            width: 100%;
-            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
             border: none;
+            border-radius: 12px;
             background: transparent;
             cursor: pointer;
-            text-align: left;
-            font-family: inherit;
-            font-size: 14px;
             color: var(--text, #333);
         `;
-        copyBtn.onmouseenter = () => copyBtn.style.background = 'rgba(255, 132, 0, 0.1)';
-        copyBtn.onmouseleave = () => copyBtn.style.background = 'transparent';
         copyBtn.onclick = () => {
             navigator.clipboard.writeText(selectedText).then(() => {
                 hideCustomContextMenu();
@@ -1104,31 +1149,22 @@ function showCustomContextMenu(x, y) {
     
     // Add Ask option if text is selected and user has privileges
     if (selectedText && hasAskPrivileges) {
-        // Add separator if there's a copy button
-        if (selectedText) {
-            const separator = document.createElement('div');
-            separator.style.cssText = 'height: 1px; background: var(--border, #ddd);';
-            menu.appendChild(separator);
-        }
-        
         const askBtn = document.createElement('button');
         askBtn.className = 'context-menu-item';
-        askBtn.innerHTML = 'Ask AI';
+        askBtn.innerHTML = sparkleSvg;
+        askBtn.title = 'Ask AI';
         askBtn.style.cssText = `
-            display: block;
-            width: 100%;
-            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
             border: none;
+            border-radius: 12px;
             background: transparent;
             cursor: pointer;
-            text-align: left;
-            font-family: inherit;
-            font-size: 14px;
             color: var(--text, #333);
-            font-weight: 400;
         `;
-        askBtn.onmouseenter = () => askBtn.style.background = 'rgba(255, 132, 0, 0.15)';
-        askBtn.onmouseleave = () => askBtn.style.background = 'transparent';
         askBtn.onclick = () => {
             hideCustomContextMenu();
             sendSelectedToAI(selectedText);
@@ -1144,15 +1180,20 @@ function showCustomContextMenu(x, y) {
     // Append to body
     document.body.appendChild(menu);
     
-    // Adjust position if menu goes off-screen
+    // Adjust position — center horizontally and place above selection
     setTimeout(() => {
         const rect = menu.getBoundingClientRect();
-        if (rect.right > window.innerWidth) {
-            menu.style.left = (x - rect.width) + 'px';
-        }
-        if (rect.bottom > window.innerHeight) {
-            menu.style.top = (y - rect.height) + 'px';
-        }
+        // Center the menu on x
+        let adjustedX = x - (rect.width / 2);
+        let adjustedY = y - rect.height;
+        
+        // Keep within viewport
+        if (adjustedX < 8) adjustedX = 8;
+        if (adjustedX + rect.width > window.innerWidth - 8) adjustedX = window.innerWidth - rect.width - 8;
+        if (adjustedY < 8) adjustedY = y + 30; // flip below if no room above
+        
+        menu.style.left = adjustedX + 'px';
+        menu.style.top = adjustedY + 'px';
     }, 0);
 }
 
@@ -1254,7 +1295,6 @@ if (typeof document !== 'undefined' && !document.getElementById('context-menu-st
         }
         
         .context-menu-item i {
-            display: none;
         }
         
         body.dark #custom-context-menu {

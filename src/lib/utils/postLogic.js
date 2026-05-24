@@ -44,20 +44,19 @@ export function addHeadingAnchorLinks() {
         const anchor = document.createElement('a');
         anchor.className = 'heading-anchor';
         anchor.href = '#' + heading.id;
-        anchor.innerHTML = '<i class="fa-regular" style="font-family: \'Font Awesome 6 Pro\', \'Font Awesome 6 Free\', \'Font Awesome 5 Pro\', \'FontAwesome\', sans-serif !important;">\uf0c1</i>';
+        anchor.setAttribute('data-sveltekit-noscroll', '');
+        anchor.innerHTML = '<i class="fa-regular fa-link-simple" style="transform: rotate(-45deg);"></i>';
         anchor.title = 'Copy link to this section';
         anchor.setAttribute('aria-label', 'Copy link to section: ' + heading.textContent);
 
         // Handle click - copy link to clipboard
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
+            e.stopPropagation(); // Prevent SvelteKit from intercepting and scrolling
             const url = window.location.origin + window.location.pathname + '#' + heading.id;
 
-            // Copy to clipboard
-            navigator.clipboard.writeText(url).then(() => {
-                showAnchorToast('Link copied to clipboard!');
-            }).catch(() => {
-                // Fallback for older browsers
+            // Copy to clipboard fallback logic
+            const fallbackCopy = () => {
                 const textArea = document.createElement('textarea');
                 textArea.value = url;
                 textArea.style.position = 'fixed';
@@ -71,7 +70,15 @@ export function addHeadingAnchorLinks() {
                     showAnchorToast('Failed to copy link');
                 }
                 document.body.removeChild(textArea);
-            });
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showAnchorToast('Link copied to clipboard!');
+                }).catch(() => fallbackCopy());
+            } else {
+                fallbackCopy();
+            }
         });
 
         // Append anchor at the end of the heading

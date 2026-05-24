@@ -16,6 +16,7 @@
 		"@sveltejs/kit": "^2.49.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
 		"@types/jsonwebtoken": "^9.0.10",
+		"@types/mark.js": "^8.11.12",
 		"mdsvex": "^0.12.6",
 		"svelte": "^5.45.6",
 		"svelte-check": "^4.3.4",

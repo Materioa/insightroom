@@ -13,7 +13,6 @@
   import { initializePostBase } from "$lib/utils/postBaseLogic.js";
   import { initTOC } from "$lib/utils/toc.js";
   import QRCodeGenerator from "$lib/components/QRCodeGenerator.svelte";
-
   import AISummary from "$lib/components/AISummary.svelte";
 
   /** @type {{ data: any }} */
@@ -21,9 +20,67 @@
   // State for content binding
   /** @type {HTMLElement | undefined} */
   let contentElement = $state();
+  /** @type {HTMLElement | undefined} */
+  let visibleContentElement = $state();
   let postContentText = $state("");
-  let decodedContent = $state("");
-  let isLoading = $state(true);
+  // If server provided pre-rendered content (for crawlers), use it immediately
+  let decodedContent = $state(data.ssrContent || "");
+  let isLoading = $state(!data.ssrContent);
+  let claps = $state(data.claps || 0);
+  let formattedClaps = $derived(claps >= 1000000 ? Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(claps) : Intl.NumberFormat('en-US').format(claps));
+  let isClapping = $state(false);
+  let hasApplauded = $state(false);
+  let showBurst = $state(false);
+
+  // Custom Search State
+  let showSearchBox = $state(false);
+  let searchQuery = $state("");
+  let matchCount = $state(0);
+  let currentMatchIndex = $state(0);
+  /** @type {any} */
+  let markInstance = null;
+  /** @type {NodeListOf<Element> | null} */
+  let markElements = null;
+  /** @type {HTMLInputElement | undefined} */
+  let searchInputRef = $state();
+
+  async function clapPost() {
+    if (isClapping || !data.postId) return;
+    isClapping = true;
+    
+    // Optimistic update
+    claps += 1;
+    hasApplauded = true;
+    showBurst = true;
+    setTimeout(() => {
+      showBurst = false;
+    }, 600);
+
+    try {
+      const res = await fetch('/api/posts/clap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: data.postId })
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.claps !== undefined) {
+          claps = result.claps;
+        }
+      } else {
+        // Revert on error
+        claps -= 1;
+        hasApplauded = false;
+      }
+    } catch (e) {
+      console.error('Failed to clap:', e);
+      // Revert on error
+      claps -= 1;
+      hasApplauded = false;
+    } finally {
+      isClapping = false;
+    }
+  }
 
   function defaultAvatar() {
     return "/assets/img/default-avatar.svg";
@@ -209,7 +266,17 @@
 
   onMount(() => {
     async function init() {
-      // Fetch post content dynamically to keep view-source clean
+      // If SSR content was already provided (bot request), skip the fetch
+      // and just initialize post features on the already-rendered content.
+      if (data.ssrContent && decodedContent) {
+        isLoading = false;
+        setTimeout(async () => {
+          initPostFeatures();
+        }, 0);
+        return;
+      }
+
+      // Fetch post content dynamically to keep view-source clean (regular users)
       if (!data.isLocked) {
         try {
           const category = encodeURIComponent(data.categorySlug || data.category || "_permalink");
@@ -222,37 +289,7 @@
 
           // Now that content is in the DOM, initialize features
           setTimeout(async () => {
-            enhancePostLinks(".post-body");
-            enhancePostLinks(".post-content");
-            
-            // Highlight code blocks, excluding diagram classes
-            // @ts-ignore
-            if (typeof hljs !== "undefined") {
-              const codeBlocks = document.querySelectorAll('pre code');
-              codeBlocks.forEach((block) => {
-                const lang = block.className;
-                const diagramLangs = ['language-mermaid', 'language-markmap', 'language-graphviz', 'language-dot', 'language-flashcards'];
-                if (diagramLangs.some(d => lang.includes(d))) return;
-                // @ts-ignore
-                hljs.highlightElement(block);
-              });
-            }
-            
-            // @ts-ignore
-            if (typeof mermaid !== "undefined") {
-              // @ts-ignore
-              mermaid.initialize({ startOnLoad: false, theme: 'default' });
-              // @ts-ignore
-              await mermaid.run();
-            }
-
-            addHeadingAnchorLinks();
-            
-            initTOC();
-
-            initializeListenComponent();
-            renderMath();
-            initializePostBase();
+            initPostFeatures();
           }, 0);
 
         } catch (e) {
@@ -262,6 +299,42 @@
       } else {
         isLoading = false;
       }
+    }
+
+    /** Shared post-render initialization for both SSR and client-fetched content */
+    async function initPostFeatures() {
+      // 1. Run raw HTML string replacements FIRST to avoid wiping out DOM event listeners
+      initializePostBase();
+
+      // 2. DOM manipulation and enhancements
+      enhancePostLinks(".post-body");
+      enhancePostLinks(".post-content");
+
+      // Highlight code blocks, excluding diagram classes
+      // @ts-ignore
+      if (typeof hljs !== "undefined") {
+        const codeBlocks = document.querySelectorAll('pre code');
+        codeBlocks.forEach((block) => {
+          const lang = block.className;
+          const diagramLangs = ['language-mermaid', 'language-markmap', 'language-graphviz', 'language-dot', 'language-flashcards'];
+          if (diagramLangs.some(d => lang.includes(d))) return;
+          // @ts-ignore
+          hljs.highlightElement(block);
+        });
+      }
+
+      // @ts-ignore
+      if (typeof mermaid !== "undefined") {
+        // @ts-ignore
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        // @ts-ignore
+        await mermaid.run();
+      }
+
+      addHeadingAnchorLinks();
+      initTOC();
+      initializeListenComponent();
+      renderMath();
     }
 
     /** @param {string} rootSelector */
@@ -328,6 +401,9 @@
             };
             // @ts-ignore
             renderMathInElement(document.body, options);
+        } else {
+            // Retry after a short delay in case the defer script hasn't loaded yet
+            setTimeout(renderMath, 100);
         }
     }
 
@@ -340,13 +416,99 @@
   });
 
   $effect(() => {
-    if (decodedContent && contentElement) {
+    if (decodedContent && contentElement && visibleContentElement) {
       tick().then(() => {
         postContentText = contentElement.textContent || "";
+        // Wait for mark.js CDN script to load
+        function tryInitMark() {
+          // @ts-ignore
+          if (typeof window !== 'undefined' && window.Mark) {
+            // @ts-ignore
+            markInstance = new window.Mark(visibleContentElement);
+          } else {
+            // Retry until CDN script loads
+            setTimeout(tryInitMark, 200);
+          }
+        }
+        if (!markInstance) {
+          tryInitMark();
+        }
       });
     }
   });
+
+  // Search Logic
+  function handleKeydown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      showSearchBox = true;
+      tick().then(() => searchInputRef?.focus());
+    } else if (e.key === 'Escape' && showSearchBox) {
+      closeSearch();
+    }
+  }
+
+  function performSearch() {
+    if (!markInstance || !visibleContentElement) return;
+    markInstance.unmark({
+      done: () => {
+        if (!searchQuery.trim()) {
+          matchCount = 0;
+          currentMatchIndex = 0;
+          markElements = null;
+          return;
+        }
+        markInstance.mark(searchQuery, {
+          separateWordSearch: false,
+          done: (count) => {
+            matchCount = count;
+            currentMatchIndex = count > 0 ? 1 : 0;
+            markElements = visibleContentElement.querySelectorAll('mark[data-markjs="true"]');
+            updateActiveMatch(false);
+          }
+        });
+      }
+    });
+  }
+
+  function updateActiveMatch(smooth = true) {
+    if (!markElements || matchCount === 0) return;
+    markElements.forEach(el => el.classList.remove('active'));
+    const activeEl = markElements[currentMatchIndex - 1];
+    if (activeEl) {
+      activeEl.classList.add('active');
+      
+      // Delay scrolling to ensure DOM/CSS updates don't block the scroll event
+      setTimeout(() => {
+        try {
+          activeEl.scrollIntoView({ block: 'center' });
+        } catch(e) {
+          activeEl.scrollIntoView();
+        }
+      }, 10);
+    }
+  }
+
+  function nextMatch() {
+    if (matchCount === 0) return;
+    currentMatchIndex = currentMatchIndex < matchCount ? currentMatchIndex + 1 : 1;
+    updateActiveMatch(true);
+  }
+
+  function prevMatch() {
+    if (matchCount === 0) return;
+    currentMatchIndex = currentMatchIndex > 1 ? currentMatchIndex - 1 : matchCount;
+    updateActiveMatch(true);
+  }
+
+  function closeSearch() {
+    showSearchBox = false;
+    searchQuery = "";
+    performSearch();
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
   <title>{data.title} - Materio InsightRoom</title>
@@ -380,10 +542,12 @@
     content={`https://room.getmaterio.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
   />
   <!-- Post specific scripts -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mark.js@8.11.1/dist/mark.min.js"></script>
 
   <!-- Markmap for mindmaps -->
   <script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
@@ -394,7 +558,65 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@viz-js/viz@3.11.0/lib/viz-standalone.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
+  <!-- JSON-LD Article structured data for search engines -->
+  {@html `<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": data.title || "",
+    "description": data.excerpt || "",
+    "image": data.image ? `https://room.getmaterio.app${data.image}` : "https://room.getmaterio.app/assets/img/og-theinsroom.jpg",
+    "datePublished": data.date || "",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Materio InsightRoom",
+      "url": "https://room.getmaterio.app"
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+          "@id": `https://room.getmaterio.app/${data.categorySlug || ""}/${data.slug || ""}`
+    }
+  })}</script>`}
 </svelte:head>
+
+<!-- Custom Search UI -->
+{#if showSearchBox}
+  <div class="custom-search-box">
+    <div class="search-input-wrapper">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        bind:this={searchInputRef}
+        bind:value={searchQuery}
+        oninput={performSearch}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') {
+            if (e.shiftKey) prevMatch();
+            else nextMatch();
+          }
+        }}
+        placeholder="Find in post..."
+        type="text"
+      />
+    </div>
+    <div class="search-controls">
+      <span class="match-count">
+        {#if searchQuery}
+          {matchCount > 0 ? currentMatchIndex : 0} / {matchCount}
+        {/if}
+      </span>
+      <button class="icon-btn" onclick={prevMatch} disabled={matchCount === 0} title="Previous match (Shift+Enter)">
+        <i class="fa-solid fa-chevron-up"></i>
+      </button>
+      <button class="icon-btn" onclick={nextMatch} disabled={matchCount === 0} title="Next match (Enter)">
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+      <div class="divider"></div>
+      <button class="icon-btn close-btn" onclick={closeSearch} title="Close (Esc)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+{/if}
+
 
 <main
   class="post-container"
@@ -658,6 +880,30 @@
             </div>
 
             <!-- Share and Print icons -->
+            <div class="clap-wrapper" class:animate-burst={showBurst}>
+              <!-- Particles for burst animation -->
+              {#if showBurst}
+                {#each [0, 72, 144, 216, 288] as deg}
+                  <div class="particle-group" style="transform: rotate({deg}deg)">
+                    <div class="particle circle"></div>
+                    <div class="particle triangle"></div>
+                  </div>
+                {/each}
+              {/if}
+              <div
+                role="button"
+                tabindex="0"
+                class="clap-button"
+                onclick={clapPost}
+                onkeypress={(e) => e.key === 'Enter' && clapPost()}
+                aria-label="Applaud"
+                title="Applaud"
+                style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; transition: all 0.2s ease; {isClapping ? 'transform: scale(1.1);' : ''} {hasApplauded ? 'color: var(--primary, #e25555);' : 'color: var(--text);'}"
+              >
+                <i class="{hasApplauded ? 'fa-solid' : 'fa-regular'} fa-hands-clapping" style="font-size: 14px;"></i>
+                <span style="font-size: 13px; font-weight: 500;">{formattedClaps}</span>
+              </div>
+            </div>
             {#if !data["hide_share"]}
               <!-- svelte-ignore a11y_click_events_have_key_events -->
               <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -822,7 +1068,7 @@
             {@html decodedContent}
           </div>
 
-          <div class="post-content-visible">
+          <div bind:this={visibleContentElement} class="post-content-visible">
             {@html decodedContent}
           </div>
         {/if}
@@ -851,6 +1097,17 @@
       hideContainer={true}
     />
   </div>
+
+  <!-- SSR content for crawlers/bots: rendered as a noscript fallback so
+       search engines, AI assistants, and ad verification bots (AdSense)
+       can always read the full article text even without JavaScript. -->
+  {#if data.ssrContent}
+    <noscript>
+      <div class="post-body post-content-visible">
+        {@html data.ssrContent}
+      </div>
+    </noscript>
+  {/if}
 </main>
 
 <!-- Site-level TOC sidebar - starts with no-transition to prevent flash on load -->
@@ -901,3 +1158,184 @@
     }
   }}
 ></div>
+
+<style>
+  :global(::-webkit-scrollbar) {
+    display: none;
+  }
+  :global(*) {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  :global(a.link-pill) {
+    font-family: 'Manrope', sans-serif !important;
+  }
+
+  /* Clap Burst Animation */
+  :global(.clap-wrapper) {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  :global(.particle-group) {
+    position: absolute;
+    top: 50%;
+    left: 14px; /* Centered around the icon */
+    width: 0;
+    height: 0;
+    z-index: 10;
+  }
+  :global(.particle) {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  :global(.particle.circle) {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #2ab7ca;
+    left: -3px;
+    top: -3px;
+  }
+  :global(.particle.triangle) {
+    width: 0;
+    height: 0;
+    background-color: transparent;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 10px solid #fe4a90;
+    left: -5px;
+    top: -5px;
+  }
+
+  :global(.animate-burst .particle.circle) { animation: shootCircle 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; }
+  :global(.animate-burst .particle.triangle) { animation: shootTriangle 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; }
+
+  @keyframes shootCircle { 
+    0% { transform: translate(-10px, -10px) scale(0.5); opacity: 1; } 
+    100% { transform: translate(-20px, -35px) scale(1); opacity: 0; } 
+  }
+  @keyframes shootTriangle { 
+    0% { transform: translate(0, 0) scale(0.5); opacity: 1; } 
+    100% { transform: translate(0, -50px) scale(1.2); opacity: 0; } 
+  }
+
+  /* Custom Search Box Styles */
+  .custom-search-box {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    gap: 12px;
+    font-family: inherit;
+    animation: slideDown 0.2s ease-out;
+  }
+  @keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+  .search-input-wrapper input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    width: 180px;
+    color: #333;
+  }
+  .search-icon {
+    color: #888;
+    font-size: 12px;
+  }
+  .search-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .match-count {
+    font-size: 12px;
+    color: #666;
+    min-width: 40px;
+    text-align: center;
+    margin-right: 8px;
+  }
+  .icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    transition: background 0.1s;
+  }
+  .icon-btn:hover:not(:disabled) {
+    background: rgba(0,0,0,0.08);
+  }
+  .icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .divider {
+    width: 1px;
+    height: 16px;
+    background: #ddd;
+    margin: 0 4px;
+  }
+  .close-btn:hover {
+    color: #e53935;
+    background: rgba(229, 57, 53, 0.1);
+  }
+
+  /* highlight styles */
+  :global(mark) {
+    background-color: #ffd54f !important;
+    color: #000 !important;
+    padding: 2px 0;
+    border-radius: 2px;
+  }
+  :global(mark.active) {
+    background-color: #ff9800 !important;
+  }
+  :global(body.dark-mode .custom-search-box) {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+  :global(body.dark-mode .search-input-wrapper) {
+    background: rgba(255,255,255,0.05);
+  }
+  :global(body.dark-mode .search-input-wrapper input) {
+    color: #fff;
+  }
+  :global(body.dark-mode .icon-btn) {
+    color: #bbb;
+  }
+  :global(body.dark-mode .icon-btn:hover:not(:disabled)) {
+    background: rgba(255,255,255,0.1);
+  }
+  :global(body.dark-mode .divider) {
+    background: #555;
+  }
+  :global(body.dark-mode .match-count) {
+    color: #aaa;
+  }
+</style>

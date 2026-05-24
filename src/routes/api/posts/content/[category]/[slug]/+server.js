@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { Marked } from 'marked';
+import { renderPostContent } from '$lib/server/renderContent.js';
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ params, cookies, fetch, url }) {
@@ -45,67 +45,8 @@ export async function GET({ params, cookies, fetch, url }) {
         return json({ html: '<div class="locked-placeholder">Unauthorized. Please upgrade to see this content.</div>' }, { status: 403 });
     }
 
-    // Pre-process custom shortcodes before parsing with marked
-    let rawContent = post.content || '';
-
-    // Attachment replacement
-    const attachmentRegex = /\[attachment:([^\]]+):([^\]:]+)\]/g;
-    rawContent = rawContent.replace(attachmentRegex, (/** @type {string} */ match, /** @type {string} */ url, /** @type {string} */ title) => {
-        const cleanUrl = url.trim();
-        const cleanTitle = title.trim();
-        const fileExt = cleanUrl.split('.').pop()?.toUpperCase() || 'FILE';
-        const id = 'attachment-' + Math.random().toString(36).substr(2, 5);
-        
-        return `<div class="attachment-card" data-file-path="${cleanUrl}" data-attachment-id="${id}" onclick="window.open('${cleanUrl}', '_blank')">
-            <div class="attachment-details">
-                <div class="attachment-title">${cleanTitle}</div>
-                <div class="attachment-meta"><span class="file-type">${fileExt}</span> • <span class="file-size">Click to view</span></div>
-            </div>
-            <div class="attachment-preview">
-                <canvas id="canvas-${id}" width="100" height="130"></canvas>
-                <img id="img-${id}" style="display: none;" alt="" />
-            </div>
-        </div>`;
-    });
-
-    // Video replacement
-    const videoRegex = /\[video:([\s\S]+?)\]/g;
-    rawContent = rawContent.replace(videoRegex, (/** @type {string} */ match, /** @type {string} */ vparams) => {
-        const isCover = vparams.trim().endsWith(':cover');
-        const videoUrl = isCover ? vparams.trim().slice(0, -6).trim() : vparams.trim();
-        const id = 'video-' + Math.random().toString(36).substr(2, 5);
-        
-        if (isCover) {
-            return `<div class="video-cover"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
-        }
-        return `<div class="video-embed"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
-    });
-
-    // Artifact replacement - extract artifacts BEFORE markdown parsing to preserve HTML
-    const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
-    /** @type {Record<string, string>} */
-    const artifacts = {};
-    rawContent = rawContent.replace(artifactRegex, (/** @type {string} */ match, /** @type {string} */ content) => {
-        const id = Math.random().toString(36).substr(2, 9);
-        artifacts[id] = content;
-        return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
-    });
-
-    // Create a new Marked instance for this request
-    const customMarked = new Marked({
-        gfm: true,
-        breaks: true,
-        pedantic: false
-    });
-
-    const html = await customMarked.parse(rawContent);
-    
-    // Restore artifacts with their HTML intact, no height limits, transparent background
-    let finalHtml = html;
-    Object.entries(artifacts).forEach(([id, content]) => {
-        const artifactHtml = `<div class="artifact-container"><div>${content}</div></div>`;
-        finalHtml = finalHtml.replace(`<div data-artifact-placeholder="${id}"></div>`, artifactHtml);
-    });
+    // Use shared renderer
+    const finalHtml = await renderPostContent(post.content || '');
 
     return json({ html: finalHtml });
 }

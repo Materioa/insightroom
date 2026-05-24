@@ -253,6 +253,19 @@
 
     /** @param {string} value */
     function editableAuthors(value) {
+        try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) {
+                const mapped = parsed.map(a => ({
+                    name: a.displayName || a.name || "",
+                    avatar: a.avatar || ""
+                }));
+                if (mapped.length) return mapped;
+            }
+        } catch (e) {
+            // Fallback for legacy formats
+        }
+        
         const authors = parseAuthorList(value)
             .map(normalizeAuthor)
             .filter(isHistoryAuthor);
@@ -261,12 +274,12 @@
 
     /** @param {HistoryAuthor[]} authors */
     function serializeAuthors(authors) {
-        const cleanAuthors = authors
-            .map((author) => ({
-                displayName: author.name.trim(),
-                avatar: author.avatar.trim(),
-            }))
-            .filter((author) => author.displayName || author.avatar);
+        const cleanAuthors = authors.map((author) => ({
+            displayName: (author.name || "").trim(),
+            avatar: (author.avatar || "").trim(),
+        }));
+        // DO NOT filter blanks here, otherwise the "Add author" button can't append a blank row!
+        // We will clean them up in savePost() instead.
         return JSON.stringify(cleanAuthors, null, 2);
     }
 
@@ -462,7 +475,19 @@
 
         metadataArray.forEach((m) => {
             if (m.key.trim()) {
-                payloadMetadata[m.key.trim()] = m.value;
+                let finalValue = m.value;
+                // Strip completely blank authors right before saving to the DB
+                if (isAuthorMetadataKey(m.key)) {
+                    try {
+                        const parsed = JSON.parse(finalValue);
+                        if (Array.isArray(parsed)) {
+                            const cleaned = parsed.filter(a => (a.displayName || a.name)?.trim() || a.avatar?.trim());
+                            finalValue = JSON.stringify(cleaned);
+                            // If empty, maybe don't save the field at all, or save as empty array
+                        }
+                    } catch (e) {}
+                }
+                payloadMetadata[m.key.trim()] = finalValue;
             }
         });
 
