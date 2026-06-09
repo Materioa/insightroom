@@ -153,7 +153,7 @@ function initializeMermaid() {
         startOnLoad: false,
         theme: document.body.classList.contains('dark') ? 'dark' : 'default',
         securityLevel: 'loose',
-        fontFamily: '"Manrope", sans-serif'
+        fontFamily: '"PP Mori", sans-serif'
     });
 
     const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');
@@ -974,7 +974,7 @@ function generatePrintElements() {
     qrSection.style.cssText = 'position: absolute; right: 0; top: 8px; text-align: center; display: flex; flex-direction: column; align-items: center;';
 
     const qrTitle = document.createElement('div');
-    qrTitle.style.cssText = 'font-family: "Libre Baskerville", serif; font-size: 9px; color: #666; margin: 0 0 6px 0; z-index: 2;';
+    qrTitle.style.cssText = 'font-family: var(--font-serif, "Tiempos Text VF", serif); font-size: 9px; color: #666; margin: 0 0 6px 0; z-index: 2;';
     qrTitle.textContent = 'Scan to read online';
 
     const qrContainer = document.createElement('div');

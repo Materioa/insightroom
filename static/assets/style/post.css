@@ -1226,7 +1226,7 @@ body {
   font-weight: bold;
   text-transform: none;
   letter-spacing: normal;
-  font-family: "Manrope", sans-serif;
+  font-family: var(--font-primary, "PP Mori", sans-serif);
 }
 
 /* Dark mode table styles */
@@ -1392,23 +1392,28 @@ body {
 NUCLEAR FONT SWITCHER (Final word)
 ========================================= */
 :root {
-  --font-primary: "Manrope", sans-serif;
+  --font-primary: "PP Mori", sans-serif;
+  --font-serif: "Tiempos Text VF", serif;
 }
 
     body.font-secondary {
-      --font-primary: "Inter", sans-serif !important;
+      --font-primary: "PP Mori", sans-serif !important;
+      --font-serif: "PP Mori", sans-serif !important;
     }
 
     body.font-serif {
-      --font-primary: "Crimson Pro", serif !important;
+      --font-primary: "Manrope", sans-serif !important;
+      --font-serif: "Libre Baskerville", serif !important;
     }
 
     body.font-system {
-      --font-primary: system-ui, sans-serif !important;
+      --font-primary: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
+      --font-serif: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
     }
 
     body.font-dyslexic {
       --font-primary: "OpenDyslexicRegular", sans-serif !important;
+      --font-serif: "OpenDyslexicRegular", sans-serif !important;
     }
 
     /* Force inheritance on everything that matters ONLY when a custom font theme is active */
@@ -1463,13 +1468,32 @@ NUCLEAR FONT SWITCHER (Final word)
       font-family: var(--font-primary) !important;
     }
 
+    body.font-secondary em,
+    body.font-secondary i:not([class*="fa"]):not([class*="fa-"]),
+    body.font-serif em,
+    body.font-serif i:not([class*="fa"]):not([class*="fa-"]),
+    body.font-system em,
+    body.font-system i:not([class*="fa"]):not([class*="fa-"]),
+    body.font-dyslexic em,
+    body.font-dyslexic i:not([class*="fa"]):not([class*="fa-"]) {
+      font-family: var(--font-serif) !important;
+    }
+
     /* Re-fix the icons which SHOULD NOT use the primary font */
-    .fa,
-    .fas,
-    .far,
-    .fal,
-    .fat,
-    .fad,
-    [class*="fa-"] {
+    body .fa,
+    body .fas,
+    body .far,
+    body .fal,
+    body .fat,
+    body .fad,
+    body [class*="fa-"],
+    body[class*="font-"] .fa,
+    body[class*="font-"] .fas,
+    body[class*="font-"] .far,
+    body[class*="font-"] .fal,
+    body[class*="font-"] .fat,
+    body[class*="font-"] .fad,
+    body[class*="font-"] [class*="fa-"] {
       font-family: var(--_fa-family, "Font Awesome 7 Pro", "Font Awesome 6 Pro", "Font Awesome 5 Pro", "FontAwesome", sans-serif) !important;
     }
+

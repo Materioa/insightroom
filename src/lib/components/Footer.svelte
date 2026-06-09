@@ -125,9 +125,9 @@
   );
 
   const fonts = [
-    { id: "default", name: "Default", family: "Manrope" },
-    { id: "secondary", name: "Sans", family: "Inter" },
-    { id: "serif", name: "Serif", family: "Crimson Pro" },
+    { id: "default", name: "Default", family: "PP Mori" },
+    { id: "secondary", name: "Sans", family: "PP Mori" },
+    { id: "serif", name: "Old", family: "Manrope" },
     { id: "system", name: "System", family: "System" },
     { id: "dyslexic", name: "Dyslexic", family: "OpenDyslexic" },
   ];
@@ -280,14 +280,12 @@
                 class:active={props.currentFont === font.id}
                 onclick={() => props.setFont(font.id)}
                 style="font-family: {font.family === 'System'
-                  ? 'system-ui'
-                  : font.family === 'OpenDyslexic'
-                    ? 'OpenDyslexicRegular'
-                    : font.family === 'Inter'
-                      ? 'Inter'
-                      : font.family === 'Crimson Pro'
-                        ? 'Crimson Pro'
-                        : 'Manrope'};"
+                ? 'system-ui'
+                : font.family === 'OpenDyslexic'
+                  ? 'OpenDyslexicRegular'
+                  : font.family === 'Manrope'
+                    ? 'Manrope'
+                    : 'PP Mori'};"
               >
                 Aa
               </button>

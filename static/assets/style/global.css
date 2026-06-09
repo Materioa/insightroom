@@ -1,5 +1,5 @@
 :root {
-    --font-primary: "Manrope", sans-serif;
+    --font-primary: "PP Mori", sans-serif;
     --squircle-outer: 40px;
     --squircle-inner: 25px;
     --brand-orange: #ff5400;
@@ -70,14 +70,14 @@ body.blog-layout.dark .site-header {
     }
 }
 
-/* Use Libre Baskerville for emphasized/italic text in posts */
+/* Use Tiempos Text VF for emphasized/italic text in posts */
 article em,
 article i,
 .post-content em,
 .post-content i,
 .changelog-excerpt em,
 .changelog-excerpt i {
-    font-family: "Libre Baskerville", serif;
+    font-family: var(--font-serif, "Tiempos Text VF", serif);
     font-style: italic;
     font-weight: 400;
 }
@@ -108,23 +108,28 @@ body.dark .post-content a.link-pill {
 
 /* Font switching support */
 :root {
-    --font-primary: "Manrope", sans-serif;
+    --font-primary: "PP Mori", sans-serif;
+    --font-serif: "Tiempos Text VF", serif;
 }
 
 body.font-secondary {
-    --font-primary: "Inter", sans-serif !important;
+    --font-primary: "PP Mori", sans-serif !important;
+    --font-serif: "PP Mori", sans-serif !important;
 }
 
 body.font-serif {
-    --font-primary: "Crimson Pro", serif !important;
+    --font-primary: "Manrope", sans-serif !important;
+    --font-serif: "Libre Baskerville", serif !important;
 }
 
 body.font-system {
     --font-primary: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
+    --font-serif: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
 }
 
 body.font-dyslexic {
     --font-primary: "OpenDyslexicRegular", sans-serif !important;
+    --font-serif: "OpenDyslexicRegular", sans-serif !important;
 }
 
 body {

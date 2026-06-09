@@ -70,7 +70,7 @@
 <svelte:head>
     <title>Insightroom Kitchen</title>
     <link rel="icon" type="image/x-icon" href="/assets/img/room-icon-x.svg" />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
 </svelte:head>
 
 <div class="cms-wrapper">
@@ -177,13 +177,28 @@
 </div>
 
 <style>
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/assets/fonts/PPMori_Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/assets/fonts/PPMori_SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
     :global(body) {
         background-color: #f5f5f5;
         margin: 0;
     }
 
     .cms-wrapper {
-        font-family: 'Manrope', sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         max-width: 1100px;
         margin: 0 auto;
         padding: 40px 20px;
@@ -237,7 +252,7 @@
         border: 1px solid #e5e5e5;
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
-        font-family: 'Manrope', sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 14px;
         width: 200px;
         outline: none;
@@ -461,7 +476,7 @@
         border: 0;
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
-        font-family: 'Manrope', sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         cursor: pointer;
         transition: all 0.2s;

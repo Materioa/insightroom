@@ -1,7 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/assets/fonts/PPMori_Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/assets/fonts/PPMori_SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Tiempos Text VF';
+  src: url('/assets/fonts/TiemposTextVF-Roman.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Tiempos Text VF';
+  src: url('/assets/fonts/TiemposTextVF-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
 
 :root {
   --bg: #f4f2f0;
@@ -23,13 +55,13 @@
 
 .dark body,
 body.dark {
-    --bg: #121212;
-    --text: #eeeeee;
-    --link: #3ea6ff;
-    --card-bg: #1e1e1e;
-    --border: #333;
-    --foot: #121212;
-    background-color: #121212 !important;
+  --bg: #121212;
+  --text: #eeeeee;
+  --link: #3ea6ff;
+  --card-bg: #1e1e1e;
+  --border: #333;
+  --foot: #121212;
+  background-color: #121212 !important;
 }
 
 /* Skeleton Loading Animation */
@@ -87,7 +119,7 @@ body.dark {
 }
 
 .header-search input {
-  font-family: "Manrope", sans-serif;
+  font-family: var(--font-primary, "PP Mori", sans-serif);
   background: transparent;
   border: none;
   outline: none;
@@ -329,48 +361,48 @@ body {
   margin-top: 2rem;
   margin-bottom: 1rem;
   color: var(--text);
-  font-family: "Manrope", sans-serif;
+  font-family: var(--font-primary, "PP Mori", sans-serif);
   font-size: 20px;
   font-weight: 600;
 }
 
 .post-body p {
   margin-bottom: 1rem;
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
   font-size: 17px;
 }
 
 .post-body ul,
 .post-body ol {
   margin-bottom: 1rem;
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .post-body li {
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .post-body blockquote {
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .post-body strong,
 .post-body b {
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .post-body em,
 .post-body i:not([class*="fa-"]) {
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .post-body table {
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .post-body table td,
 .post-body table th {
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 @media (max-width: 768px) {
@@ -402,7 +434,7 @@ body {
   margin: 1.5rem 0;
   border-radius: 0;
   position: relative;
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 body.dark-mode .post-body blockquote {
@@ -675,7 +707,7 @@ body.dark-mode .post-body blockquote.quote::before {
 .post-description {
   font-size: 0.95rem;
   color: var(--text);
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .site-footer {
@@ -718,7 +750,7 @@ body.dark-mode .post-body blockquote.quote::before {
   font-size: 1rem;
   color: #555;
   margin: 0.5rem 0 1.25rem 0;
-  font-family: "Libre Baskerville", serif;
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
 }
 
 .post-date {
@@ -1649,7 +1681,7 @@ pre code ::-moz-selection {
 
     @bottom-center {
       content: "Page " counter(page) " of " counter(pages);
-      font-family: 'Libre Baskerville', serif;
+      font-family: var(--font-serif, "Tiempos Text VF", serif);
       font-size: 9pt;
       color: #666;
     }
@@ -1684,7 +1716,7 @@ pre code ::-moz-selection {
   }
 
   body {
-    font-family: 'Libre Baskerville', serif !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
     font-size: 12pt !important;
     line-height: 1.6 !important;
     color: #000 !important;
@@ -1774,7 +1806,7 @@ pre code ::-moz-selection {
   /* Show clean date, category, and read time as normal text */
   .print-meta {
     display: block !important;
-    font-family: 'Libre Baskerville', serif !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
     font-size: 10pt !important;
     color: #666 !important;
     margin-bottom: 1rem !important;
@@ -1791,7 +1823,7 @@ pre code ::-moz-selection {
 
   /* Post title styling */
   .post-title {
-    font-family: 'Libre Baskerville', serif !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
     font-size: 18pt !important;
     font-weight: bold !important;
     color: #000 !important;
@@ -1801,14 +1833,14 @@ pre code ::-moz-selection {
 
   /* Post meta styling */
   .post-date {
-    font-family: 'Libre Baskerville', serif !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
     font-size: 10pt !important;
     color: #666 !important;
     margin-bottom: 1rem !important;
   }
 
   .post-description {
-    font-family: 'Libre Baskerville', serif !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
     font-size: 11pt !important;
     color: #333 !important;
     font-style: italic !important;
@@ -1817,7 +1849,7 @@ pre code ::-moz-selection {
 
   /* Post body content */
   .post-body {
-    font-family: 'Libre Baskerville', serif !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
     font-size: 11pt !important;
     line-height: 1.6 !important;
     color: #000 !important;
@@ -1830,7 +1862,7 @@ pre code ::-moz-selection {
   .post-body h4,
   .post-body h5,
   .post-body h6 {
-    font-family: 'Libre Baskerville', serif !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
     color: #000 !important;
     page-break-after: avoid !important;
     margin-top: 1rem !important;

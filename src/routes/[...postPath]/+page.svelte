@@ -1169,7 +1169,7 @@
   }
 
   :global(a.link-pill) {
-    font-family: 'Manrope', sans-serif !important;
+    font-family: var(--font-primary, "PP Mori", sans-serif) !important;
   }
 
   /* Clap Burst Animation */

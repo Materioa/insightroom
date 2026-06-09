@@ -51,7 +51,7 @@
         border: 0;
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
-        font-family: 'Manrope', sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         cursor: pointer;
         transition: all 0.2s;

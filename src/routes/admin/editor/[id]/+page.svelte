@@ -719,10 +719,7 @@
 <svelte:head>
     <title>Insightroom Kitchen</title>
     <link rel="icon" type="image/x-icon" href="/assets/img/room-icon-x.svg" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    />
+    
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet"
@@ -1238,7 +1235,7 @@
                 </div>
                 <div
                     class="history-main"
-                    style="font-family: 'Manrope', sans-serif;"
+                    style="font-family: var(--font-primary, "PP Mori", sans-serif);"
                 >
                     {#if selectedVersion}
                         <div class="diff-header">
@@ -1343,13 +1340,28 @@
 </div>
 
 <style>
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/assets/fonts/PPMori_Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PP Mori';
+  src: url('/assets/fonts/PPMori_SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
     :global(body) {
         background-color: #f5f5f5;
         margin: 0;
     }
 
     .cms-wrapper {
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         max-width: 1200px;
         margin: 0 auto;
         padding: 40px 20px;
@@ -1450,7 +1462,7 @@
         gap: 8px;
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         font-size: 14px;
         padding: 10px 20px;
@@ -1524,7 +1536,7 @@
         border: none;
         border-bottom: 1px solid #ccc;
         padding: 5px 0;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 15px;
         color: #333;
         outline: none;
@@ -1538,7 +1550,7 @@
         border: none;
         border-bottom: 2px solid var(--brand-orange);
         padding: 8px 0;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 42px;
         font-weight: 700;
         color: #111;
@@ -1605,7 +1617,7 @@
         background: transparent;
         border: none;
         padding: 20px;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 15px;
         line-height: 1.6;
         color: #333;
@@ -1617,7 +1629,7 @@
     .preview-box {
         min-height: 400px;
         padding: 30px;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         line-height: 1.7;
         overflow-wrap: break-word;
         word-wrap: break-word;
@@ -1757,7 +1769,7 @@
         corner-shape: squircle;
         cursor: pointer;
         display: block;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
     }
 
     .v-date {
@@ -1953,7 +1965,7 @@
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
         padding: 10px 12px;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 14px;
         box-sizing: border-box;
         outline: none;
@@ -1993,7 +2005,7 @@
         corner-shape: squircle;
         font-weight: 600;
         font-size: 14px;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         outline: none;
         box-sizing: border-box;
     }
@@ -2036,7 +2048,7 @@
         color: #f38a00;
         font-weight: 700;
         font-size: 15px;
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -2123,7 +2135,7 @@
         background: var(--toast-bg, #fff);
         color: var(--toast-color, #2d2a27);
         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
-        font-family: "Manrope", sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 14px;
         line-height: 1.45;
         pointer-events: auto;
@@ -2156,7 +2168,7 @@
         border: 0;
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
-        font-family: 'Manrope', sans-serif;
+        font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         cursor: pointer;
         transition: all 0.2s;
