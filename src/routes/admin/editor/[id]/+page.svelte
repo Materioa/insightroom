@@ -1235,7 +1235,7 @@
                 </div>
                 <div
                     class="history-main"
-                    style="font-family: var(--font-primary, "PP Mori", sans-serif);"
+                    style="font-family: var(--font-primary, 'PP Mori', sans-serif);"
                 >
                     {#if selectedVersion}
                         <div class="diff-header">
