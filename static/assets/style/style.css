@@ -36,10 +36,10 @@
 }
 
 :root {
-  --bg: #f4f2f0;
+  --bg: #faf9f5;
   --text: #000000;
   --link: #007aff;
-  --card-bg: #f9f9f9;
+  --card-bg: #ffffff;
   --border: #ddd;
   --foot: #e4e0da;
   --brand-orange: #ff5400;
@@ -50,24 +50,24 @@
   --pastel-orange: #fff3e0;
   --pastel-red: #ffebee;
   --pastel-purple: #f3e5f5;
-  --pastel-grey: #f5f5f5;
+  --pastel-grey: #e7e7db;
 }
 
 .dark body,
 body.dark {
-  --bg: #121212;
+  --bg: #1f1f1e;
   --text: #eeeeee;
   --link: #3ea6ff;
-  --card-bg: #1e1e1e;
+  --card-bg: #252524;
   --border: #333;
-  --foot: #121212;
-  background-color: #121212 !important;
+  --foot: #1f1f1e;
+  background-color: #1f1f1e !important;
 }
 
 /* Skeleton Loading Animation */
 .skeleton {
   background: #eee;
-  background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+  background: linear-gradient(110deg, #ececec 8%, #e7e7db 18%, #ececec 33%);
   border-radius: 5px;
   background-size: 200% 100%;
   animation: 1.5s shine linear infinite;
@@ -87,7 +87,7 @@ body.dark {
 
 
 .dark .site-header {
-  background-color: rgba(33, 33, 33, 0.5);
+  background-color: #1f1f1e;
 }
 
 .dark .site-footer {
@@ -107,8 +107,6 @@ body.dark {
   border: 1px solid var(--border, #3333334a);
   border-radius: 25px;
   padding: 0.5rem 1rem;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   width: 250px;
 }
@@ -141,7 +139,7 @@ body.dark {
 
 /* Dark mode styles for search */
 :global(.dark) .header-search {
-  background: rgba(33, 33, 33, 0.5);
+  background: #1f1f1e;
   border-color: var(--border, #404040);
 }
 
@@ -192,9 +190,7 @@ body {
   right: 0;
   height: 60px;
   z-index: 1000;
-  background-color: rgba(219, 213, 207, 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background-color: #faf9f5;
   color: #333;
   padding: 10px;
   text-align: left;
@@ -203,9 +199,22 @@ body {
   background-size: 120px 32px;
   background-position: 20px center;
   box-sizing: border-box;
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(to bottom, black calc(100% - 20px), transparent 100%);
   /* Promote to compositing layer for smoother scrolling */
   transform: translateZ(0);
   will-change: transform;
+}
+
+.header-logo {
+  display: block;
+  width: 120px;
+  height: 32px;
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
 }
 
 
@@ -777,14 +786,14 @@ pre {
   corner-shape: squircle;
   border-radius: 24px;
   overflow: hidden;
-  background: #1e1e1e;
+  background: #252524;
   border: 1px solid #333;
 }
 
 pre code {
   display: block;
   padding: 3.5rem 1rem 1rem 1rem;
-  background: #1e1e1e;
+  background: #252524;
   color: #f8f8f2;
   overflow-x: auto;
   font-size: 0.9rem;
@@ -800,12 +809,12 @@ pre code.hljs {
 
 /* Light mode code blocks */
 body:not(.dark) pre {
-  background: #f8f9fa;
+  background: #ffffff;
   border: 1px solid #e9ecef;
 }
 
 body:not(.dark) pre code {
-  background: #f8f9fa;
+  background: #ffffff;
   color: #212529;
 }
 
@@ -1154,7 +1163,7 @@ table td code {
 .dark .mindmap-card {
   background:
     radial-gradient(circle, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
-    var(--card-bg, #1e1e1e);
+    var(--card-bg, #252524);
   background-size: 20px 20px;
   border-color: var(--border, #333);
 }
@@ -1405,7 +1414,7 @@ pre code ::-moz-selection {
 }
 
 .flashcard-back {
-  background: var(--card-bg, #f8f9fa);
+  background: var(--card-bg, #ffffff);
   color: var(--text, #212529);
   transform: rotateY(180deg);
 }
@@ -1460,7 +1469,7 @@ pre code ::-moz-selection {
 }
 
 .flashcard-btn:hover {
-  background: var(--card-bg, #f5f5f5);
+  background: var(--card-bg, #e7e7db);
   border-color: var(--text, #333);
   transform: scale(1.1);
 }
@@ -1489,20 +1498,20 @@ pre code ::-moz-selection {
 
 /* Dark mode flashcards */
 .dark .flashcard-front {
-  background: var(--card-bg, #1e1e1e);
+  background: var(--card-bg, #252524);
   border-color: var(--border, #333);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .dark .flashcard-back {
-  background: var(--bg, #121212);
+  background: var(--bg, #1f1f1e);
   border-color: var(--border, #333);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .dark .flashcard-btn {
   border-color: var(--border, #444);
-  background: var(--card-bg, #1e1e1e);
+  background: var(--card-bg, #252524);
   color: var(--text, #eee);
 }
 
@@ -2095,7 +2104,7 @@ pre code ::-moz-selection {
   }
 
   table tr:nth-child(even) {
-    background: #f9f9f9 !important;
+    background: #ffffff !important;
   }
 
   table tr:hover {

@@ -1,12 +1,12 @@
 /* Post navigation pills and buttons dark mode */
 .post-date-pill {
-  background: #f5f5f5;
+  background: #e7e7db;
   border: 1px solid #e0e0e0;
   color: #333;
 }
 
 .post-nav-button {
-  background: #f5f5f5;
+  background: #e7e7db;
   border: 1px solid #e0e0e0;
   color: #333;
 }
@@ -30,7 +30,7 @@ body.dark-mode .post-nav-button {
 }
 
 body.dark-mode .post-image-frame {
-  background: #1a1a1a;
+  background: #2c2c2a;
 }
 
 /* Attachment Card Styles */
@@ -343,7 +343,7 @@ body.dark-mode .post-image-frame {
   background: transparent;
 }
 
-.artifact-container > div {
+.artifact-container>div {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -351,7 +351,7 @@ body.dark-mode .post-image-frame {
   background: transparent;
 }
 
-.artifact-container > div > * {
+.artifact-container>div>* {
   flex: 1;
 }
 
@@ -361,7 +361,7 @@ body.dark-mode .attachment-card {
   border-color: transparent;
 }
 
-body.dark-mode .artifact-container > div {
+body.dark-mode .artifact-container>div {
   background: transparent;
 }
 
@@ -381,7 +381,7 @@ body.dark-mode .artifact-container > div {
   border-color: #e7e3df !important;
 }
 
-.stacked-author-avatar + .stacked-author-avatar {
+.stacked-author-avatar+.stacked-author-avatar {
   margin-left: -10px;
 }
 
@@ -404,7 +404,7 @@ body.dark-mode .author-avatar {
 }
 
 body.dark-mode .stacked-author-avatar {
-  border-color: #1a1a1a !important;
+  border-color: #2c2c2a !important;
 }
 
 body.dark-mode .author-info .author-name {
@@ -507,7 +507,7 @@ body.dark-mode code {
 @media print {
   code {
     font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
-    background: #f5f5f5 !important;
+    background: #e7e7db !important;
     color: #333 !important;
     padding: 2px 4px !important;
     border-radius: 3px !important;
@@ -540,7 +540,7 @@ body.dark-mode code {
   }
 
   .post-body table th {
-    background-color: #f5f5f5 !important;
+    background-color: #e7e7db !important;
     font-weight: bold !important;
     color: #333 !important;
   }
@@ -758,7 +758,7 @@ body.dark-mode .post-toc .toc a {
   pointer-events: none;
   box-sizing: border-box;
   padding: 10px 10px 16px 10px;
-  background-color: #ece6df;
+  background-color: #e7e7db;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 40px;
   corner-shape: squircle;
@@ -827,7 +827,7 @@ body.toc-sheet-open .site-toc-overlay {
 /* Dark mode: match dark header color */
 .dark .site-toc-sidebar,
 body.dark-mode .site-toc-sidebar {
-  background-color: #1a1a1a;
+  background-color: #2c2c2a;
   border-color: rgba(255, 255, 255, 0.06);
   color: #eaeaea;
 }
@@ -969,12 +969,12 @@ body.dark-mode .toc-rail-line.active {
     corner-shape: squircle;
     transform: translateY(calc(100% + 12px)) !important;
     padding: 8px 5px 5px 5px !important;
-    background: #ece6df !important;
+    background: #e7e7db !important;
   }
 
   body.dark-mode .site-toc-sidebar,
   .dark .site-toc-sidebar {
-    background: #1a1a1a !important;
+    background: #2c2c2a !important;
   }
 
   body.dark-mode .site-toc-sheet-handle .sheet-handle-icon,
@@ -1222,7 +1222,7 @@ body {
 }
 
 .post-body table th {
-  background-color: #f5f5f5;
+  background-color: #e7e7db;
   font-weight: bold;
   text-transform: none;
   letter-spacing: normal;
@@ -1231,7 +1231,7 @@ body {
 
 /* Dark mode table styles */
 body.dark-mode .post-body table th {
-  background-color: #1e1e1e;
+  background-color: #2c2c2a;
   border-color: #333;
   color: #eeeeee;
 }
@@ -1396,104 +1396,103 @@ NUCLEAR FONT SWITCHER (Final word)
   --font-serif: "Tiempos Text VF", serif;
 }
 
-    body.font-secondary {
-      --font-primary: "PP Mori", sans-serif !important;
-      --font-serif: "PP Mori", sans-serif !important;
-    }
+body.font-secondary {
+  --font-primary: "PP Mori", sans-serif !important;
+  --font-serif: "PP Mori", sans-serif !important;
+}
 
-    body.font-serif {
-      --font-primary: "Manrope", sans-serif !important;
-      --font-serif: "Libre Baskerville", serif !important;
-    }
+body.font-serif {
+  --font-primary: "Manrope", sans-serif !important;
+  --font-serif: "Libre Baskerville", serif !important;
+}
 
-    body.font-system {
-      --font-primary: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
-      --font-serif: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
-    }
+body.font-system {
+  --font-primary: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
+  --font-serif: sans-serif, system-ui, -apple-system, BlinkMacSystemFont !important;
+}
 
-    body.font-dyslexic {
-      --font-primary: "OpenDyslexicRegular", sans-serif !important;
-      --font-serif: "OpenDyslexicRegular", sans-serif !important;
-    }
+body.font-dyslexic {
+  --font-primary: "OpenDyslexicRegular", sans-serif !important;
+  --font-serif: "OpenDyslexicRegular", sans-serif !important;
+}
 
-    /* Force inheritance on everything that matters ONLY when a custom font theme is active */
-    body.font-secondary,
-    body.font-secondary .post-body,
-    body.font-secondary .post-content,
-    body.font-secondary .post-title,
-    body.font-secondary h1,
-    body.font-secondary h2,
-    body.font-secondary h3,
-    body.font-secondary h4,
-    body.font-secondary p,
-    body.font-secondary span,
-    body.font-secondary li,
-    body.font-secondary a,
-    body.font-serif,
-    body.font-serif .post-body,
-    body.font-serif .post-content,
-    body.font-serif .post-title,
-    body.font-serif h1,
-    body.font-serif h2,
-    body.font-serif h3,
-    body.font-serif h4,
-    body.font-serif p,
-    body.font-serif span,
-    body.font-serif li,
-    body.font-serif a,
-    body.font-system,
-    body.font-system .post-body,
-    body.font-system .post-content,
-    body.font-system .post-title,
-    body.font-system h1,
-    body.font-system h2,
-    body.font-system h3,
-    body.font-system h4,
-    body.font-system p,
-    body.font-system span,
-    body.font-system li,
-    body.font-system a,
-    body.font-dyslexic,
-    body.font-dyslexic .post-body,
-    body.font-dyslexic .post-content,
-    body.font-dyslexic .post-title,
-    body.font-dyslexic h1,
-    body.font-dyslexic h2,
-    body.font-dyslexic h3,
-    body.font-dyslexic h4,
-    body.font-dyslexic p,
-    body.font-dyslexic span,
-    body.font-dyslexic li,
-    body.font-dyslexic a {
-      font-family: var(--font-primary) !important;
-    }
+/* Force inheritance on everything that matters ONLY when a custom font theme is active */
+body.font-secondary,
+body.font-secondary .post-body,
+body.font-secondary .post-content,
+body.font-secondary .post-title,
+body.font-secondary h1,
+body.font-secondary h2,
+body.font-secondary h3,
+body.font-secondary h4,
+body.font-secondary p,
+body.font-secondary span,
+body.font-secondary li,
+body.font-secondary a,
+body.font-serif,
+body.font-serif .post-body,
+body.font-serif .post-content,
+body.font-serif .post-title,
+body.font-serif h1,
+body.font-serif h2,
+body.font-serif h3,
+body.font-serif h4,
+body.font-serif p,
+body.font-serif span,
+body.font-serif li,
+body.font-serif a,
+body.font-system,
+body.font-system .post-body,
+body.font-system .post-content,
+body.font-system .post-title,
+body.font-system h1,
+body.font-system h2,
+body.font-system h3,
+body.font-system h4,
+body.font-system p,
+body.font-system span,
+body.font-system li,
+body.font-system a,
+body.font-dyslexic,
+body.font-dyslexic .post-body,
+body.font-dyslexic .post-content,
+body.font-dyslexic .post-title,
+body.font-dyslexic h1,
+body.font-dyslexic h2,
+body.font-dyslexic h3,
+body.font-dyslexic h4,
+body.font-dyslexic p,
+body.font-dyslexic span,
+body.font-dyslexic li,
+body.font-dyslexic a {
+  font-family: var(--font-primary) !important;
+}
 
-    body.font-secondary em,
-    body.font-secondary i:not([class*="fa"]):not([class*="fa-"]),
-    body.font-serif em,
-    body.font-serif i:not([class*="fa"]):not([class*="fa-"]),
-    body.font-system em,
-    body.font-system i:not([class*="fa"]):not([class*="fa-"]),
-    body.font-dyslexic em,
-    body.font-dyslexic i:not([class*="fa"]):not([class*="fa-"]) {
-      font-family: var(--font-serif) !important;
-    }
+body.font-secondary em,
+body.font-secondary i:not([class*="fa"]):not([class*="fa-"]),
+body.font-serif em,
+body.font-serif i:not([class*="fa"]):not([class*="fa-"]),
+body.font-system em,
+body.font-system i:not([class*="fa"]):not([class*="fa-"]),
+body.font-dyslexic em,
+body.font-dyslexic i:not([class*="fa"]):not([class*="fa-"]) {
+  font-family: var(--font-serif) !important;
+}
 
-    /* Re-fix the icons which SHOULD NOT use the primary font */
-    body .fa,
-    body .fas,
-    body .far,
-    body .fal,
-    body .fat,
-    body .fad,
-    body [class*="fa-"],
-    body[class*="font-"] .fa,
-    body[class*="font-"] .fas,
-    body[class*="font-"] .far,
-    body[class*="font-"] .fal,
-    body[class*="font-"] .fat,
-    body[class*="font-"] .fad,
-    body[class*="font-"] [class*="fa-"] {
-      font-family: var(--_fa-family, "Font Awesome 7 Pro", "Font Awesome 6 Pro", "Font Awesome 5 Pro", "FontAwesome", sans-serif) !important;
-    }
-
+/* Re-fix the icons which SHOULD NOT use the primary font */
+body .fa,
+body .fas,
+body .far,
+body .fal,
+body .fat,
+body .fad,
+body [class*="fa-"],
+body[class*="font-"] .fa,
+body[class*="font-"] .fas,
+body[class*="font-"] .far,
+body[class*="font-"] .fal,
+body[class*="font-"] .fat,
+body[class*="font-"] .fad,
+body[class*="font-"] [class*="fa-"] {
+  font-family: var(--_fa-family, "Font Awesome 7 Pro", "Font Awesome 6 Pro", "Font Awesome 5 Pro", "FontAwesome", sans-serif) !important;
+}
