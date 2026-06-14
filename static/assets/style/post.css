@@ -381,8 +381,94 @@ body.dark-mode .artifact-container>div {
   border-color: #e7e3df !important;
 }
 
-.stacked-author-avatar+.stacked-author-avatar {
+.author-hover-container + .author-hover-container .stacked-author-avatar {
   margin-left: -10px;
+}
+
+/* Hover Card Styles */
+.author-hover-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.author-hover-card {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  width: 290px;
+  background: var(--pastel-grey, #e7e7db);
+  border: 3px solid #ffffff;
+  border-radius: 20px;
+  corner-shape: squircle;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  padding: 20px 24px 20px 110px; /* space for photo */
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.author-hover-container:hover .author-hover-card,
+.author-hover-container:focus-within .author-hover-card {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(5px);
+}
+
+.author-hover-photo {
+  position: absolute;
+  left: -5px;
+  top: -15px;
+  width: 90px;
+  height: 115px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transform: rotate(-6deg);
+  background: #f5f5f5;
+  transition: transform 0.3s ease;
+  z-index: 101;
+}
+
+.author-hover-container:hover .author-hover-photo,
+.author-hover-container:focus-within .author-hover-photo {
+  transform: rotate(-3deg) scale(1.05);
+}
+
+.author-hover-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.author-hover-info {
+  text-align: left;
+}
+
+.author-hover-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 2px;
+  line-height: 1.1;
+}
+
+.author-hover-tags {
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.author-hover-desc {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.3;
 }
 
 .author-avatar:hover {
@@ -405,6 +491,42 @@ body.dark-mode .author-avatar {
 
 body.dark-mode .stacked-author-avatar {
   border-color: #2c2c2a !important;
+}
+
+body.dark-mode .author-hover-card {
+  background: #2c2c2a;
+  border: 3px solid #4a4a47;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .author-hover-name {
+  color: #eee;
+}
+
+body.dark-mode .author-hover-tags {
+  color: #ccc;
+}
+
+body.dark-mode .author-hover-desc {
+  color: #bbb;
+}
+
+body.dark-mode .author-hover-photo {
+  border-color: #4a4a47;
+  background: #222;
+}
+
+/* Mobile responsive for hover cards */
+@media (max-width: 768px) {
+  .author-hover-card {
+    left: -20px;
+    transform: translateY(10px);
+  }
+  
+  .author-hover-container:hover .author-hover-card,
+  .author-hover-container:focus-within .author-hover-card {
+    transform: translateY(5px);
+  }
 }
 
 body.dark-mode .author-info .author-name {
@@ -1416,67 +1538,50 @@ body.font-dyslexic {
   --font-serif: "OpenDyslexicRegular", sans-serif !important;
 }
 
+body.font-arizona {
+  --font-primary: "ABC Arizona Superfamily", sans-serif !important;
+  --font-serif: "ABC Arizona Superfamily", sans-serif !important;
+}
+
 /* Force inheritance on everything that matters ONLY when a custom font theme is active */
-body.font-secondary,
-body.font-secondary .post-body,
-body.font-secondary .post-content,
-body.font-secondary .post-title,
-body.font-secondary h1,
-body.font-secondary h2,
-body.font-secondary h3,
-body.font-secondary h4,
-body.font-secondary p,
-body.font-secondary span,
-body.font-secondary li,
-body.font-secondary a,
-body.font-serif,
-body.font-serif .post-body,
-body.font-serif .post-content,
-body.font-serif .post-title,
-body.font-serif h1,
-body.font-serif h2,
-body.font-serif h3,
-body.font-serif h4,
-body.font-serif p,
-body.font-serif span,
-body.font-serif li,
-body.font-serif a,
-body.font-system,
-body.font-system .post-body,
-body.font-system .post-content,
-body.font-system .post-title,
-body.font-system h1,
-body.font-system h2,
-body.font-system h3,
-body.font-system h4,
-body.font-system p,
-body.font-system span,
-body.font-system li,
-body.font-system a,
-body.font-dyslexic,
-body.font-dyslexic .post-body,
-body.font-dyslexic .post-content,
-body.font-dyslexic .post-title,
-body.font-dyslexic h1,
-body.font-dyslexic h2,
-body.font-dyslexic h3,
-body.font-dyslexic h4,
-body.font-dyslexic p,
-body.font-dyslexic span,
-body.font-dyslexic li,
-body.font-dyslexic a {
+body[class*="font-"]:not(.font-default),
+body[class*="font-"]:not(.font-default) .post-body,
+body[class*="font-"]:not(.font-default) .post-content,
+body[class*="font-"]:not(.font-default) .post-title,
+body[class*="font-"]:not(.font-default) h1,
+body[class*="font-"]:not(.font-default) h2,
+body[class*="font-"]:not(.font-default) h3,
+body[class*="font-"]:not(.font-default) h4,
+body[class*="font-"]:not(.font-default) p,
+body[class*="font-"]:not(.font-default) li,
+body[class*="font-"]:not(.font-default) a {
   font-family: var(--font-primary) !important;
 }
 
-body.font-secondary em,
-body.font-secondary i:not([class*="fa"]):not([class*="fa-"]),
-body.font-serif em,
-body.font-serif i:not([class*="fa"]):not([class*="fa-"]),
-body.font-system em,
-body.font-system i:not([class*="fa"]):not([class*="fa-"]),
-body.font-dyslexic em,
-body.font-dyslexic i:not([class*="fa"]):not([class*="fa-"]) {
+body[class*="font-"]:not(.font-default) span:not(pre span):not(code span):not(.hljs-keyword):not(.hljs-string):not(.hljs-title):not(.hljs-built_in) {
+  font-family: var(--font-primary) !important;
+}
+
+body[class*="font-"]:not(.font-default) em,
+body[class*="font-"]:not(.font-default) i:not([class*="fa"]):not([class*="fa-"]) {
   font-family: var(--font-serif) !important;
+}
+
+/* Re-fix code blocks and inline code to never be affected by font presets */
+body pre, body code, body pre *, body code *,
+body[class*="font-"] pre,
+body[class*="font-"] code,
+body[class*="font-"] pre *,
+body[class*="font-"] code *,
+body[class*="font-"]:not(.font-default) pre,
+body[class*="font-"]:not(.font-default) code,
+body[class*="font-"]:not(.font-default) pre *,
+body[class*="font-"]:not(.font-default) code *,
+body[class*="font-"]:not(.font-default) pre span,
+body[class*="font-"]:not(.font-default) code span,
+body[class*="font-"]:not(.font-default) pre [class^="hljs-"],
+body[class*="font-"]:not(.font-default) code [class^="hljs-"] {
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
 }
 
 /* Re-fix the icons which SHOULD NOT use the primary font */

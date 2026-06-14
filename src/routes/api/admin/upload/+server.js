@@ -4,6 +4,7 @@ import { env } from '$env/dynamic/private';
 import fs from 'fs';
 import path from 'path';
 
+/** @param {import('@sveltejs/kit').RequestEvent} event */
 export async function POST({ request, cookies }) {
     const token = cookies.get('materio_auth_token');
     if (!token) return json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,6 +19,9 @@ export async function POST({ request, cookies }) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    const isVideo = file.type.startsWith('video/') || 
+                    ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(file.name.split('.').pop()?.toLowerCase() || '');
+
     // If Cloudinary is configured, use it
     if (env.CLOUDINARY_URL || (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET)) {
         cloudinary.config({
@@ -29,7 +33,7 @@ export async function POST({ request, cookies }) {
         try {
             const result = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
-                    { folder: 'insightroom' },
+                    { folder: 'insightroom', resource_type: 'auto' },
                     (error, result) => {
                         if (error) reject(error);
                         else resolve(result);

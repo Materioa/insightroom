@@ -14,6 +14,9 @@
   import { initTOC } from "$lib/utils/toc.js";
   import QRCodeGenerator from "$lib/components/QRCodeGenerator.svelte";
   import AISummary from "$lib/components/AISummary.svelte";
+  import authorsData from "$lib/authors.json";
+
+  const authorsMap = /** @type {Record<string, {name: string, passportPhoto: string, tags: string[], description: string | string[]}>} */ (authorsData);
 
   /** @type {{ data: any }} */
   let { data } = $props();
@@ -24,9 +27,15 @@
   let visibleContentElement = $state();
   let postContentText = $state("");
   // If server provided pre-rendered content (for crawlers), use it immediately
-  let decodedContent = $state(data.ssrContent || "");
-  let isLoading = $state(!data.ssrContent);
-  let claps = $state(data.claps || 0);
+  let decodedContent = $state("");
+  let isLoading = $state(true);
+  let claps = $state(0);
+
+  $effect.pre(() => {
+    decodedContent = data.ssrContent || "";
+    isLoading = !data.ssrContent;
+    claps = data.claps || 0;
+  });
   let formattedClaps = $derived(claps >= 1000000 ? Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(claps) : Intl.NumberFormat('en-US').format(claps));
   let isClapping = $state(false);
   let hasApplauded = $state(false);
@@ -417,14 +426,16 @@
 
   $effect(() => {
     if (decodedContent && contentElement && visibleContentElement) {
+      const el = contentElement;
+      const visEl = visibleContentElement;
       tick().then(() => {
-        postContentText = contentElement.textContent || "";
+        postContentText = el.textContent || "";
         // Wait for mark.js CDN script to load
         function tryInitMark() {
           // @ts-ignore
           if (typeof window !== 'undefined' && window.Mark) {
             // @ts-ignore
-            markInstance = new window.Mark(visibleContentElement);
+            markInstance = new window.Mark(visEl);
           } else {
             // Retry until CDN script loads
             setTimeout(tryInitMark, 200);
@@ -438,6 +449,7 @@
   });
 
   // Search Logic
+  /** @param {KeyboardEvent} e */
   function handleKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
       e.preventDefault();
@@ -449,7 +461,8 @@
   }
 
   function performSearch() {
-    if (!markInstance || !visibleContentElement) return;
+    const visEl = visibleContentElement;
+    if (!markInstance || !visEl) return;
     markInstance.unmark({
       done: () => {
         if (!searchQuery.trim()) {
@@ -460,10 +473,10 @@
         }
         markInstance.mark(searchQuery, {
           separateWordSearch: false,
-          done: (count) => {
+          done: (/** @type {number} */ count) => {
             matchCount = count;
             currentMatchIndex = count > 0 ? 1 : 0;
-            markElements = visibleContentElement.querySelectorAll('mark[data-markjs="true"]');
+            markElements = visEl.querySelectorAll('mark[data-markjs="true"]');
             updateActiveMatch(false);
           }
         });
@@ -775,16 +788,39 @@
             {#if !data["hide_author"]}
               <div class="post-author-stack" aria-label="Authors">
                 {#each postAuthors().slice(0, 4) as author}
-                  <div
-                    class="author-avatar stacked-author-avatar"
-                    title={author.name}
-                    style="width: 35px; height: 35px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(0,0,0,0.1);"
-                  >
-                    <img
-                      src={author.avatar}
-                      alt={author.name}
-                      style="width: 100%; height: 100%; object-fit: cover;"
-                    />
+                  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                  <div class="author-hover-container" tabindex="0">
+                    <div
+                      class="author-avatar stacked-author-avatar"
+                      title={author.name}
+                      style="width: 35px; height: 35px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(0,0,0,0.1);"
+                    >
+                      <img
+                        src={author.avatar}
+                        alt={author.name}
+                        style="width: 100%; height: 100%; object-fit: cover;"
+                      />
+                    </div>
+                    {#if authorsMap[author.name]}
+                      <div class="author-hover-card">
+                        <div class="author-hover-photo">
+                          <img src={authorsMap[author.name].passportPhoto} alt={author.name} />
+                        </div>
+                        <div class="author-hover-info">
+                          <div class="author-hover-name">{authorsMap[author.name].name}</div>
+                          <div class="author-hover-tags">
+                            {authorsMap[author.name].tags.join(", ")}
+                          </div>
+                          <div class="author-hover-desc">
+                            <div>
+                              {typeof authorsMap[author.name].description === 'string'
+                                ? authorsMap[author.name].description
+                                : authorsMap[author.name].description.join(' ')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {/if}
                   </div>
                 {/each}
               </div>
@@ -923,6 +959,15 @@
                 style="font-size: 14px; cursor: pointer; color: var(--text);"
                 title="Print"
               ></i>
+            {/if}
+            {#if data.accessTier === 'super' || data.accessTier === 'plus'}
+              <a
+                href={`/writer/editor/${data.postId}`}
+                style="color: var(--text); display: flex; align-items: center; justify-content: center; text-decoration: none;"
+                title="Edit Post"
+              >
+                <i class="fa-regular fa-user-pen" style="font-size: 14px; cursor: pointer;"></i>
+              </a>
             {/if}
           </div>
         </div>

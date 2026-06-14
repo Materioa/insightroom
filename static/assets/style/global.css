@@ -132,6 +132,11 @@ body.font-dyslexic {
     --font-serif: "OpenDyslexicRegular", sans-serif !important;
 }
 
+body.font-arizona {
+    --font-primary: "ABC Arizona Superfamily", sans-serif !important;
+    --font-serif: "ABC Arizona Superfamily", sans-serif !important;
+}
+
 body {
     font-family: var(--font-primary) !important;
 }
@@ -139,6 +144,27 @@ body {
 /* Ensure all content elements inherit the primary font */
 .post-body, .post-content, .post-title, .site-header, .site-footer {
     font-family: var(--font-primary) !important;
+}
+
+body[class*="font-"]:not(.font-default) span:not(pre span):not(code span):not(.hljs-keyword):not(.hljs-string):not(.hljs-title):not(.hljs-built_in) {
+    font-family: var(--font-primary) !important;
+}
+
+/* Re-fix code blocks and inline code to never be affected by font presets */
+body pre, body code, body pre *, body code *,
+body[class*="font-"] pre,
+body[class*="font-"] code,
+body[class*="font-"] pre *,
+body[class*="font-"] code *,
+body[class*="font-"]:not(.font-default) pre,
+body[class*="font-"]:not(.font-default) code,
+body[class*="font-"]:not(.font-default) pre *,
+body[class*="font-"]:not(.font-default) code *,
+body[class*="font-"]:not(.font-default) pre span,
+body[class*="font-"]:not(.font-default) code span,
+body[class*="font-"]:not(.font-default) pre [class^="hljs-"],
+body[class*="font-"]:not(.font-default) code [class^="hljs-"] {
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
 }
 
 

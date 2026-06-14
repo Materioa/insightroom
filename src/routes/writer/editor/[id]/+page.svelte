@@ -112,6 +112,8 @@
     let isUploading = false;
     let uploadStatus = "";
     let coverUploading = false;
+    /** @type {number | null} */
+    let activePresetMenu = null;
     /** @type {{ id: number, message: string, type: string }[]} */
     let toasts = [];
     let toastId = 0;
@@ -307,6 +309,33 @@
     function removeAuthorMetadataRow(fieldIndex, authorIndex) {
         const authors = editableAuthors(metadataArray[fieldIndex].value).filter((_, index) => index !== authorIndex);
         metadataArray[fieldIndex].value = serializeAuthors(authors);
+        metadataArray = [...metadataArray];
+    }
+
+    /** 
+     * @param {number} fieldIndex 
+     * @param {string} type 
+     */
+    function addPresetAuthor(fieldIndex, type) {
+        if (!type) return;
+        const authors = editableAuthors(metadataArray[fieldIndex].value);
+        let preset = { name: "", avatar: "" };
+        
+        if (type === 'jinansh') {
+            preset = { 
+                name: data.user?.displayName || data.user?.name || data.user?.username || "Jinansh", 
+                avatar: data.user?.avatar || data.user?.profilePicture || "/assets/img/authors/jinansh.png" 
+            };
+        } else if (type === 'materio') {
+            preset = { name: "Materio", avatar: "/assets/img/a8f76d19-64b9-4183-90c1-ecb1f7d3f7c2.webp" };
+        }
+        
+        // If there is only one author and it's empty, replace it rather than appending
+        if (authors.length === 1 && !authors[0].name && !authors[0].avatar) {
+            metadataArray[fieldIndex].value = serializeAuthors([preset]);
+        } else {
+            metadataArray[fieldIndex].value = serializeAuthors([...authors, preset]);
+        }
         metadataArray = [...metadataArray];
     }
 
@@ -512,7 +541,7 @@
             showToast("Saved successfully.", "success");
             if (id === "new") {
                 setTimeout(() => {
-                    window.location.href = `/admin/editor/${result.id}`;
+                    window.location.href = `/writer/editor/${result.id}`;
                 }, 500);
             }
         } else {
@@ -522,7 +551,7 @@
 
     async function deletePost() {
         if (id === "new") {
-            window.location.href = "/admin";
+            window.location.href = "/writer";
             return;
         }
         const shouldDelete = await requestConfirmation({
@@ -538,7 +567,7 @@
             if (res.ok) {
                 showToast("Deleted successfully.", "success");
                 setTimeout(() => {
-                    window.location.href = "/admin";
+                    window.location.href = "/writer";
                 }, 500);
             } else {
                 showToast("Failed to delete.", "error");
@@ -626,9 +655,10 @@
         if (!dateStr) return "";
         const d = new Date(dateStr);
         const day = d.getDate();
+        const month = d.toLocaleDateString("en-US", { month: 'long' });
         const weekday = d.toLocaleDateString("en-US", { weekday: 'long' });
         const year = d.getFullYear();
-        return `${day} ${weekday} ${year}`;
+        return `${day} ${month}, ${weekday} ${year}`;
     }
     
     /** @param {string|Date|number} dateStr */
@@ -727,6 +757,7 @@
 </svelte:head>
 
 <svelte:window
+    onclick={() => activePresetMenu = null}
     onkeydown={(e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "s") {
             e.preventDefault();
@@ -741,7 +772,7 @@
         <div class="cms-main">
             <div class="breadcrumbs">
                 <h2>
-                    <a href="/admin" class="home-link"
+                    <a href="/writer" class="home-link"
                         ><i class="fa-solid fa-house"></i> Posts</a
                     >
                     /
@@ -1085,9 +1116,26 @@
                                                 </button>
                                             </div>
                                         {/each}
-                                        <button class="btn-new-meta" onclick={() => addAuthorMetadataRow(i)}>
-                                            <i class="fa-solid fa-circle-plus"></i> Add author
-                                        </button>
+                                        <div class="author-actions" style="display: flex; gap: 8px; margin-top: 10px;">
+                                            <button class="btn-new-meta" onclick={() => addAuthorMetadataRow(i)}>
+                                                <i class="fa-solid fa-circle-plus"></i> Add author
+                                            </button>
+                                            <div class="preset-dropdown-container" style="position: relative;">
+                                                <button class="btn-new-meta" onclick={(e) => { e.stopPropagation(); activePresetMenu = activePresetMenu === i ? null : i; }}>
+                                                    <i class="fa-solid fa-chevron-down"></i> Select preset
+                                                </button>
+                                                <div class="popup-menu profile-menu" class:show={activePresetMenu === i} style="bottom: auto; top: calc(100% + 8px); left: 0; corner-shape: squircle;">
+                                                    <button class="menu-item" onclick={() => { addPresetAuthor(i, 'jinansh'); activePresetMenu = null; }}>
+                                                        <img src={data.user?.avatar || data.user?.profilePicture || "/assets/img/authors/jinansh.png"} alt="Jinansh" class="profile-avatar" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
+                                                        {data.user?.displayName || data.user?.username || data.user?.name || 'Jinansh'}
+                                                    </button>
+                                                    <button class="menu-item" onclick={() => { addPresetAuthor(i, 'materio'); activePresetMenu = null; }}>
+                                                        <img src="/assets/img/a8f76d19-64b9-4183-90c1-ecb1f7d3f7c2.webp" alt="Materio" class="profile-avatar" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
+                                                        Materio
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 {:else}
                                     <input

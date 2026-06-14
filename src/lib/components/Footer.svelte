@@ -127,6 +127,7 @@
   const fonts = [
     { id: "default", name: "Default", family: "PP Mori" },
     { id: "secondary", name: "Sans", family: "PP Mori" },
+    { id: "arizona", name: "Arizona", family: "ABC Arizona Superfamily" },
     { id: "serif", name: "Old", family: "Manrope" },
     { id: "system", name: "System", family: "System" },
     { id: "dyslexic", name: "Dyslexic", family: "OpenDyslexic" },
@@ -176,7 +177,7 @@
       </button>
 
       <!-- Profile Popup Menu -->
-      <div class="popup-menu profile-menu" class:show={showProfileMenu}>
+      <div class="popup-menu profile-menu" class:show={showProfileMenu} style="corner-shape: squircle;">
         <button class="menu-item" onclick={goToProfile}>
           <i class="fa-regular fa-user"></i>
           Profile
@@ -218,7 +219,7 @@
       ></i>
     </button>
 
-    <div class="appearance-card" class:show={showAppearanceMenu}>
+    <div class="appearance-card" class:show={showAppearanceMenu} style="corner-shape: squircle;">
       <h3 class="appearance-title">Appearance</h3>
 
       <div class="appearance-section">
@@ -285,7 +286,9 @@
                   ? 'OpenDyslexicRegular'
                   : font.family === 'Manrope'
                     ? 'Manrope'
-                    : 'PP Mori'};"
+                    : font.family === 'ABC Arizona Superfamily'
+                      ? 'ABC Arizona Superfamily'
+                      : 'PP Mori'};"
               >
                 Aa
               </button>

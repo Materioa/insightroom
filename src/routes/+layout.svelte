@@ -21,7 +21,7 @@
       document.body.classList.toggle("dark-mode", isDark);
       
       // Manage font classes
-      const fontClasses = ["font-default", "font-secondary", "font-serif", "font-system", "font-dyslexic"];
+      const fontClasses = ["font-default", "font-secondary", "font-serif", "font-system", "font-dyslexic", "font-arizona"];
       fontClasses.forEach(c => document.body.classList.remove(c));
       document.body.classList.add(`font-${currentFont}`);
       

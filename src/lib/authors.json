@@ -1,0 +1,28 @@
+{
+  "Jinansh": {
+    "name": "Jinansh",
+    "passportPhoto": "/assets/img/authors/jinansh.png",
+    "tags": [
+      "Writer",
+      "Creator"
+    ],
+    "description": [
+      "Passionate about building",
+      "interactive web experiences",
+      "and exploring new ideas."
+    ]
+  },
+  "Materio": {
+    "name": "Materio",
+    "passportPhoto": "/assets/img/open-graph.jpeg",
+    "tags": [
+      "Publisher",
+      "Community"
+    ],
+    "description": [
+      "The InsightRoom organization.",
+      "For minds that want more",
+      "than just academics."
+    ]
+  }
+}
