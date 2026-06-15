@@ -152,7 +152,7 @@ export function initializeListenComponent() {
         totalDuration = estimatedMinutes * 60;
 
         const durEl = document.getElementById('listen-duration');
-        if (durEl) durEl.textContent = `${estimatedMinutes}m audio`;
+        if (durEl) durEl.textContent = `${estimatedMinutes}m`;
     }
 
     initializeWaveform();

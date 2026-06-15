@@ -411,6 +411,22 @@ body.dark-mode .artifact-container>div {
   pointer-events: none;
 }
 
+/* Tooltip pointing arrow */
+.author-hover-card::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: var(--pastel-grey, #e7e7db);
+  border-top: 3px solid #ffffff;
+  border-left: 3px solid #ffffff;
+  border-top-left-radius: 5px; /* Rounded soft pointing corner */
+  z-index: 99;
+}
+
 .author-hover-container:hover .author-hover-card,
 .author-hover-container:focus-within .author-hover-card {
   opacity: 1;
@@ -499,6 +515,12 @@ body.dark-mode .author-hover-card {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
+body.dark-mode .author-hover-card::before {
+  background: #2c2c2a;
+  border-top-color: #4a4a47;
+  border-left-color: #4a4a47;
+}
+
 body.dark-mode .author-hover-name {
   color: #eee;
 }
@@ -518,14 +540,58 @@ body.dark-mode .author-hover-photo {
 
 /* Mobile responsive for hover cards */
 @media (max-width: 768px) {
+  .post-author-stack {
+    position: relative;
+  }
+
+  .author-hover-container {
+    position: static;
+  }
+
   .author-hover-card {
-    left: -20px;
-    transform: translateY(10px);
+    width: calc(100vw - 48px);
+    max-width: 240px;
+    left: 0;
+    transform: translateY(10px); /* override desktop translateX(-50%) */
+    padding: 14px 70px 14px 14px; /* right padding makes room for photo */
   }
   
+  .author-hover-card::before {
+    left: calc(19px + var(--author-index, 0) * 20px);
+    transform: rotate(45deg); /* override desktop translateX(-50%) */
+  }
+
   .author-hover-container:hover .author-hover-card,
   .author-hover-container:focus-within .author-hover-card {
-    transform: translateY(5px);
+    transform: translateY(5px); /* override desktop translateX(-50%) */
+  }
+
+  .author-hover-photo {
+    top: -12px;
+    left: auto;
+    right: -8px; /* stick out to the right */
+    width: 56px;
+    height: 72px;
+    transform: rotate(3deg);
+  }
+  
+  .author-hover-container:hover .author-hover-photo,
+  .author-hover-container:focus-within .author-hover-photo {
+    transform: rotate(1.5deg) scale(1.03);
+  }
+
+  .author-hover-name {
+    font-size: 16px;
+  }
+  
+  .author-hover-tags {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  
+  .author-hover-desc {
+    font-size: 12px;
+    line-height: 1.25;
   }
 }
 
@@ -542,6 +608,13 @@ body.dark-mode .author-info .author-name {
 
   .author-info .author-name {
     font-size: 13px !important;
+  }
+}
+
+/* Hide author name when row gets cramped */
+@media (max-width: 600px) {
+  .author-info {
+    display: none;
   }
 }
 

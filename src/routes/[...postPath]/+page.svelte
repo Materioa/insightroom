@@ -169,6 +169,18 @@
     return authors.map((author) => author.name).join(", ");
   }
 
+  /**
+   * @param {string | string[] | undefined} desc
+   * @returns {string}
+   */
+  function formatAuthorDescription(desc) {
+    if (!desc) return "";
+    if (Array.isArray(desc)) {
+      return desc.join(" ");
+    }
+    return desc;
+  }
+
   let postAuthors = $derived(() => getPostAuthors());
 
   /** @param {string|undefined|null} dateStr */
@@ -787,9 +799,9 @@
           <div style="display: flex; align-items: center; gap: 0.8rem;">
             {#if !data["hide_author"]}
               <div class="post-author-stack" aria-label="Authors">
-                {#each postAuthors().slice(0, 4) as author}
+                {#each postAuthors().slice(0, 4) as author, i}
                   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-                  <div class="author-hover-container" tabindex="0">
+                  <div class="author-hover-container" tabindex="0" style="--author-index: {i}">
                     <div
                       class="author-avatar stacked-author-avatar"
                       title={author.name}
@@ -813,9 +825,7 @@
                           </div>
                           <div class="author-hover-desc">
                             <div>
-                              {typeof authorsMap[author.name].description === 'string'
-                                ? authorsMap[author.name].description
-                                : authorsMap[author.name].description.join(' ')}
+                              {formatAuthorDescription(authorsMap[author.name]?.description)}
                             </div>
                           </div>
                         </div>
