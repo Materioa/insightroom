@@ -177,7 +177,10 @@
         } catch {
             // Custom tags often use comma-separated names.
         }
-        return raw.split(",").map((name) => name.trim()).filter(Boolean);
+        return raw
+            .split(",")
+            .map((name) => name.trim())
+            .filter(Boolean);
     }
 
     /** @param {any} author */
@@ -186,11 +189,21 @@
         if (typeof author === "string") {
             return { name: author, avatar: defaultAvatar() };
         }
-        const name = author.displayName || author.name || author.username || author.title || author.label;
+        const name =
+            author.displayName ||
+            author.name ||
+            author.username ||
+            author.title ||
+            author.label;
         if (!name) return null;
         return {
             name,
-            avatar: author.avatar || author.profilePicture || author.image || author.photo || defaultAvatar(),
+            avatar:
+                author.avatar ||
+                author.profilePicture ||
+                author.image ||
+                author.photo ||
+                defaultAvatar(),
         };
     }
 
@@ -240,7 +253,13 @@
     /** @param {any} version */
     function versionAuthors(version) {
         const authors = getAuthors(version);
-        return authors.length ? authors : [{ name: "Admin", avatar: defaultAvatar() }];
+        if (authors.length) return authors;
+        const u = data.user;
+        const fallbackName =
+            u?.displayName || u?.username || u?.name || "Materio";
+        const fallbackAvatar =
+            u?.avatar || u?.profilePicture || defaultAvatar();
+        return [{ name: fallbackName, avatar: fallbackAvatar }];
     }
 
     /** @param {HistoryAuthor[]} authors */
@@ -250,7 +269,14 @@
 
     /** @param {string} key */
     function isAuthorMetadataKey(key) {
-        return ["authors", "author", "editors", "editor", "collaborators", "collaborator"].includes(key.trim().toLowerCase());
+        return [
+            "authors",
+            "author",
+            "editors",
+            "editor",
+            "collaborators",
+            "collaborator",
+        ].includes(key.trim().toLowerCase());
     }
 
     /** @param {string} value */
@@ -258,16 +284,16 @@
         try {
             const parsed = JSON.parse(value);
             if (Array.isArray(parsed)) {
-                const mapped = parsed.map(a => ({
+                const mapped = parsed.map((a) => ({
                     name: a.displayName || a.name || "",
-                    avatar: a.avatar || ""
+                    avatar: a.avatar || "",
                 }));
                 if (mapped.length) return mapped;
             }
         } catch (e) {
             // Fallback for legacy formats
         }
-        
+
         const authors = parseAuthorList(value)
             .map(normalizeAuthor)
             .filter(isHistoryAuthor);
@@ -301,47 +327,68 @@
     /** @param {number} fieldIndex */
     function addAuthorMetadataRow(fieldIndex) {
         const authors = editableAuthors(metadataArray[fieldIndex].value);
-        metadataArray[fieldIndex].value = serializeAuthors([...authors, { name: "", avatar: "" }]);
+        metadataArray[fieldIndex].value = serializeAuthors([
+            ...authors,
+            { name: "", avatar: "" },
+        ]);
         metadataArray = [...metadataArray];
     }
 
     /** @param {number} fieldIndex @param {number} authorIndex */
     function removeAuthorMetadataRow(fieldIndex, authorIndex) {
-        const authors = editableAuthors(metadataArray[fieldIndex].value).filter((_, index) => index !== authorIndex);
+        const authors = editableAuthors(metadataArray[fieldIndex].value).filter(
+            (_, index) => index !== authorIndex,
+        );
         metadataArray[fieldIndex].value = serializeAuthors(authors);
         metadataArray = [...metadataArray];
     }
 
-    /** 
-     * @param {number} fieldIndex 
-     * @param {string} type 
+    /**
+     * @param {number} fieldIndex
+     * @param {string} type
      */
     function addPresetAuthor(fieldIndex, type) {
         if (!type) return;
         const authors = editableAuthors(metadataArray[fieldIndex].value);
         let preset = { name: "", avatar: "" };
-        
-        if (type === 'jinansh') {
-            preset = { 
-                name: data.user?.displayName || data.user?.name || data.user?.username || "Jinansh", 
-                avatar: data.user?.avatar || data.user?.profilePicture || "/assets/img/authors/jinansh.png" 
+
+        if (type === "jinansh") {
+            preset = {
+                name:
+                    data.user?.displayName ||
+                    data.user?.name ||
+                    data.user?.username ||
+                    "Jinansh",
+                avatar:
+                    data.user?.avatar ||
+                    data.user?.profilePicture ||
+                    "/assets/img/authors/jinansh.png",
             };
-        } else if (type === 'materio') {
-            preset = { name: "Materio", avatar: "/assets/img/a8f76d19-64b9-4183-90c1-ecb1f7d3f7c2.webp" };
+        } else if (type === "materio") {
+            preset = {
+                name: "Materio",
+                avatar: "/assets/img/a8f76d19-64b9-4183-90c1-ecb1f7d3f7c2.webp",
+            };
         }
-        
+
         // If there is only one author and it's empty, replace it rather than appending
         if (authors.length === 1 && !authors[0].name && !authors[0].avatar) {
             metadataArray[fieldIndex].value = serializeAuthors([preset]);
         } else {
-            metadataArray[fieldIndex].value = serializeAuthors([...authors, preset]);
+            metadataArray[fieldIndex].value = serializeAuthors([
+                ...authors,
+                preset,
+            ]);
         }
         metadataArray = [...metadataArray];
     }
 
     $: historyAuthors = (() => {
         const seen = new Set();
-        const all = [...getAuthors(post), ...versions.flatMap((version) => getAuthors(version))];
+        const all = [
+            ...getAuthors(post),
+            ...versions.flatMap((version) => getAuthors(version)),
+        ];
         return all.filter((author) => {
             const key = author.name.toLowerCase();
             if (seen.has(key)) return false;
@@ -355,7 +402,92 @@
         e.preventDefault();
         const files = e.dataTransfer?.files;
         if (files && files.length) {
-            await uploadFile(files[0]);
+            for (const file of files) {
+                await uploadFile(file);
+            }
+        }
+    }
+
+    /**
+     * Try to extract an image/gif URL from HTML clipboard data.
+     * The Windows emoji picker and GBoard embed the Tenor GIF URL
+     * inside an `<img src="...">` tag in the text/html payload.
+     * @param {DataTransfer | null | undefined} dt
+     * @returns {string | null}
+     */
+    function extractEmbeddedMediaUrl(dt) {
+        if (!dt) return null;
+        try {
+            const html = dt.getData("text/html");
+            if (html) {
+                const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+                if (m && m[1] && /^https?:\/\//.test(m[1])) return m[1];
+            }
+            const uri = dt.getData("text/uri-list");
+            if (uri && /^https?:\/\//.test(uri.trim())) {
+                const url = uri.trim().split("\n")[0];
+                if (/\.(gif|webp|png|jpe?g|mp4|webm)/i.test(url)) return url;
+            }
+        } catch {
+            // getData may throw in some contexts
+        }
+        return null;
+    }
+
+    /** @param {ClipboardEvent} e */
+    async function handlePaste(e) {
+        // 1. Try to grab the original media URL (e.g. Tenor GIF)
+        const url = extractEmbeddedMediaUrl(e.clipboardData);
+        if (url) {
+            e.preventDefault();
+            insertAtCursor(`\n![](${url})\n`);
+            return;
+        }
+        // 2. Fall back to file upload
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+            if (
+                item.kind === "file" &&
+                (item.type.startsWith("image/") ||
+                    item.type.startsWith("video/"))
+            ) {
+                e.preventDefault();
+                const file = item.getAsFile();
+                if (file) await uploadFile(file);
+                return;
+            }
+        }
+    }
+
+    /** @param {InputEvent} e */
+    async function handleBeforeInput(e) {
+        if (
+            e.inputType !== "insertFromPaste" &&
+            e.inputType !== "insertFromDrop"
+        )
+            return;
+        const dt = e.dataTransfer;
+        if (!dt) return;
+        // 1. Try to grab the original media URL (e.g. Tenor GIF)
+        const url = extractEmbeddedMediaUrl(dt);
+        if (url) {
+            e.preventDefault();
+            insertAtCursor(`\n![](${url})\n`);
+            return;
+        }
+        // 2. Fall back to file upload
+        const files = dt.files;
+        if (!files || !files.length) return;
+        for (const file of files) {
+            if (
+                file.type.startsWith("image/") ||
+                file.type.startsWith("video/")
+            ) {
+                e.preventDefault();
+                await uploadFile(file);
+                return;
+            }
         }
     }
 
@@ -425,7 +557,10 @@
             !file.type.startsWith("image/") &&
             !file.type.startsWith("video/")
         ) {
-            showToast("Only images and videos are allowed for cover.", "warning");
+            showToast(
+                "Only images and videos are allowed for cover.",
+                "warning",
+            );
             return;
         }
 
@@ -510,7 +645,11 @@
                     try {
                         const parsed = JSON.parse(finalValue);
                         if (Array.isArray(parsed)) {
-                            const cleaned = parsed.filter(a => (a.displayName || a.name)?.trim() || a.avatar?.trim());
+                            const cleaned = parsed.filter(
+                                (a) =>
+                                    (a.displayName || a.name)?.trim() ||
+                                    a.avatar?.trim(),
+                            );
                             finalValue = JSON.stringify(cleaned);
                             // If empty, maybe don't save the field at all, or save as empty array
                         }
@@ -520,6 +659,7 @@
             }
         });
 
+        const u = data.user;
         const payload = {
             id: id === "new" ? null : id,
             title,
@@ -528,6 +668,9 @@
             metadata: {
                 ...payloadMetadata,
             },
+            saved_by_name: u?.username || u?.name || u?.displayName,
+            saved_by_display_name: u?.displayName || u?.username || u?.name,
+            saved_by_avatar: u?.avatar || u?.profilePicture,
         };
 
         const res = await fetch("/api/admin/posts", {
@@ -556,7 +699,8 @@
         }
         const shouldDelete = await requestConfirmation({
             title: "Delete post?",
-            message: "This will permanently delete this post and its version history.",
+            message:
+                "This will permanently delete this post and its version history.",
             confirmText: "Delete",
             danger: true,
         });
@@ -655,17 +799,20 @@
         if (!dateStr) return "";
         const d = new Date(dateStr);
         const day = d.getDate();
-        const month = d.toLocaleDateString("en-US", { month: 'long' });
-        const weekday = d.toLocaleDateString("en-US", { weekday: 'long' });
+        const month = d.toLocaleDateString("en-US", { month: "long" });
+        const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
         const year = d.getFullYear();
         return `${day} ${month}, ${weekday} ${year}`;
     }
-    
+
     /** @param {string|Date|number} dateStr */
     function formatVersionTime(dateStr) {
         if (!dateStr) return "";
         const d = new Date(dateStr);
-        return d.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit' });
+        return d.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+        });
     }
 
     let isPreviewMode = false;
@@ -708,8 +855,10 @@
                     /** @type {string} */ match,
                     /** @type {string} */ vparams,
                 ) => {
-                    const isCover = vparams.trim().endsWith(':cover');
-                    const videoUrl = isCover ? vparams.trim().slice(0, -6).trim() : vparams.trim();
+                    const isCover = vparams.trim().endsWith(":cover");
+                    const videoUrl = isCover
+                        ? vparams.trim().slice(0, -6).trim()
+                        : vparams.trim();
                     return `<div class="video-embed"><video muted loop autoplay playsinline src="${videoUrl}"></video></div>`;
                 },
             );
@@ -718,38 +867,49 @@
             const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
             /** @type {Record<string, string>} */
             const artifacts = {};
-            rawContent = rawContent.replace(artifactRegex, (/** @type {string} */ match, /** @type {string} */ contentArtifact) => {
-                const id = Math.random().toString(36).substr(2, 9);
-                artifacts[id] = contentArtifact;
-                return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
-            });
+            rawContent = rawContent.replace(
+                artifactRegex,
+                (
+                    /** @type {string} */ match,
+                    /** @type {string} */ contentArtifact,
+                ) => {
+                    const id = Math.random().toString(36).substr(2, 9);
+                    artifacts[id] = contentArtifact;
+                    return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
+                },
+            );
 
             previewHtml = await customMarked.parse(rawContent);
-            
+
             // Restore artifacts with their HTML intact, no height limits, transparent background
             Object.entries(artifacts).forEach(([id, content]) => {
                 const artifactHtml = `<div class="artifact-container"><div>${content}</div></div>`;
-                previewHtml = previewHtml.replace(`<div data-artifact-placeholder="${id}"></div>`, artifactHtml);
+                previewHtml = previewHtml.replace(
+                    `<div data-artifact-placeholder="${id}"></div>`,
+                    artifactHtml,
+                );
             });
         }
     }
 
-    $: permalinkField = metadataArray.find(m => m.key === 'permalink');
-    $: permalink = permalinkField && permalinkField.value ? permalinkField.value : null;
+    $: permalinkField = metadataArray.find((m) => m.key === "permalink");
+    $: permalink =
+        permalinkField && permalinkField.value ? permalinkField.value : null;
     $: liveUrl = permalink
-        ? (permalink.startsWith('/') || permalink.startsWith('http') ? permalink : `/${permalink}`)
+        ? permalink.startsWith("/") || permalink.startsWith("http")
+            ? permalink
+            : `/${permalink}`
         : draft
-            ? `/draft/${slug}`
-            : category
-                ? `/${category}/${slug}`
-                : `/${slug}`;
-
+          ? `/draft/${slug}`
+          : category
+            ? `/${category}/${slug}`
+            : `/${slug}`;
 </script>
 
 <svelte:head>
-    <title>Insightroom Kitchen</title>
+    <title>Insightroom Writer</title>
     <link rel="icon" type="image/x-icon" href="/assets/img/room-icon-x.svg" />
-    
+
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet"
@@ -757,7 +917,7 @@
 </svelte:head>
 
 <svelte:window
-    onclick={() => activePresetMenu = null}
+    onclick={() => (activePresetMenu = null)}
     onkeydown={(e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "s") {
             e.preventDefault();
@@ -776,7 +936,7 @@
                         ><i class="fa-solid fa-house"></i> Posts</a
                     >
                     /
-                    <span class="light">{liveUrl.replace(/^\/+/, '')}</span>
+                    <span class="light">{liveUrl.replace(/^\/+/, "")}</span>
                 </h2>
             </div>
 
@@ -791,7 +951,7 @@
                     type="text"
                     class="input-path"
                     bind:value={slug}
-                    placeholder="2026-01-01-my-post"
+                    placeholder="Choose a home for this story."
                 />
             </div>
 
@@ -803,7 +963,7 @@
                     type="text"
                     class="input-title"
                     bind:value={title}
-                    placeholder="Insightroom Admin!"
+                    placeholder="Every story begins with a headline."
                 />
             </div>
 
@@ -859,7 +1019,8 @@
                     <button
                         class="tool-btn"
                         onclick={() => insertFormatting("link")}
-                        title="Link"><i class="fa-regular fa-link-simple"></i></button
+                        title="Link"
+                        ><i class="fa-regular fa-link-simple"></i></button
                     >
                     <label
                         class="tool-btn"
@@ -917,6 +1078,8 @@
                         bind:value={content}
                         ondrop={handleFileDrop}
                         ondragover={(e) => e.preventDefault()}
+                        onpaste={handlePaste}
+                        onbeforeinput={handleBeforeInput}
                     ></textarea>
                 {/if}
             </div>
@@ -1090,7 +1253,8 @@
                                                             i,
                                                             authorIndex,
                                                             "name",
-                                                            e.currentTarget.value,
+                                                            e.currentTarget
+                                                                .value,
                                                         )}
                                                 />
                                                 <input
@@ -1104,33 +1268,107 @@
                                                             i,
                                                             authorIndex,
                                                             "avatar",
-                                                            e.currentTarget.value,
+                                                            e.currentTarget
+                                                                .value,
                                                         )}
                                                 />
                                                 <button
                                                     class="btn-icon"
-                                                    onclick={() => removeAuthorMetadataRow(i, authorIndex)}
+                                                    onclick={() =>
+                                                        removeAuthorMetadataRow(
+                                                            i,
+                                                            authorIndex,
+                                                        )}
                                                     aria-label="Remove author"
                                                 >
-                                                    <i class="fa-solid fa-xmark"></i>
+                                                    <i class="fa-solid fa-xmark"
+                                                    ></i>
                                                 </button>
                                             </div>
                                         {/each}
-                                        <div class="author-actions" style="display: flex; gap: 8px; margin-top: 10px;">
-                                            <button class="btn-new-meta" onclick={() => addAuthorMetadataRow(i)}>
-                                                <i class="fa-solid fa-circle-plus"></i> Add author
+                                        <div
+                                            class="author-actions"
+                                            style="display: flex; gap: 8px; margin-top: 10px;"
+                                        >
+                                            <button
+                                                class="btn-new-meta"
+                                                onclick={() =>
+                                                    addAuthorMetadataRow(i)}
+                                            >
+                                                <i
+                                                    class="fa-solid fa-circle-plus"
+                                                ></i> Add author
                                             </button>
-                                            <div class="preset-dropdown-container" style="position: relative;">
-                                                <button class="btn-new-meta" onclick={(e) => { e.stopPropagation(); activePresetMenu = activePresetMenu === i ? null : i; }}>
-                                                    <i class="fa-solid fa-chevron-down"></i> Select preset
+                                            <div
+                                                class="preset-dropdown-container"
+                                                style="position: relative;"
+                                            >
+                                                <button
+                                                    class="btn-new-meta"
+                                                    onclick={(e) => {
+                                                        e.stopPropagation();
+                                                        activePresetMenu =
+                                                            activePresetMenu ===
+                                                            i
+                                                                ? null
+                                                                : i;
+                                                    }}
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-chevron-down"
+                                                    ></i> Select preset
                                                 </button>
-                                                <div class="popup-menu profile-menu" class:show={activePresetMenu === i} style="bottom: auto; top: calc(100% + 8px); left: 0; corner-shape: squircle;">
-                                                    <button class="menu-item" onclick={() => { addPresetAuthor(i, 'jinansh'); activePresetMenu = null; }}>
-                                                        <img src={data.user?.avatar || data.user?.profilePicture || "/assets/img/authors/jinansh.png"} alt="Jinansh" class="profile-avatar" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
-                                                        {data.user?.displayName || data.user?.username || data.user?.name || 'Jinansh'}
+                                                <div
+                                                    class="popup-menu profile-menu"
+                                                    class:show={activePresetMenu ===
+                                                        i}
+                                                    style="bottom: auto; top: calc(100% + 8px); left: 0; corner-shape: squircle;"
+                                                >
+                                                    <button
+                                                        class="menu-item"
+                                                        onclick={() => {
+                                                            addPresetAuthor(
+                                                                i,
+                                                                "jinansh",
+                                                            );
+                                                            activePresetMenu =
+                                                                null;
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={data.user
+                                                                ?.avatar ||
+                                                                data.user
+                                                                    ?.profilePicture ||
+                                                                "/assets/img/authors/jinansh.png"}
+                                                            alt="Jinansh"
+                                                            class="profile-avatar"
+                                                            style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;"
+                                                        />
+                                                        {data.user
+                                                            ?.displayName ||
+                                                            data.user
+                                                                ?.username ||
+                                                            data.user?.name ||
+                                                            "Jinansh"}
                                                     </button>
-                                                    <button class="menu-item" onclick={() => { addPresetAuthor(i, 'materio'); activePresetMenu = null; }}>
-                                                        <img src="/assets/img/a8f76d19-64b9-4183-90c1-ecb1f7d3f7c2.webp" alt="Materio" class="profile-avatar" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
+                                                    <button
+                                                        class="menu-item"
+                                                        onclick={() => {
+                                                            addPresetAuthor(
+                                                                i,
+                                                                "materio",
+                                                            );
+                                                            activePresetMenu =
+                                                                null;
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src="/assets/img/a8f76d19-64b9-4183-90c1-ecb1f7d3f7c2.webp"
+                                                            alt="Materio"
+                                                            class="profile-avatar"
+                                                            style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;"
+                                                        />
                                                         Materio
                                                     </button>
                                                 </div>
@@ -1177,8 +1415,7 @@
                 >
                 <button
                     class="btn btn-gray"
-                    onclick={() =>
-                        window.open(liveUrl, "_blank")}
+                    onclick={() => window.open(liveUrl, "_blank")}
                     ><i class="fa-solid fa-arrow-up-right-from-square"></i> Live</button
                 >
                 <button class="btn btn-gray" onclick={viewHistory}
@@ -1245,17 +1482,34 @@
                                         ).toLocaleString()}"
                                     >
                                         <div class="v-date">
-                                            {formatVersionDate(v.version_saved_at)}
+                                            {formatVersionDate(
+                                                v.version_saved_at,
+                                            )}
                                         </div>
                                         <div class="v-author">
-                                            <span>{formatVersionTime(v.version_saved_at)} -</span>
+                                            <span
+                                                >{formatVersionTime(
+                                                    v.version_saved_at,
+                                                )} -</span
+                                            >
                                             {#if authors.length > 1}
-                                                <span class="author-stack mini" aria-label="Authors">
+                                                <span
+                                                    class="author-stack mini"
+                                                    aria-label="Authors"
+                                                >
                                                     {#each authors.slice(0, 3) as author}
-                                                        <img src={author.avatar} alt={author.name} class="history-avatar stacked" />
+                                                        <img
+                                                            src={author.avatar}
+                                                            alt={author.name}
+                                                            class="history-avatar stacked"
+                                                        />
                                                     {/each}
                                                 </span>
-                                                <span>{authorNames(authors)}</span>
+                                                <span
+                                                    >{authorNames(
+                                                        authors,
+                                                    )}</span
+                                                >
                                             {:else}
                                                 <img
                                                     src={authors[0].avatar}
@@ -1271,10 +1525,17 @@
                         </ul>
                         {#if historyAuthors.length > 1}
                             <div class="history-authors">
-                                <div class="history-authors-label">{authorNames(historyAuthors)}</div>
+                                <div class="history-authors-label">
+                                    {authorNames(historyAuthors)}
+                                </div>
                                 <div class="author-stack">
                                     {#each historyAuthors.slice(0, 5) as author}
-                                        <img src={author.avatar} alt={author.name} title={author.name} class="history-avatar large stacked" />
+                                        <img
+                                            src={author.avatar}
+                                            alt={author.name}
+                                            title={author.name}
+                                            class="history-avatar large stacked"
+                                        />
                                     {/each}
                                 </div>
                             </div>
@@ -1308,35 +1569,36 @@
                         >
                             <table class="diff-table">
                                 <tbody>
-                                {#each diffResult as line}
-                                    <tr class="diff-row {line.type}">
-                                        <td class="diff-line-num"
-                                            >{line.oldLine}</td
-                                        >
-                                        <td class="diff-line-num"
-                                            >{line.newLine}</td
-                                        >
-                                        <td class="diff-line-code">
-                                            <span class="diff-sign"
-                                                >{line.type === "added"
-                                                    ? "+"
-                                                    : line.type === "removed"
-                                                      ? "-"
-                                                      : " "}</span
+                                    {#each diffResult as line}
+                                        <tr class="diff-row {line.type}">
+                                            <td class="diff-line-num"
+                                                >{line.oldLine}</td
                                             >
-                                            {line.text}
-                                        </td>
-                                    </tr>
-                                {/each}
-                                {#if diffResult.length === 0}
-                                    <tr
-                                        ><td
-                                            colspan="3"
-                                            style="text-align:center; padding:20px; color:#666;"
-                                            >No changes detected.</td
-                                        ></tr
-                                    >
-                                {/if}
+                                            <td class="diff-line-num"
+                                                >{line.newLine}</td
+                                            >
+                                            <td class="diff-line-code">
+                                                <span class="diff-sign"
+                                                    >{line.type === "added"
+                                                        ? "+"
+                                                        : line.type ===
+                                                            "removed"
+                                                          ? "-"
+                                                          : " "}</span
+                                                >
+                                                {line.text}
+                                            </td>
+                                        </tr>
+                                    {/each}
+                                    {#if diffResult.length === 0}
+                                        <tr
+                                            ><td
+                                                colspan="3"
+                                                style="text-align:center; padding:20px; color:#666;"
+                                                >No changes detected.</td
+                                            ></tr
+                                        >
+                                    {/if}
                                 </tbody>
                             </table>
                         </div>
@@ -1368,10 +1630,16 @@
             <div class="toast-title">{confirmToast.title}</div>
             <div class="toast-message">{confirmToast.message}</div>
             <div class="toast-actions">
-                <button class="toast-btn secondary" onclick={() => resolveConfirmation(false)}>
+                <button
+                    class="toast-btn secondary"
+                    onclick={() => resolveConfirmation(false)}
+                >
                     {confirmToast.cancelText}
                 </button>
-                <button class="toast-btn primary" onclick={() => resolveConfirmation(true)}>
+                <button
+                    class="toast-btn primary"
+                    onclick={() => resolveConfirmation(true)}
+                >
                     {confirmToast.confirmText}
                 </button>
             </div>
@@ -1380,7 +1648,11 @@
     {#each toasts as toast (toast.id)}
         <div class="toast-card {toast.type}">
             <div class="toast-message">{toast.message}</div>
-            <button class="toast-close" onclick={() => dismissToast(toast.id)} aria-label="Dismiss notification">
+            <button
+                class="toast-close"
+                onclick={() => dismissToast(toast.id)}
+                aria-label="Dismiss notification"
+            >
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -1388,20 +1660,20 @@
 </div>
 
 <style>
-@font-face {
-  font-family: 'PP Mori';
-  src: url('/assets/fonts/PPMori_Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PP Mori';
-  src: url('/assets/fonts/PPMori_SemiBold.otf') format('opentype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
+    @font-face {
+        font-family: "PP Mori";
+        src: url("/assets/fonts/PPMori_Regular.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: "PP Mori";
+        src: url("/assets/fonts/PPMori_SemiBold.otf") format("opentype");
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+    }
 
     :global(body) {
         background-color: #f5f5f5;
@@ -2189,9 +2461,15 @@
         pointer-events: auto;
     }
 
-    .toast-card.success { color: #1b5e20; }
-    .toast-card.error { color: #cf1322; }
-    .toast-card.confirm.danger { color: var(--toast-color, #333); }
+    .toast-card.success {
+        color: #1b5e20;
+    }
+    .toast-card.error {
+        color: #cf1322;
+    }
+    .toast-card.confirm.danger {
+        color: var(--toast-color, #333);
+    }
 
     .toast-title {
         margin-bottom: 8px;
@@ -2256,19 +2534,35 @@
         cursor: pointer;
     }
 
-    :global(body.dark) { 
-        background-color: #121212; 
+    :global(body.dark) {
+        background-color: #121212;
         --toast-bg: #1f1f1f;
         --toast-border: #333;
         --toast-color: #eee;
     }
-    :global(body.dark) .cms-wrapper { background-color: #121212; color: #eee; }
-    :global(body.dark) .cms-wrapper.fullscreen { background: #121212; }
-    :global(body.dark) .history-avatar { border-color: #1a1a1a; }
-    :global(body.dark) .toast-card { box-shadow: 0 14px 34px rgba(0,0,0,.35); }
-    :global(body.dark) .toast-btn.secondary { background: #333; color: #eee; }
-    :global(body.dark) .toast-close { color: #aaa; }
-    :global(body.dark) .toast-message { color: #aaa; }
+    :global(body.dark) .cms-wrapper {
+        background-color: #121212;
+        color: #eee;
+    }
+    :global(body.dark) .cms-wrapper.fullscreen {
+        background: #121212;
+    }
+    :global(body.dark) .history-avatar {
+        border-color: #1a1a1a;
+    }
+    :global(body.dark) .toast-card {
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+    }
+    :global(body.dark) .toast-btn.secondary {
+        background: #333;
+        color: #eee;
+    }
+    :global(body.dark) .toast-close {
+        color: #aaa;
+    }
+    :global(body.dark) .toast-message {
+        color: #aaa;
+    }
 
     :global(body.dark) .meta-card {
         background: #1a1a1a;
@@ -2377,21 +2671,68 @@
 
     /* Mobile Responsive */
     @media (max-width: 768px) {
-        .cms-layout { flex-direction: column; gap: 20px; }
-        .cms-sidebar { width: 100%; margin-top: 10px; padding-bottom: 30px; }
-        .header-actions { flex-direction: row; flex-wrap: wrap; }
-        .header-actions .btn { flex: 1 1 calc(50% - 10px); }
-        .cms-wrapper { padding: 20px 15px; }
-        .modal-content { width: 100%; height: 100vh; border-radius: 0 !important; }
-        .history-layout { flex-direction: column; }
-        .history-sidebar { width: 100%; height: 35%; border-right: none; border-bottom: 1px solid #eee; }
-        :global(body.dark) .history-sidebar { border-bottom-color: #333; }
-        .history-main { height: 65%; padding: 15px; }
-        .meta-card { padding: 15px; border-radius: 12px !important; }
-        .toolbar { flex-wrap: wrap; padding: 4px; gap: 4px; }
-        .tool-btn { width: 36px; height: 36px; }
-        .input-title { font-size: 28px; }
-        .preview-box { padding: 15px; overflow-x: hidden; }
-        .author-field-row { grid-template-columns: 1fr 1fr 30px; }
+        .cms-layout {
+            flex-direction: column;
+            gap: 20px;
+        }
+        .cms-sidebar {
+            width: 100%;
+            margin-top: 10px;
+            padding-bottom: 30px;
+        }
+        .header-actions {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        .header-actions .btn {
+            flex: 1 1 calc(50% - 10px);
+        }
+        .cms-wrapper {
+            padding: 20px 15px;
+        }
+        .modal-content {
+            width: 100%;
+            height: 100vh;
+            border-radius: 0 !important;
+        }
+        .history-layout {
+            flex-direction: column;
+        }
+        .history-sidebar {
+            width: 100%;
+            height: 35%;
+            border-right: none;
+            border-bottom: 1px solid #eee;
+        }
+        :global(body.dark) .history-sidebar {
+            border-bottom-color: #333;
+        }
+        .history-main {
+            height: 65%;
+            padding: 15px;
+        }
+        .meta-card {
+            padding: 15px;
+            border-radius: 12px !important;
+        }
+        .toolbar {
+            flex-wrap: wrap;
+            padding: 4px;
+            gap: 4px;
+        }
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+        }
+        .input-title {
+            font-size: 28px;
+        }
+        .preview-box {
+            padding: 15px;
+            overflow-x: hidden;
+        }
+        .author-field-row {
+            grid-template-columns: 1fr 1fr 30px;
+        }
     }
 </style>

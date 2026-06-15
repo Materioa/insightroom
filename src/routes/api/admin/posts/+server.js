@@ -16,7 +16,7 @@ export async function POST({ request, cookies }) {
     try {
         const body = await request.json();
         
-        let { id, title, slug, content, metadata } = body;
+        let { id, title, slug, content, metadata, saved_by_name, saved_by_display_name, saved_by_avatar } = body;
         
         if (!title) return json({ error: 'Title is required' }, { status: 400 });
         if (!slug) slug = slugify(title);
@@ -46,9 +46,9 @@ export async function POST({ request, cookies }) {
                     content: oldPost.content,
                     metadata: oldPost.metadata,
                     updated_at: oldPost.updated_at || oldPost.created_at || new Date(),
-                    saved_by_name: metadata.author_name || 'Admin',
-                    saved_by_display_name: metadata.author_name || 'Admin',
-                    saved_by_avatar: metadata.author_avatar || '/assets/img/default-avatar.svg',
+                    saved_by_name: saved_by_name || metadata.author_name || 'Materio',
+                    saved_by_display_name: saved_by_display_name || metadata.author_name || 'Materio',
+                    saved_by_avatar: saved_by_avatar || metadata.author_avatar || '/assets/img/default-avatar.svg',
                     version_saved_at: new Date()
                 });
             }
