@@ -18,6 +18,7 @@ export function initializePostBase() {
         initializeMarkmap();
         initializeGraphviz();
         initializeFlashcards();
+        initializeMCQSystem();
     }, 100);
 }
 
@@ -1307,4 +1308,296 @@ if (typeof document !== 'undefined' && !document.getElementById('context-menu-st
         }
     `;
     document.head.appendChild(style);
+}
+
+
+
+/* =========================================
+   Interactive MCQ System
+   ========================================= */
+function initializeMCQSystem() {
+    const postBody = document.querySelector('.post-body');
+    if (!postBody) return;
+
+    // Use .post-content-visible to avoid querying duplicate cards in Svelte's hidden .summary-capture
+    const visibleContent = postBody.querySelector('.post-content-visible') || postBody;
+
+    const cards = visibleContent.querySelectorAll('.mcq-card');
+    if (cards.length === 0) return;
+
+    // 1. Setup global state or scoreboard
+    let scorecardContainer = visibleContent.querySelector('.mcq-scorecard-container');
+    if (!scorecardContainer) {
+        scorecardContainer = document.createElement('div');
+        scorecardContainer.className = 'mcq-scorecard-container';
+        visibleContent.appendChild(scorecardContainer);
+    }
+
+    const N = cards.length;
+    const strokeWidth = 10;
+    const radius = 80;
+    const centerX = 100;
+    const centerY = 95;
+
+    // Helper functions for SVG arc drawing
+    /**
+     * @param {number} cx
+     * @param {number} cy
+     * @param {number} r
+     * @param {number} angleInDegrees
+     */
+    function polarToCartesian(cx, cy, r, angleInDegrees) {
+        const angleInRadians = (angleInDegrees * Math.PI) / 180.0;
+        return {
+            x: cx + r * Math.cos(angleInRadians),
+            y: cy - r * Math.sin(angleInRadians)
+        };
+    }
+
+    /**
+     * @param {number} cx
+     * @param {number} cy
+     * @param {number} r
+     * @param {number} startAngle
+     * @param {number} endAngle
+     */
+    function describeArc(cx, cy, r, startAngle, endAngle) {
+        const start = polarToCartesian(cx, cy, r, startAngle);
+        const end = polarToCartesian(cx, cy, r, endAngle);
+        const largeArcFlag = startAngle - endAngle <= 180 ? "0" : "1";
+        return [
+            "M", start.x, start.y,
+            "A", r, r, 0, largeArcFlag, 1, end.x, end.y
+        ].join(" ");
+    }
+
+    // Determine spacing and generate SVG paths
+    const gap = N === 1 ? 0 : Math.max(2, Math.min(10, 180 / (2 * N)));
+    const totalGapAngle = gap * (N - 1);
+    const totalSegmentAngle = 180 - totalGapAngle;
+    const segSpan = totalSegmentAngle / N;
+
+    let pathsHtml = '';
+    for (let i = 0; i < N; i++) {
+        const startAngle = 180 - i * (segSpan + gap);
+        const endAngle = startAngle - segSpan;
+        const d = describeArc(centerX, centerY, radius, startAngle, endAngle);
+        pathsHtml += `<path d="${d}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" class="mcq-gauge-segment" data-index="${i}" />`;
+    }
+
+    // Set SVG & scoreboard inner HTML
+    scorecardContainer.innerHTML = `
+        <div class="mcq-scorecard-title">Quiz Progress</div>
+        <div class="mcq-gauge-wrapper">
+            <svg width="200" height="110" viewBox="0 0 200 110">
+                ${pathsHtml}
+            </svg>
+            <div class="mcq-score-display">
+                <div class="score-num-wrapper">
+                    <span class="score-num">0</span>
+                    <span class="score-total">/${N}</span>
+                </div>
+                <div class="score-label">Score</div>
+            </div>
+        </div>
+        <button class="mcq-take-again-btn">
+            <i class="fa-solid fa-play"></i> Take Quiz
+        </button>
+    `;
+
+    // References to updated DOM elements in the scorecard
+    const segments = scorecardContainer.querySelectorAll('.mcq-gauge-segment');
+    const scoreNum = scorecardContainer.querySelector('.score-num');
+    const takeAgainBtn = scorecardContainer.querySelector('.mcq-take-again-btn');
+
+    // Function to update scorecard status
+    function updateScorecard() {
+        let correctCount = 0;
+        let answeredCount = 0;
+
+        cards.forEach((card, idx) => {
+            const isAnswered = card.classList.contains('answered');
+            if (isAnswered) {
+                answeredCount++;
+                const isCorrect = !card.querySelector('.mcq-option.incorrect');
+                if (isCorrect) {
+                    correctCount++;
+                    segments[idx].setAttribute('class', 'mcq-gauge-segment correct');
+                } else {
+                    segments[idx].setAttribute('class', 'mcq-gauge-segment incorrect');
+                }
+            } else {
+                segments[idx].setAttribute('class', 'mcq-gauge-segment');
+            }
+        });
+
+        if (scoreNum) scoreNum.textContent = String(correctCount);
+
+        // Hide gauge and score wrapper if no questions are answered yet (Scorecard initially clean)
+        const gaugeWrapper = scorecardContainer.querySelector('.mcq-gauge-wrapper');
+        if (gaugeWrapper) {
+            gaugeWrapper.style.display = answeredCount > 0 ? '' : 'none';
+        }
+
+        // Dynamic take again button text
+        if (takeAgainBtn) {
+            if (answeredCount > 0) {
+                takeAgainBtn.innerHTML = `<i class="fa-solid fa-rotate-left"></i> Take Again`;
+            } else {
+                takeAgainBtn.innerHTML = `<i class="fa-solid fa-play"></i> Take Quiz`;
+            }
+        }
+    }
+
+    // Initial update
+    updateScorecard();
+
+    // Listen for events bubbled up from cards
+    visibleContent.addEventListener('mcq-answer', updateScorecard);
+    visibleContent.addEventListener('mcq-reset', updateScorecard);
+
+    // Setup Slideshow Quiz Mode logic
+    let slideshowContainer = visibleContent.querySelector('.mcq-slideshow-container');
+    if (!slideshowContainer) {
+        slideshowContainer = document.createElement('div');
+        slideshowContainer.className = 'mcq-slideshow-container';
+        slideshowContainer.style.display = 'none';
+        visibleContent.insertBefore(slideshowContainer, scorecardContainer);
+    }
+
+    let currentSlideIndex = 0;
+
+    function exitQuizMode() {
+        if (slideshowContainer) slideshowContainer.style.display = 'none';
+        if (scorecardContainer) scorecardContainer.style.display = '';
+        updateScorecard();
+        
+        // Scroll back to scorecard
+        if (scorecardContainer) {
+            scorecardContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    /**
+     * @param {number} index
+     */
+    function showSlide(index) {
+        currentSlideIndex = index;
+        if (!slideshowContainer) return;
+        const progress = slideshowContainer.querySelector('.mcq-slideshow-progress');
+        const prevBtn = slideshowContainer.querySelector('.prev-btn');
+        const nextBtn = slideshowContainer.querySelector('.next-btn');
+        const body = slideshowContainer.querySelector('.mcq-slideshow-body');
+
+        // Update progress text
+        if (progress) progress.textContent = `Question ${currentSlideIndex + 1} of ${N}`;
+
+        // Move a CLONED copy of the card to the slideshow body to keep in-post MCQs fully visible and intact!
+        if (body) {
+            body.innerHTML = '';
+            // Clone the original card to keep it visible in post body
+            const cardClone = cards[currentSlideIndex].cloneNode(true);
+            cardClone.style.display = '';
+            
+            // Remove the reset button inside the slideshow card to keep the modal focused and clean
+            const cloneReset = cardClone.querySelector('.mcq-reset-btn');
+            if (cloneReset) cloneReset.remove();
+
+            body.appendChild(cardClone);
+        }
+
+        // Update nav button states
+        if (prevBtn) {
+            /** @type {HTMLButtonElement} */ (prevBtn).disabled = currentSlideIndex === 0;
+        }
+        if (nextBtn) {
+            if (currentSlideIndex === N - 1) {
+                nextBtn.innerHTML = `Finish <i class="fa-solid fa-check"></i>`;
+            } else {
+                nextBtn.innerHTML = `Next <i class="fa-solid fa-chevron-right"></i>`;
+            }
+        }
+    }
+
+    // Hook up takeAgainBtn
+    if (takeAgainBtn) {
+        takeAgainBtn.addEventListener('click', () => {
+            // Reset all cards (re-evaluating answers fresh for the quiz)
+            cards.forEach(card => {
+                const resetBtn = card.querySelector('.mcq-reset-btn');
+                if (resetBtn) {
+                    /** @type {HTMLElement} */ (resetBtn).click();
+                }
+            });
+
+            // Keep in-post MCQs visible (no display = 'none'), just hide scorecard
+            if (scorecardContainer) scorecardContainer.style.display = 'none';
+
+            // Setup/initialize slideshow DOM
+            if (slideshowContainer) {
+                slideshowContainer.innerHTML = `
+                    <div class="mcq-slideshow-header">
+                        <span class="mcq-slideshow-progress">Question 1 of ${N}</span>
+                        <button class="mcq-slideshow-close-btn" title="Exit Quiz"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="mcq-slideshow-body"></div>
+                    <div class="mcq-slideshow-footer">
+                        <button class="mcq-slideshow-nav-btn prev-btn"><i class="fa-solid fa-chevron-left"></i> Previous</button>
+                        <button class="mcq-slideshow-nav-btn next-btn">Next <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                `;
+                slideshowContainer.style.display = '';
+
+                // Add event listeners inside slideshow
+                const closeBtn = slideshowContainer.querySelector('.mcq-slideshow-close-btn');
+                const prevBtn = slideshowContainer.querySelector('.prev-btn');
+                const nextBtn = slideshowContainer.querySelector('.next-btn');
+                const body = slideshowContainer.querySelector('.mcq-slideshow-body');
+
+                if (closeBtn) closeBtn.addEventListener('click', exitQuizMode);
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (currentSlideIndex > 0) {
+                            showSlide(currentSlideIndex - 1);
+                        }
+                    });
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        if (currentSlideIndex < N - 1) {
+                            showSlide(currentSlideIndex + 1);
+                        } else {
+                            exitQuizMode();
+                        }
+                    });
+                }
+
+                // Add synchronization listener on slideshow body
+                // Clicking option inside the clone triggers a click on the original inline MCQ card button
+                if (body) {
+                    body.addEventListener('click', (e) => {
+                        // Cast EventTarget to HTMLElement
+                        const target = /** @type {HTMLElement} */ (e.target);
+                        
+                        const btn = target.closest('.mcq-option');
+                        if (btn) {
+                            const optionIndex = parseInt(btn.getAttribute('data-index') || '0', 10);
+                            const originalCard = cards[currentSlideIndex];
+                            const originalBtns = originalCard.querySelectorAll('.mcq-option');
+                            if (originalBtns[optionIndex]) {
+                                // Sync selection click back to original card if it is not already answered
+                                if (!originalCard.classList.contains('answered')) {
+                                    /** @type {HTMLElement} */ (originalBtns[optionIndex]).click();
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Show the first slide and scroll focus
+                showSlide(0);
+                slideshowContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
 }

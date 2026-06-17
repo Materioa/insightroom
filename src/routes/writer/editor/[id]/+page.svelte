@@ -863,6 +863,82 @@
                 },
             );
 
+            // MCQ replacement
+            const mcqRegex = /\[mcq:([\s\S]+?)\]/g;
+            rawContent = rawContent.replace(
+                mcqRegex,
+                (/** @type {string} */ match, /** @type {string} */ mcqContent) => {
+                    const trimmed = mcqContent.trim();
+                    let question = '';
+                    /** @type {{text: string, isCorrect: boolean}[]} */
+                    let options = [];
+
+                    if (trimmed.includes('|')) {
+                        const parts = trimmed.split('|').map((/** @type {string} */ p) => p.trim());
+                        question = parts[0];
+                        options = parts.slice(1).map((/** @type {string} */ opt) => {
+                            const isCorrect = (opt.startsWith('**') && opt.endsWith('**')) ||
+                                              (opt.startsWith('*') && opt.endsWith('*')) ||
+                                              (opt.startsWith('_') && opt.endsWith('_'));
+                            const text = opt.replace(/^(\*\*|\*|_)+|(\*\*|\*|_)+$/g, '').trim();
+                            return { text, isCorrect };
+                        });
+                    } else {
+                        const lines = trimmed.split('\n').map((/** @type {string} */ l) => l.trim()).filter(Boolean);
+                        if (lines.length > 0) {
+                            const optionLines = lines.filter((/** @type {string} */ l) => l.startsWith('-') || l.startsWith('*') || /^\d+\./.test(l));
+                            const questionLines = lines.filter((/** @type {string} */ l) => !optionLines.includes(l));
+                            
+                            question = questionLines.join(' ');
+                            options = optionLines.map((/** @type {string} */ opt) => {
+                                const cleanOpt = opt.replace(/^([-\*]|\d+\.)\s*/, '').trim();
+                                const isCorrect = (cleanOpt.startsWith('**') && cleanOpt.endsWith('**')) ||
+                                                  (cleanOpt.startsWith('*') && cleanOpt.endsWith('*')) ||
+                                                  (cleanOpt.startsWith('_') && cleanOpt.endsWith('_'));
+                                const text = cleanOpt.replace(/^(\*\*|\*|_)+|(\*\*|\*|_)+$/g, '').trim();
+                                return { text, isCorrect };
+                            });
+                        }
+                    }
+
+                    if (!question || options.length === 0) return match;
+
+                    const escapeHtml = (/** @type {string} */ str) => {
+                        return str
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+                    };
+
+                    const escapedQuestion = escapeHtml(question);
+                    const correctIndex = options.findIndex((/** @type {any} */ opt) => opt.isCorrect);
+
+                    const optionsHtml = options.map((/** @type {any} */ opt, /** @type {number} */ idx) => {
+                        const letter = String.fromCharCode(65 + idx);
+                        const escapedText = escapeHtml(opt.text);
+                        const clickHandler = "(function(btn){var card=btn.closest('.mcq-card');if(card.classList.contains('answered'))return;card.classList.add('answered');var correctIdx=parseInt(card.getAttribute('data-correct-index'),10);var selectedIdx=parseInt(btn.getAttribute('data-index'),10);var isCorrect=correctIdx===selectedIdx;var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b,idx){var icon=b.querySelector('.mcq-option-icon i');if(idx===correctIdx){b.classList.add('correct');if(icon)icon.className='fa-solid fa-circle-check';}else if(idx===selectedIdx){b.classList.add('incorrect');if(icon)icon.className='fa-solid fa-circle-xmark';}});card.dispatchEvent(new CustomEvent('mcq-answer',{detail:{correct:isCorrect},bubbles:true}));})(this)";
+                        
+                        return `<button class="mcq-option" data-index="${idx}" onclick="${clickHandler}">` +
+                            `<span class="mcq-option-letter">${letter}</span>` +
+                            `<span class="mcq-option-text">${escapedText}</span>` +
+                            `<span class="mcq-option-icon"><i class="fa-regular"></i></span>` +
+                        `</button>`;
+                    }).join('');
+
+                    const resetHandler = "(function(btn){var card=btn.closest('.mcq-card');card.classList.remove('answered');var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b){b.classList.remove('correct','incorrect');var icon=b.querySelector('.mcq-option-icon i');if(icon)icon.className='fa-regular';});card.dispatchEvent(new CustomEvent('mcq-reset',{bubbles:true}));})(this)";
+
+                    return `<div class="mcq-card" data-correct-index="${correctIndex}">` +
+                        `<div class="mcq-header">` +
+                            `<div class="mcq-question">${escapedQuestion}</div>` +
+                            `<button class="mcq-reset-btn" onclick="${resetHandler}" title="Reset Question"><i class="fa-solid fa-rotate-left"></i></button>` +
+                        `</div>` +
+                        `<div class="mcq-options">${optionsHtml}</div>` +
+                    `</div>`;
+                }
+            );
+
             // Artifact replacement - extract artifacts BEFORE markdown parsing to preserve HTML
             const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
             /** @type {Record<string, string>} */
