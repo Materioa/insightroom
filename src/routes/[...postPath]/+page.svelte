@@ -10,6 +10,7 @@
   } from "$lib/utils/postLogic.js";
   import { page } from "$app/stores";
   import { dev } from "$app/environment";
+  import { showSearchBoxStore } from "$lib/stores/search";
   import { initializePostBase } from "$lib/utils/postBaseLogic.js";
   import { initTOC } from "$lib/utils/toc.js";
   import QRCodeGenerator from "$lib/components/QRCodeGenerator.svelte";
@@ -20,11 +21,7 @@
 
   /** @type {{ data: any }} */
   let { data } = $props();
-  // State for content binding
-  /** @type {HTMLElement | undefined} */
-  let contentElement = $state();
-  /** @type {HTMLElement | undefined} */
-  let visibleContentElement = $state();
+
   let postContentText = $state("");
   // If server provided pre-rendered content (for crawlers), use it immediately
   let decodedContent = $state("");
@@ -42,16 +39,22 @@
   let showBurst = $state(false);
 
   // Custom Search State
-  let showSearchBox = $state(false);
   let searchQuery = $state("");
   let matchCount = $state(0);
   let currentMatchIndex = $state(0);
-  /** @type {any} */
-  let markInstance = null;
-  /** @type {NodeListOf<Element> | null} */
-  let markElements = null;
+
   /** @type {HTMLInputElement | undefined} */
   let searchInputRef = $state();
+
+  // Reading Progress Bar State
+  let scrollProgress = $state(0);
+
+  function handleScroll() {
+    if (typeof window === 'undefined') return;
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    scrollProgress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+  }
 
   async function clapPost() {
     if (isClapping || !data.postId) return;
@@ -222,8 +225,7 @@
         url: window.location.href,
       });
     } else if (typeof navigator !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
+      navigator.clipboard.writeText(window.location.href).catch(() => {});
     }
   }
 
@@ -285,46 +287,200 @@
     return null;
   }
 
-  onMount(() => {
-    async function init() {
-      // If SSR content was already provided (bot request), skip the fetch
-      // and just initialize post features on the already-rendered content.
-      if (data.ssrContent && decodedContent) {
-        isLoading = false;
-        setTimeout(async () => {
-          initPostFeatures();
-        }, 0);
-        return;
-      }
+  // Move helper functions out of the lifecycle block
+  /** @param {string} rootSelector */
+  function enhancePostLinks(rootSelector) {
+    const roots = document.querySelectorAll(rootSelector);
+    if (!roots.length) return;
+    roots.forEach(function (root) {
+      const anchors = root.querySelectorAll("a[href]:not(.no-pill)");
+      // @ts-ignore
+      anchors.forEach(function (/** @type {HTMLAnchorElement} */ a) {
+        if (a.querySelector("img")) return;
+        if (a.closest("code, pre")) return;
+        if (!a.classList.contains("link-pill")) a.classList.add("link-pill");
 
-      // Fetch post content dynamically to keep view-source clean (regular users)
-      if (!data.isLocked) {
-        try {
-          const category = encodeURIComponent(data.categorySlug || data.category || "_permalink");
-          const slug = encodeURIComponent(data.slug || "");
-          const res = await fetch(`/api/posts/content/${category}/${slug}`);
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          const result = await res.json();
-          decodedContent = result.html;
-          isLoading = false;
-
-          // Now that content is in the DOM, initialize features
-          setTimeout(async () => {
-            initPostFeatures();
-          }, 0);
-
-        } catch (e) {
-          console.error("Failed to load post content:", e);
-          isLoading = false;
+        const lastChild = a.lastElementChild;
+        if (
+          lastChild instanceof HTMLElement &&
+          lastChild.tagName === "I" &&
+          (lastChild.classList.contains("fa-arrow-up-right") ||
+            lastChild.classList.contains("fa-link-simple"))
+        ) {
+          lastChild.classList.add("link-pill-icon");
         }
+
+        let icon = a.querySelector("i.link-pill-icon");
+        if (!icon) {
+          icon = document.createElement("i");
+          icon.className = "link-pill-icon fa-regular";
+          a.appendChild(icon);
+        }
+
+        try {
+          const href = (a.getAttribute("href") || "").trim();
+          const url = href ? new URL(href, window.location.href) : null;
+          if (url && url.origin !== window.location.origin) {
+            a.setAttribute("target", "_blank");
+            a.setAttribute("rel", "noopener noreferrer");
+            // @ts-ignore
+            icon.className = "link-pill-icon fa-regular fa-arrow-up-right";
+          } else {
+            // @ts-ignore
+            icon.className = "link-pill-icon fa-regular fa-link-simple";
+            // @ts-ignore
+            icon.style.transform = "rotate(-20deg)";
+          }
+        } catch (e) {
+          // @ts-ignore
+          icon.className = "link-pill-icon fa-regular fa-link-simple";
+        }
+      });
+    });
+  }
+
+  function renderMath() {
+      // @ts-ignore
+      if (typeof renderMathInElement !== "undefined") {
+          const options = {
+              delimiters: [
+                  { left: "$$", right: "$$", display: false },
+                  { left: "$", right: "$", display: false },
+                  { left: "\\(", right: "\\)", display: false },
+                  { left: "\\[", right: "\\]", display: true },
+              ],
+          };
+          // @ts-ignore
+          renderMathInElement(document.body, options);
       } else {
+          // Retry after a short delay in case the defer script hasn't loaded yet
+          setTimeout(renderMath, 100);
+      }
+  }
+
+  // Reactive load and initialization using Svelte 5 $effect
+  $effect(() => {
+    // Explicitly reference the dependencies so this re-runs when post navigation happens
+    const _postId = data.postId;
+    const _ssrContent = data.ssrContent;
+    const _isLocked = data.isLocked;
+    const _slug = data.slug;
+    const _category = data.category;
+    const _categorySlug = data.categorySlug;
+
+    let active = true;
+
+    async function init() {
+      try {
+        // 1. Get post content (either SSR or dynamic fetch)
+        if (!_ssrContent && !_isLocked) {
+          try {
+            const category = encodeURIComponent(_categorySlug || _category || "_permalink");
+            const slug = encodeURIComponent(_slug || "");
+            const res = await fetch(`/api/posts/content/${category}/${slug}`);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const result = await res.json();
+            if (!active) return;
+            decodedContent = result.html;
+          } catch (e) {
+            console.error("Failed to load post content:", e);
+          }
+        } else {
+          decodedContent = _ssrContent || "";
+        }
+        isLoading = false;
+
+        if (!active) return;
+
+        // 2. Inspect decodedContent to see what needs to be loaded
+        const contentStr = decodedContent || "";
+        const hasMermaid = contentStr.includes("mermaid");
+        const hasMarkmap = contentStr.includes("markmap");
+        const hasGraphviz = contentStr.includes("graphviz") || contentStr.includes("dot");
+        const hasPdf = contentStr.includes("attachment") || contentStr.includes("pdf");
+        const hasKatex = contentStr.includes("$") || contentStr.includes("\\(") || contentStr.includes("\\[") || contentStr.includes("katex");
+        const hasHighlight = contentStr.includes("<pre>") || contentStr.includes("code");
+
+        // 3. Dynamically import only the needed libraries
+        const [
+          katex,
+          autoRender,
+          hljsModule,
+          mermaidModule,
+          Mark,
+          d3,
+          markmapView,
+          markmapLib,
+          VizModule,
+          pdfjsLibModule
+        ] = await Promise.all([
+          hasKatex ? import("katex") : Promise.resolve(null),
+          hasKatex ? import("katex/dist/contrib/auto-render.js") : Promise.resolve(null),
+          hasHighlight ? import("highlight.js") : Promise.resolve(null),
+          hasMermaid ? import("mermaid") : Promise.resolve(null),
+          import("mark.js"), // search always uses mark
+          hasMarkmap ? import("d3") : Promise.resolve(null),
+          hasMarkmap ? import("markmap-view") : Promise.resolve(null),
+          hasMarkmap ? import("markmap-lib") : Promise.resolve(null),
+          hasGraphviz ? import("@viz-js/viz") : Promise.resolve(null),
+          hasPdf ? import("pdfjs-dist") : Promise.resolve(null)
+        ]);
+
+        if (!active) return;
+
+        if (hasKatex) {
+          await import("katex/dist/katex.min.css");
+        }
+
+        const mermaid = mermaidModule ? (mermaidModule.default || mermaidModule) : null;
+
+        // 4. Assign to window for backward compatibility with vanilla JS scripts
+        const w = /** @type {any} */ (window);
+        if (katex) w.katex = katex;
+        if (autoRender) w.renderMathInElement = autoRender.default || autoRender;
+        if (hljsModule) w.hljs = hljsModule.default;
+        if (mermaid) w.mermaid = mermaid;
+        if (Mark) w.Mark = Mark.default || Mark;
+        if (d3) w.d3 = d3;
+        if (markmapView && markmapLib) {
+          w.markmap = {
+            Transformer: markmapLib.Transformer,
+            Markmap: markmapView.Markmap,
+            deriveOptions: markmapView.deriveOptions,
+            loadCSS: markmapView.loadCSS,
+            loadJS: markmapView.loadJS,
+          };
+        }
+        if (VizModule) w.Viz = VizModule;
+        if (pdfjsLibModule) {
+          w.pdfjsLib = pdfjsLibModule;
+          pdfjsLibModule.GlobalWorkerOptions.workerSrc = new URL(
+            "pdfjs-dist/build/pdf.worker.min.mjs",
+            import.meta.url
+          ).toString();
+        }
+
+        // 5. Wait for Svelte DOM tick, then initialize post features
+        await tick();
+        if (!active) return;
+        const visEl = document.querySelector('.post-content-visible');
+        const contentEl = document.querySelector('.summary-capture');
+        if (visEl) {
+          visEl.innerHTML = decodedContent;
+        }
+        if (contentEl) {
+          contentEl.innerHTML = decodedContent;
+        }
+        await initPostFeatures();
+      } catch (err) {
+        console.error("Failed to load dependencies dynamically:", err);
         isLoading = false;
       }
     }
 
     /** Shared post-render initialization for both SSR and client-fetched content */
     async function initPostFeatures() {
-      // 1. Run raw HTML string replacements FIRST to avoid wiping out DOM event listeners
+      // 1. Run raw HTML string replacements FIRST synchronously
       initializePostBase();
 
       // 2. DOM manipulation and enhancements
@@ -344,12 +500,17 @@
         });
       }
 
+      // Render Mermaid synchronously now that initializePostBase (which replaces the nodes) ran synchronously
       // @ts-ignore
       if (typeof mermaid !== "undefined") {
         // @ts-ignore
-        mermaid.initialize({ startOnLoad: false, theme: 'default' });
-        // @ts-ignore
-        await mermaid.run();
+        mermaid.initialize({ startOnLoad: false, theme: document.body.classList.contains('dark') ? 'dark' : 'default' });
+        try {
+          // @ts-ignore
+          await mermaid.run({ querySelector: '.mermaid-diagram' });
+        } catch (e) {
+          console.error('Mermaid render error:', e);
+        }
       }
 
       addHeadingAnchorLinks();
@@ -358,137 +519,65 @@
       renderMath();
     }
 
-    /** @param {string} rootSelector */
-    function enhancePostLinks(rootSelector) {
-      const roots = document.querySelectorAll(rootSelector);
-      if (!roots.length) return;
-      roots.forEach(function (root) {
-        const anchors = root.querySelectorAll("a[href]:not(.no-pill)");
-        // @ts-ignore
-        anchors.forEach(function (/** @type {HTMLAnchorElement} */ a) {
-          if (a.querySelector("img")) return;
-          if (a.closest("code, pre")) return;
-          if (!a.classList.contains("link-pill")) a.classList.add("link-pill");
-
-          const lastChild = a.lastElementChild;
-          if (
-            lastChild instanceof HTMLElement &&
-            lastChild.tagName === "I" &&
-            (lastChild.classList.contains("fa-arrow-up-right") ||
-              lastChild.classList.contains("fa-link-simple"))
-          ) {
-            lastChild.classList.add("link-pill-icon");
-          }
-
-          let icon = a.querySelector("i.link-pill-icon");
-          if (!icon) {
-            icon = document.createElement("i");
-            icon.className = "link-pill-icon fa-regular";
-            a.appendChild(icon);
-          }
-
-          try {
-            const href = (a.getAttribute("href") || "").trim();
-            const url = href ? new URL(href, window.location.href) : null;
-            if (url && url.origin !== window.location.origin) {
-              a.setAttribute("target", "_blank");
-              a.setAttribute("rel", "noopener noreferrer");
-              // @ts-ignore
-              icon.className = "link-pill-icon fa-regular fa-arrow-up-right";
-            } else {
-              // @ts-ignore
-              icon.className = "link-pill-icon fa-regular fa-link-simple";
-              // @ts-ignore
-              icon.style.transform = "rotate(-20deg)";
-            }
-          } catch (e) {
-            // @ts-ignore
-            icon.className = "link-pill-icon fa-regular fa-link-simple";
-          }
-        });
-      });
-    }
-
-    function renderMath() {
-        // @ts-ignore
-        if (typeof renderMathInElement !== "undefined") {
-            const options = {
-                delimiters: [
-                    { left: "$$", right: "$$", display: false },
-                    { left: "$", right: "$", display: false },
-                    { left: "\\(", right: "\\)", display: false },
-                    { left: "\\[", right: "\\]", display: true },
-                ],
-            };
-            // @ts-ignore
-            renderMathInElement(document.body, options);
-        } else {
-            // Retry after a short delay in case the defer script hasn't loaded yet
-            setTimeout(renderMath, 100);
-        }
-    }
-
     init();
 
-    const startTime = Date.now();
     return () => {
-      const duration = Math.round((Date.now() - startTime) / 1000);
+      active = false;
     };
   });
 
   $effect(() => {
-    if (decodedContent && contentElement && visibleContentElement) {
-      const el = contentElement;
-      const visEl = visibleContentElement;
+    if (decodedContent) {
       tick().then(() => {
-        postContentText = el.textContent || "";
-        // Wait for mark.js CDN script to load
-        function tryInitMark() {
-          // @ts-ignore
-          if (typeof window !== 'undefined' && window.Mark) {
-            // @ts-ignore
-            markInstance = new window.Mark(visEl);
-          } else {
-            // Retry until CDN script loads
-            setTimeout(tryInitMark, 200);
-          }
-        }
-        if (!markInstance) {
-          tryInitMark();
+        const el = document.querySelector('.summary-capture');
+        if (el) {
+          postContentText = el.textContent || "";
         }
       });
     }
   });
 
   // Search Logic
+  $effect(() => {
+    if ($showSearchBoxStore) {
+      tick().then(() => searchInputRef?.focus());
+    }
+  });
+
   /** @param {KeyboardEvent} e */
   function handleKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
       e.preventDefault();
-      showSearchBox = true;
-      tick().then(() => searchInputRef?.focus());
-    } else if (e.key === 'Escape' && showSearchBox) {
+      showSearchBoxStore.set(true);
+    } else if (e.key === 'Escape' && $showSearchBoxStore) {
       closeSearch();
     }
   }
 
   function performSearch() {
-    const visEl = visibleContentElement;
-    if (!markInstance || !visEl) return;
-    markInstance.unmark({
+    if (typeof window === 'undefined') return;
+    const visEl = document.querySelector('.post-content-visible');
+    if (!visEl) return;
+    // @ts-ignore
+    if (!window.Mark) return;
+    
+    // Always create a new Mark instance for the current visible element
+    // @ts-ignore
+    const instance = new window.Mark(visEl);
+    
+    instance.unmark({
       done: () => {
         if (!searchQuery.trim()) {
           matchCount = 0;
           currentMatchIndex = 0;
-          markElements = null;
           return;
         }
-        markInstance.mark(searchQuery, {
+        instance.mark(searchQuery, {
           separateWordSearch: false,
+          className: 'search-mark',
           done: (/** @type {number} */ count) => {
             matchCount = count;
             currentMatchIndex = count > 0 ? 1 : 0;
-            markElements = visEl.querySelectorAll('mark[data-markjs="true"]');
             updateActiveMatch(false);
           }
         });
@@ -497,16 +586,23 @@
   }
 
   function updateActiveMatch(smooth = true) {
-    if (!markElements || matchCount === 0) return;
-    markElements.forEach(el => el.classList.remove('active'));
-    const activeEl = markElements[currentMatchIndex - 1];
+    if (typeof window === 'undefined' || matchCount === 0) return;
+    const visEl = document.querySelector('.post-content-visible');
+    if (!visEl) return;
+    
+    // Query DOM dynamically to ensure we always get current, valid nodes
+    const elements = visEl.querySelectorAll('mark.search-mark');
+    if (elements.length === 0) return;
+    
+    elements.forEach(el => el.classList.remove('active'));
+    const activeEl = elements[currentMatchIndex - 1];
     if (activeEl) {
       activeEl.classList.add('active');
       
       // Delay scrolling to ensure DOM/CSS updates don't block the scroll event
       setTimeout(() => {
         try {
-          activeEl.scrollIntoView({ block: 'center' });
+          activeEl.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
         } catch(e) {
           activeEl.scrollIntoView();
         }
@@ -514,6 +610,7 @@
     }
   }
 
+  // nextMatch and prevMatch are already bound to onclick handlers in the template
   function nextMatch() {
     if (matchCount === 0) return;
     currentMatchIndex = currentMatchIndex < matchCount ? currentMatchIndex + 1 : 1;
@@ -527,13 +624,50 @@
   }
 
   function closeSearch() {
-    showSearchBox = false;
+    showSearchBoxStore.set(false);
     searchQuery = "";
     performSearch();
   }
+
+  /** @param {Event} e */
+  function handleThemeChange(e) {
+    const customEvent = /** @type {CustomEvent} */ (e);
+    const dark = customEvent.detail.isDark;
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.mermaid) {
+      // @ts-ignore
+      const mermaid = window.mermaid;
+      mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default' });
+      const diagrams = document.querySelectorAll('.mermaid-diagram');
+      diagrams.forEach(async (el, index) => {
+        const src = el.getAttribute('data-mermaid-src');
+        if (src) {
+           try {
+              // clear previous content
+              el.innerHTML = '';
+              el.removeAttribute('data-processed');
+              const id = `mermaid-${Date.now()}-${index}`;
+              const { svg } = await mermaid.render(id, src);
+              el.innerHTML = svg;
+           } catch (err) {
+              console.error('Mermaid re-render error:', err);
+           }
+        }
+      });
+    }
+  }
+
+  onMount(() => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('themeChanged', handleThemeChange);
+      return () => {
+        window.removeEventListener('themeChanged', handleThemeChange);
+      };
+    }
+  });
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} onscroll={handleScroll} />
 
 <svelte:head>
   <title>{data.title} - Materio InsightRoom</title>
@@ -566,22 +700,7 @@
     name="twitter:image"
     content={`https://room.getmaterio.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
   />
-  <!-- Post specific scripts -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mark.js@8.11.1/dist/mark.min.js"></script>
-
-  <!-- Markmap for mindmaps -->
-  <script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/markmap-view@0.18.12"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/markmap-lib@0.18.12"></script>
-
-  <!-- Graphviz for FSM/automata diagrams -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@viz-js/viz@3.11.0/lib/viz-standalone.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <!-- Post specific scripts are loaded dynamically from npm packages inside onMount -->
 
   <!-- JSON-LD Article structured data for search engines -->
   {@html `<script type="application/ld+json">${JSON.stringify({
@@ -603,8 +722,10 @@
   })}</script>`}
 </svelte:head>
 
+<div class="reading-progress-bar" style="width: {scrollProgress}%;"></div>
+
 <!-- Custom Search UI -->
-{#if showSearchBox}
+{#if $showSearchBoxStore}
   <div class="custom-search-box">
     <div class="search-input-wrapper">
       <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -642,6 +763,18 @@
   </div>
 {/if}
 
+<!-- Desktop Fixed Back Button -->
+<button
+  class="post-back-btn-desktop"
+  title="Back"
+  onclick={() => {
+    if (document.referrer) history.back();
+    else window.location.href = "/";
+  }}
+>
+  <i class="fa-solid fa-arrow-left" style="font-size: 12px;"></i>
+  <span class="desktop-text">Back</span>
+</button>
 
 <main
   class="post-container"
@@ -650,60 +783,60 @@
   data-category={data.category}
   data-no-ads={data["no-ads"]}
 >
-  <article class="post" style="max-width: 700px; margin: 0 auto;">
+  <article class="post" style="max-width: 700px; margin: 0 auto; position: relative;">
     <div style="text-align: center;">
       <!-- Date, Category, and Reading Time Pill -->
-      <div
-        style="display: flex; justify-content: center; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;"
-      >
-        {#if isLoading}
-          <div class="skeleton" style="width: 140px; height: 28px; border-radius: 20px;"></div>
-        {:else}
-          <div
-            class="post-date-pill"
-            style="border-radius: 20px; padding: 0.4rem 0.8rem; font-size: 12px;"
-          >
-            {formatDate(data.date)}
-            {#if categories()}
-              • {categories()}
+      <div class="post-meta-container">
+        <!-- Right Side: Meta Pill & Navigation -->
+        <div class="post-meta-pill-wrapper">
+          {#if isLoading}
+            <div class="skeleton" style="width: 140px; height: 28px; border-radius: 20px;"></div>
+          {:else}
+            <div
+              class="post-date-pill"
+              style="border-radius: 20px; padding: 0.4rem 0.8rem; font-size: 12px;"
+            >
+              {formatDate(data.date)}
+              {#if categories()}
+                • {categories()}
+              {/if}
+              <span class="reading-time">• {data.readingTime || 1} min read</span>
+            </div>
+
+            <!-- Print-only clean meta information -->
+            <div class="print-meta" style="display: none;">
+              {formatDate(data.date)}
+              {#if categories()}
+                • {categories()}
+              {/if}
+              <span class="reading-time">• {data.readingTime || 1} minute read</span>
+            </div>
+
+            <!-- Previous Post Button -->
+            {#if data["previous_post"]}
+              <a
+                href={data["previous_post"]}
+                class="post-nav-button"
+                style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
+                title="Previous Post"
+              >
+                <i class="fa-solid fa-chevron-left" style="font-size: 12px;"></i>
+              </a>
             {/if}
-            <span class="reading-time">• {data.readingTime || 1} min read</span>
-          </div>
 
-          <!-- Print-only clean meta information -->
-          <div class="print-meta" style="display: none;">
-            {formatDate(data.date)}
-            {#if categories()}
-              • {categories()}
+            <!-- Next Post Button -->
+            {#if data["next_post"]}
+              <a
+                href={data["next_post"]}
+                class="post-nav-button"
+                style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
+                title="Next Post"
+              >
+                <i class="fa-solid fa-chevron-right" style="font-size: 12px;"></i>
+              </a>
             {/if}
-            <span class="reading-time">• {data.readingTime || 1} minute read</span
-            >
-          </div>
-
-          <!-- Previous Post Button -->
-          {#if data["previous_post"]}
-            <a
-              href={data["previous_post"]}
-              class="post-nav-button"
-              style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
-              title="Previous Post"
-            >
-              <i class="fa-solid fa-chevron-left" style="font-size: 12px;"></i>
-            </a>
           {/if}
-
-          <!-- Next Post Button -->
-          {#if data["next_post"]}
-            <a
-              href={data["next_post"]}
-              class="post-nav-button"
-              style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease;"
-              title="Next Post"
-            >
-              <i class="fa-solid fa-chevron-right" style="font-size: 12px;"></i>
-            </a>
-          {/if}
-        {/if}
+        </div>
       </div>
 
       <div class="post-title" style="font-size: 32px; font-weight: bold; min-height: 40px; display: flex; align-items: center; justify-content: center;">
@@ -1116,16 +1249,11 @@
         {:else}
           <!-- Capture content for summary (hidden, no IDs to avoid duplicates) -->
           <div
-            bind:this={contentElement}
             class="summary-capture"
             style="display: none;"
-          >
-            {@html decodedContent}
-          </div>
+          ></div>
 
-          <div bind:this={visibleContentElement} class="post-content-visible">
-            {@html decodedContent}
-          </div>
+          <div class="post-content-visible"></div>
         {/if}
       </div>
 
@@ -1280,7 +1408,7 @@
   /* Custom Search Box Styles */
   .custom-search-box {
     position: fixed;
-    top: 20px;
+    top: 70px;
     right: 20px;
     z-index: 9999;
     background: #fff;
@@ -1362,13 +1490,13 @@
   }
 
   /* highlight styles */
-  :global(mark) {
+  :global(mark.search-mark) {
     background-color: #ffd54f !important;
     color: #000 !important;
     padding: 2px 0;
     border-radius: 2px;
   }
-  :global(mark.active) {
+  :global(mark.search-mark.active) {
     background-color: #ff9800 !important;
   }
   :global(body.dark-mode .custom-search-box) {
@@ -1392,5 +1520,119 @@
   }
   :global(body.dark-mode .match-count) {
     color: #aaa;
+  }
+
+  @media (max-width: 768px) {
+    .custom-search-box {
+      left: 12px;
+      right: 12px;
+      top: 70px;
+      padding: 6px 10px;
+      gap: 8px;
+    }
+    .search-input-wrapper {
+      flex: 1;
+      min-width: 0;
+      gap: 6px;
+      padding: 4px 6px;
+    }
+    .search-input-wrapper input {
+      width: 100%;
+      min-width: 0;
+    }
+    .match-count {
+      min-width: unset;
+      margin-right: 4px;
+      font-size: 11px;
+    }
+    .search-controls {
+      gap: 2px;
+    }
+  }
+  .reading-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background-color: #8c8c85;
+    z-index: 10005;
+    transition: width 80ms ease-out;
+    pointer-events: none;
+  }
+  :global(body.dark-mode) .reading-progress-bar,
+  :global(body.dark) .reading-progress-bar {
+    background-color: #a0a09a;
+  }
+
+  @media print {
+    .reading-progress-bar {
+      display: none !important;
+    }
+  }
+
+  .post-meta-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    min-height: 32px;
+  }
+
+  .post-meta-pill-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .post-back-btn-desktop {
+    position: fixed;
+    top: 75px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    opacity: 0.6;
+    z-index: 1000;
+  }
+
+  .post-back-btn-desktop .desktop-text {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .post-back-btn-desktop:hover {
+    opacity: 1;
+    transform: translateX(-4px);
+  }
+
+  .post-back-btn-desktop:active {
+    transform: translateX(-8px);
+  }
+
+  @media (max-width: 1100px) {
+    .post-back-btn-desktop {
+      display: none;
+    }
+
+    .post-meta-container {
+      padding: 0 1rem;
+    }
+    
+    .post-meta-pill-wrapper {
+      width: 100%;
+      justify-content: center;
+    }
   }
 </style>

@@ -24,12 +24,21 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
+		"@viz-js/viz": "^3.28.0",
 		"cloudinary": "^2.9.0",
+		"d3": "^7.9.0",
 		"diff": "^9.0.0",
 		"gray-matter": "^4.0.3",
+		"highlight.js": "^11.11.1",
 		"jsonwebtoken": "^9.0.3",
+		"katex": "^0.17.0",
+		"mark.js": "^8.11.1",
 		"marked": "^17.0.1",
+		"markmap-lib": "^0.18.12",
+		"markmap-view": "^0.18.12",
+		"mermaid": "^11.15.0",
 		"mongodb": "^7.2.0",
+		"pdfjs-dist": "^6.0.227",
 		"qr-code-styling": "^1.6.0-alpha.1",
 		"rehype-raw": "^7.0.0",
 		"remark-gfm": "^4.0.1"

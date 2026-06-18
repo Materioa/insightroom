@@ -8,6 +8,7 @@ function slugify(text) {
     return text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
 }
 
+/** @type {import('@sveltejs/kit').RequestHandler} */
 export async function POST({ request, cookies }) {
     // Basic auth check
     const token = cookies.get('materio_auth_token');
@@ -80,6 +81,7 @@ export async function POST({ request, cookies }) {
     }
 }
 
+/** @type {import('@sveltejs/kit').RequestHandler} */
 export async function DELETE({ request, cookies, url }) {
     // Basic auth check
     const token = cookies.get('materio_auth_token');

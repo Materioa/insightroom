@@ -95,6 +95,10 @@ body.dark {
 
 
 .dark .site-header {
+  /* handled by ::before */
+}
+
+.dark .site-header::before {
   background-color: #1f1f1e;
 }
 
@@ -106,7 +110,7 @@ body.dark {
 /* Header Search Box */
 .header-search {
   position: absolute;
-  right: 20px;
+  right: 70px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -159,7 +163,7 @@ body.dark {
   .header-search {
     width: 120px;
     padding: 0.35rem 0.7rem;
-    right: 15px;
+    right: 60px;
   }
 
   .header-search input {
@@ -197,21 +201,26 @@ body {
   left: 0;
   right: 0;
   height: 60px;
-  z-index: 1000;
-  background-color: #faf9f5;
+  z-index: 1300;
   color: #333;
   padding: 10px;
   text-align: left;
+  box-sizing: border-box;
+}
+
+.site-header::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: -1;
+  background-color: #faf9f5;
   background-image: url('/assets/img/materio_new_bk.svg');
   background-repeat: no-repeat;
   background-size: 120px 32px;
   background-position: 20px center;
-  box-sizing: border-box;
   -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 20px), transparent 100%);
   mask-image: linear-gradient(to bottom, black calc(100% - 20px), transparent 100%);
-  /* Promote to compositing layer for smoother scrolling */
-  transform: translateZ(0);
-  will-change: transform;
+  pointer-events: none;
 }
 
 .header-logo {
@@ -1177,16 +1186,76 @@ table td code {
 }
 
 /* Mindmap node colors */
-.mindmap-card .markmap-node text {
-  font-family: var(--font-primary);
-  fill: var(--text, #212529);
+.mindmap-card .markmap-node text,
+.mindmap-card svg text,
+.mindmap-card svg tspan {
+  font-family: var(--font-primary) !important;
+  fill: var(--text, #212529) !important;
+  stroke: none !important;
+}
+
+.mindmap-card .markmap-foreign,
+.mindmap-card .markmap-foreign * {
+  font-family: var(--font-primary) !important;
+  color: var(--text, #212529) !important;
 }
 
 .dark .mindmap-card .markmap-node text,
 .dark .mindmap-card svg text,
 .dark .mindmap-card svg tspan {
   fill: #ffffff !important;
-  stroke: none !important;
+}
+
+.dark .mindmap-card .markmap-foreign,
+.dark .mindmap-card .markmap-foreign * {
+  color: #ffffff !important;
+}
+
+/* Mindmap Controls */
+.mindmap-controls {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border, #e0e0e0);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.dark .mindmap-controls {
+  background: #1a1a1a;
+  border-color: #333;
+}
+
+.mindmap-ctrl-btn {
+  background: transparent;
+  border: none;
+  color: var(--text, #333);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.mindmap-ctrl-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark .mindmap-ctrl-btn {
+  color: #fff;
+}
+
+.dark .mindmap-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Responsive mindmap */
@@ -1207,9 +1276,7 @@ table td code {
 .graphviz-diagram {
   text-align: center;
   margin: 2rem 0;
-  background: var(--bg);
-  border-radius: 8px;
-  padding: 1.5rem;
+  background: transparent;
   overflow-x: auto;
 }
 
@@ -1218,18 +1285,33 @@ table td code {
   height: auto;
 }
 
-/* Graphviz dark theme adjustments */
-.dark .graphviz-diagram {
-  background: var(--card-bg);
+/* Make Graphviz generated background transparent */
+.graphviz-diagram svg > g.graph > polygon:first-of-type {
+  fill: transparent !important;
+  stroke: none !important;
 }
 
+/* Inherit Font */
+.graphviz-diagram svg text,
+.graphviz-diagram svg g.node text,
+.graphviz-diagram svg g.edge text,
+.graphviz-diagram svg g.graph text {
+  font-family: var(--font-primary) !important;
+  fill: var(--text, #212529) !important;
+}
+
+/* Graphviz dark theme adjustments */
 .dark .graphviz-diagram svg polygon {
-  fill: var(--card-bg) !important;
+  fill: transparent !important;
   stroke: var(--border) !important;
 }
 
+.dark .graphviz-diagram svg > g.graph > polygon:first-of-type {
+  stroke: none !important;
+}
+
 .dark .graphviz-diagram svg ellipse {
-  fill: var(--card-bg) !important;
+  fill: transparent !important;
   stroke: var(--text) !important;
 }
 

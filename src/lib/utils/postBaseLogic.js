@@ -4,22 +4,19 @@
 export function initializePostBase() {
     if (typeof window === 'undefined') return;
 
-    // Use setTimeout to ensure DOM is fully ready and styles applied
-    setTimeout(() => {
-        initializeBlankCharFix();
-        initializeCodeBlocks();
-        processGitHubCallouts();
-        processAttachmentTags();
-        initializeAttachmentCards(); // Initialize previews for server-rendered tags
-        processVideoTags();
-        initializePrintEnhancements();
-        initializeSecureMode();
-        initializeMermaid();
-        initializeMarkmap();
-        initializeGraphviz();
-        initializeFlashcards();
-        initializeMCQSystem();
-    }, 100);
+    initializeBlankCharFix();
+    initializeCodeBlocks();
+    processGitHubCallouts();
+    processAttachmentTags();
+    initializeAttachmentCards(); // Initialize previews for server-rendered tags
+    processVideoTags();
+    initializePrintEnhancements();
+    initializeSecureMode();
+    initializeMermaid();
+    initializeMarkmap();
+    initializeGraphviz();
+    initializeFlashcards();
+    initializeMCQSystem();
 }
 
 function initializeBlankCharFix() {
@@ -50,6 +47,8 @@ function initializeCodeBlocks() {
     document.querySelectorAll('pre code').forEach(function (codeBlock) {
         const pre = codeBlock.parentElement;
         if (!pre) return;
+        if (pre.dataset.initialized) return;
+        pre.dataset.initialized = 'true';
 
         const classList = codeBlock.className;
         let language = '';
@@ -159,11 +158,12 @@ function initializeMermaid() {
 
     const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');
     mermaidBlocks.forEach(element => {
-        const code = element.textContent;
+        const code = element.textContent || '';
         const div = document.createElement('div');
         div.className = 'mermaid-diagram';
         div.style.textAlign = 'center';
         div.textContent = code;
+        div.setAttribute('data-mermaid-src', code);
 
         const pre = element.parentElement;
         if (pre && pre.parentElement) {
@@ -173,12 +173,7 @@ function initializeMermaid() {
         }
     });
 
-    try {
-        // @ts-ignore
-        mermaid.init(undefined, document.querySelectorAll('.mermaid-diagram'));
-    } catch (e) {
-        console.error('Mermaid init error:', e);
-    }
+    // mermaid.init is deprecated in v10+ and handled asynchronously in +page.svelte via mermaid.run
 }
 
 /* =========================================
@@ -223,13 +218,48 @@ function initializeMarkmap() {
 
             // Create markmap instance with interactivity
             // @ts-ignore
-            markmap.Markmap.create(svg, {
+            const mm = markmap.Markmap.create(svg, {
                 colorFreezeLevel: 2,
                 duration: 300,
                 maxWidth: 200,
                 zoom: true,
                 pan: true,
             }, root);
+
+            // Automatically fit the map to the frame after rendering
+            setTimeout(() => {
+                if (mm && typeof mm.fit === 'function') {
+                    mm.fit();
+                }
+            }, 100);
+            
+            // Re-fit on resize
+            const resizeObserver = new ResizeObserver(() => {
+                if (mm && typeof mm.fit === 'function') {
+                    mm.fit();
+                }
+            });
+            resizeObserver.observe(card);
+
+            // Add custom controls (+, -, fit to frame)
+            const toolbar = document.createElement('div');
+            toolbar.className = 'mindmap-controls';
+            toolbar.innerHTML = `
+                <button class="mindmap-ctrl-btn zoom-in" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+                <button class="mindmap-ctrl-btn zoom-out" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                <button class="mindmap-ctrl-btn fit-frame" title="Fit to Frame"><i class="fa-solid fa-expand"></i></button>
+            `;
+            card.appendChild(toolbar);
+
+            toolbar.querySelector('.zoom-in').addEventListener('click', () => {
+                if (mm && typeof mm.rescale === 'function') mm.rescale(1.25);
+            });
+            toolbar.querySelector('.zoom-out').addEventListener('click', () => {
+                if (mm && typeof mm.rescale === 'function') mm.rescale(0.8);
+            });
+            toolbar.querySelector('.fit-frame').addEventListener('click', () => {
+                if (mm && typeof mm.fit === 'function') mm.fit();
+            });
         } catch (e) {
             console.error('Markmap render error:', e);
             card.innerHTML = `<div class="diagram-error">Error rendering mindmap: ${e.message}</div>`;

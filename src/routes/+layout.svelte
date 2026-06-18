@@ -4,6 +4,8 @@
   import { browser } from "$app/environment";
   import Header from "$lib/components/Header.svelte";
   import Footer from "$lib/components/Footer.svelte";
+  import githubDark from "highlight.js/styles/github-dark.css?raw";
+  import a11yLight from "highlight.js/styles/a11y-light.css?raw";
 
   let { children, data } = $props();
 
@@ -60,18 +62,6 @@
   }
 
   /** @param {boolean} dark */
-  function updateHighlightTheme(dark) {
-    if (!browser) return;
-    const highlightTheme = /** @type {HTMLLinkElement | null} */ (
-      document.getElementById("highlight-theme")
-    );
-    if (!highlightTheme) return;
-    highlightTheme.href = dark
-      ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css"
-      : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-light.min.css";
-  }
-
-  /** @param {boolean} dark */
   function applyTheme(dark) {
     isDark = dark;
     if (browser) {
@@ -82,8 +72,8 @@
         header.classList.toggle("dark", dark);
         header.classList.toggle("dark-mode", dark);
       }
+      window.dispatchEvent(new CustomEvent("themeChanged", { detail: { isDark: dark } }));
     }
-    updateHighlightTheme(dark);
   }
 
   /** @param {string} theme */
@@ -142,13 +132,50 @@
         ],
       });
     }
+
+    // Lazy load Google Adsense to prevent rendering thread blocking on initial load
+    const loadAdsense = () => {
+      // @ts-ignore
+      if (window._adsenseLoaded) return;
+      // @ts-ignore
+      window._adsenseLoaded = true;
+      
+      const meta = document.createElement("meta");
+      meta.name = "google-adsense-account";
+      meta.content = "ca-pub-7539227284131407";
+      document.head.appendChild(meta);
+
+      const script = document.createElement("script");
+      script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7539227284131407";
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      document.head.appendChild(script);
+    };
+
+    const adsenseTimer = setTimeout(loadAdsense, 2500);
+    const triggerEvents = ["mousemove", "scroll", "touchstart", "click"];
+    
+    const handleInteraction = () => {
+      clearTimeout(adsenseTimer);
+      loadAdsense();
+      triggerEvents.forEach(e => window.removeEventListener(e, handleInteraction));
+    };
+
+    triggerEvents.forEach(event => {
+      window.addEventListener(event, handleInteraction, { once: true, passive: true });
+    });
+
+    return () => {
+      clearTimeout(adsenseTimer);
+      triggerEvents.forEach(e => window.removeEventListener(e, handleInteraction));
+    };
   });
 </script>
 
 <svelte:head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content={isDark ? "#1a1a1a" : "#e8e4e0"} />
+  <meta name="theme-color" content={isDark ? "#1f1f1e" : "#faf9f5"} />
   <link
     rel="icon"
     type="image/x-icon"
@@ -156,46 +183,66 @@
     sizes="256x256"
   />
 
-  <!-- Fonts -->
-  
-  <link
-    href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
-    rel="stylesheet"
-  />
+  <!-- Preconnect to Font Hosts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
   <link rel="preconnect" href="https://rsms.me/" />
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+
+  <!-- Preload Critical Styles -->
+  <link rel="preload" href="/assets/style/global.css" as="style" />
+  <link rel="preload" href="/assets/style/style.css" as="style" />
+  <link rel="preload" href="/assets/style/post.css" as="style" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/assets/style/global.css" />
+  <link rel="stylesheet" href="/assets/style/style.css" />
+  <link rel="stylesheet" href="/assets/style/post.css" />
+  {@html `<style>${isDark ? githubDark : a11yLight}</style>`}
+
+  <!-- Fonts (Non-blocking Asynchronous Loading) -->
   <link
-    href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
     rel="stylesheet"
+    media="print"
+    onload={(e) => { e.currentTarget.media = 'all'; }}
+  />
+  <link
+    rel="stylesheet"
+    href="https://rsms.me/inter/inter.css"
+    media="print"
+    onload={(e) => { e.currentTarget.media = 'all'; }}
   />
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css"
+    media="print"
+    onload={(e) => { e.currentTarget.media = 'all'; }}
   />
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="/assets/style/global.css" />
-  <link rel="stylesheet" href="/assets/style/style.css" />
-  <link rel="stylesheet" href="/assets/style/post.css" />
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
-  />
-  <link
-    id="highlight-theme"
-    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-light.min.css"
-    rel="stylesheet"
-  />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css" />
+  </noscript>
 
-
-
-  <!-- Materioa Kit -->
-  <script src="https://materioa.github.io/kit/6a787c7335.js" crossorigin="anonymous"></script>
-
-
+  <!-- Materioa Kit (Deferred to prevent parsing block) -->
+  <script src="https://materioa.github.io/kit/6a787c7335.js" crossorigin="anonymous" defer></script>
 </svelte:head>
 
-<Header {isPost} {isHome} />
+<Header
+  {isPost}
+  {isHome}
+  {setTheme}
+  {currentTheme}
+  {setFont}
+  {currentFont}
+  user={data.user}
+  accessTier={data.accessTier}
+/>
 
 <main>
   {@render children()}

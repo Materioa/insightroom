@@ -1,12 +1,13 @@
-/** @type {import('./$types').LayoutServerLoad} */
 import { redirect, isRedirect } from '@sveltejs/kit';
+import { validateToken } from '$lib/server/auth.js';
 
+/** @type {import('./$types').LayoutServerLoad} */
 export const load = async ({ cookies, fetch, url }) => {
     // Prefer local auth service in localhost development, but fallback to production auth.
     const isDevHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
     const authBaseUrls = isDevHost
-        ? ['http://localhost:1000', 'https://materioa.vercel.app']
-        : ['https://materioa.vercel.app'];
+        ? ['http://localhost:1000', 'https://getmaterio.app', 'https://materioa.vercel.app']
+        : ['https://getmaterio.app', 'https://materioa.vercel.app'];
 
     // Check if a handoff code is present in URL (secure cross-domain login)
     const handoffCode = url.searchParams.get('handoff');
@@ -18,6 +19,7 @@ export const load = async ({ cookies, fetch, url }) => {
 
             for (const authBaseUrl of authBaseUrls) {
                 try {
+                    console.log(`Attempting handoff exchange with auth server: ${authBaseUrl}`);
                     const exchangeResponse = await fetch(`${authBaseUrl}/api/v2/login`, {
                         method: 'POST',
                         headers: {
@@ -27,6 +29,8 @@ export const load = async ({ cookies, fetch, url }) => {
                     });
 
                     if (!exchangeResponse.ok) {
+                        const errBody = await exchangeResponse.text();
+                        console.warn(`Handoff exchange failed for ${authBaseUrl}: Status ${exchangeResponse.status}, Error: ${errBody}`);
                         continue;
                     }
 
@@ -36,11 +40,15 @@ export const load = async ({ cookies, fetch, url }) => {
                     const user = exchangeData.user || exchangeData;
 
                     if (token) {
+                        console.log(`Successfully exchanged handoff token for user: ${user.username || user.email}`);
                         exchangeResult = { token, user };
                         break;
+                    } else {
+                        console.warn(`Auth server ${authBaseUrl} responded with OK, but no token was found:`, exchangeData);
                     }
-                } catch {
-                    // Try the next auth host.
+                } catch (err) {
+                    // @ts-ignore
+                    console.error(`Handoff exchange network error for ${authBaseUrl}:`, err.message);
                 }
             }
 
@@ -77,37 +85,10 @@ export const load = async ({ cookies, fetch, url }) => {
         return { user: null, accessTier: 'guest' };
     }
 
-    // Validate the existing token by fetching user profile, with auth host fallback.
-    for (const authBaseUrl of authBaseUrls) {
-        try {
-            const response = await fetch(`${authBaseUrl}/api/v2/profile`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+    const { user, accessTier } = await validateToken(token, fetch, url);
 
-            if (!response.ok) {
-                continue;
-            }
-
-            const userData = await response.json();
-            // Handle both response formats: wrapped in 'user' property or direct user data
-            const user = userData.user || userData;
-
-            // Determine access tier
-            let accessTier = 'normal';
-            if (user?.hasAdminPrivileges) {
-                accessTier = 'super';
-            } else if (user?.isPlusUser) {
-                accessTier = 'plus';
-            }
-
-            return { user, accessTier, token };
-        } catch {
-            // Try the next auth host.
-        }
+    if (user) {
+        return { user, accessTier, token };
     }
 
     // Token is invalid or expired, clear it

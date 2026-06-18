@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { renderPostContent } from '$lib/server/renderContent.js';
+import { validateToken } from '$lib/server/auth.js';
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ params, cookies, fetch, url }) {
@@ -9,26 +10,8 @@ export async function GET({ params, cookies, fetch, url }) {
 
     // 2. Validate token and determine access tier
     if (token) {
-        const isDevHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-        const authBaseUrls = isDevHost
-            ? ['http://localhost:1000', 'https://materioa.vercel.app']
-            : ['https://materioa.vercel.app'];
-
-        for (const authBaseUrl of authBaseUrls) {
-            try {
-                const response = await fetch(`${authBaseUrl}/api/v2/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const userData = await response.json();
-                    const user = userData.user || userData;
-                    if (user?.hasAdminPrivileges) accessTier = 'super';
-                    else if (user?.isPlusUser) accessTier = 'plus';
-                    else accessTier = 'normal';
-                    break;
-                }
-            } catch (e) { /* ignore and try next auth host */ }
-        }
+        const authResult = await validateToken(token, fetch, url);
+        accessTier = authResult.accessTier;
     }
 
     const { getPost, getPostByPermalink } = await import('$lib/server/posts.js');

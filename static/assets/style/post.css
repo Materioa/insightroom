@@ -852,20 +852,39 @@ body.dark-mode .post-toc .toc a {
 
 .toc-mobile-toggle {
   display: none;
-  position: absolute;
-  right: 58px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
+  position: relative;
+  width: 38px;
+  height: 38px;
   border: none;
-  border-radius: 10px;
+  border-radius: 50%;
   background: transparent;
-  color: var(--text, #222);
+  color: var(--text, #333);
   cursor: pointer;
   align-items: center;
   justify-content: center;
   z-index: 1201;
+  transition: background-color 0.2s, color 0.2s, transform 0.2s;
+  padding: 0;
+}
+
+.toc-mobile-toggle:hover {
+  background-color: rgba(128, 128, 128, 0.15);
+  color: var(--brand-orange, #ff5400);
+  transform: scale(1.05);
+}
+
+.toc-mobile-toggle:active {
+  transform: scale(0.95);
+}
+
+.dark .toc-mobile-toggle,
+body.dark-mode .toc-mobile-toggle {
+  color: #eee;
+}
+
+.dark .toc-mobile-toggle:hover,
+body.dark-mode .toc-mobile-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .toc-mobile-icon {
@@ -1054,9 +1073,6 @@ body.dark-mode .toc-rail-line.active {
 }
 
 @media (max-width: 700px) {
-  .toc-mobile-toggle {
-    right: 10px;
-  }
 }
 
 /* Override inline/header fixed width on small screens to prevent forcing horizontal scroll */
@@ -1201,33 +1217,17 @@ body.dark-mode .toc-rail-line.active {
     padding-right: 114px !important;
   }
 
-  .site-header .back-button {
-    right: 74px !important;
-    font-size: 1.05rem !important;
-  }
-
   .toc-mobile-toggle[data-has-toc="true"] {
-    right: 14px;
     width: 32px;
     height: 32px;
   }
 }
 
-/* Ensure the back/exit icon stays fully visible on small screens */
 @media (max-width: 700px) {
   .site-header {
     padding-right: 96px !important;
     box-sizing: border-box;
     overflow: visible !important;
-  }
-
-  .site-header .back-button {
-    position: absolute !important;
-    right: 56px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    z-index: 1400 !important;
-    font-size: 1rem !important;
   }
 }
 
@@ -1363,7 +1363,7 @@ body.dark-mode .site-toc-sidebar .toc a.active,
 /* Prevent scroll chaining but allow browser navigation gestures */
 html,
 body {
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
 }
 
 @media (max-width: 980px) {
@@ -1566,13 +1566,13 @@ html {
   scroll-behavior: smooth;
   /* Contain overscroll but allow browser navigation gestures (back/forward swipe) */
   overscroll-behavior-x: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
 }
 
 body {
   /* Contain vertical overscroll, allow horizontal for browser back/forward gestures */
   overscroll-behavior-x: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
