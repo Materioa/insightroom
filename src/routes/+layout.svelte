@@ -12,15 +12,36 @@
   let isPost = $derived(!!$page.params.postPath);
   let isHome = $derived($page.url.pathname === "/");
   let bodyClass = $derived(isPost ? "body-post" : isHome ? "blog-layout" : "");
-  let isDark = $state(false);
-  let currentTheme = $state("system");
-  let currentFont = $state("default");
+  
+  // Reactive Svelte 5 Runes for Theme and Font
+  let currentTheme = $state(data.theme || "system");
+  let currentFont = $state(data.font || "default");
+  let systemPrefersDark = $state(false);
+
+  // Derive isDark reactively
+  let isDark = $derived(
+    currentTheme === "dark" ||
+    (currentTheme === "system" && systemPrefersDark)
+  );
+
+  // React to prop changes from page navigation/layout data reload
+  $effect.pre(() => {
+    if (data.theme) currentTheme = data.theme;
+    if (data.font) currentFont = data.font;
+  });
 
   $effect(() => {
     if (browser) {
       // Manage theme classes
       document.body.classList.toggle("dark", isDark);
       document.body.classList.toggle("dark-mode", isDark);
+
+      // Manage theme classes on header
+      const header = document.querySelector("header");
+      if (header) {
+        header.classList.toggle("dark", isDark);
+        header.classList.toggle("dark-mode", isDark);
+      }
       
       // Manage font classes
       const fontClasses = ["font-default", "font-secondary", "font-serif", "font-system", "font-dyslexic", "font-arizona"];
@@ -30,6 +51,9 @@
       // Manage layout classes
       document.body.classList.toggle("body-post", isPost);
       document.body.classList.toggle("blog-layout", isHome);
+
+      // Dispatch event for components like Mermaid
+      window.dispatchEvent(new CustomEvent("themeChanged", { detail: { isDark } }));
     }
   });
 
@@ -61,36 +85,11 @@
     document.cookie = name + "=" + value + expires + "; path=/";
   }
 
-  /** @param {boolean} dark */
-  function applyTheme(dark) {
-    isDark = dark;
-    if (browser) {
-      document.body.classList.toggle("dark", dark);
-      document.body.classList.toggle("dark-mode", dark);
-      const header = document.querySelector("header");
-      if (header) {
-        header.classList.toggle("dark", dark);
-        header.classList.toggle("dark-mode", dark);
-      }
-      window.dispatchEvent(new CustomEvent("themeChanged", { detail: { isDark: dark } }));
-    }
-  }
-
   /** @param {string} theme */
   function setTheme(theme) {
     if (!browser) return;
     currentTheme = theme;
     setCookie("theme", theme, 30);
-    if (theme === "dark") {
-      applyTheme(true);
-    } else if (theme === "light") {
-      applyTheme(false);
-    } else if (theme === "system") {
-      const systemPrefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-      applyTheme(systemPrefersDark);
-    }
   }
 
   /** @param {string} font */
@@ -109,14 +108,31 @@
   }
 
   onMount(() => {
-    // Initialize theme
-    const userTheme = getCookie("theme") || "system";
-    currentTheme = userTheme;
-    setTheme(userTheme);
+    // Setup prefers-color-scheme listener
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    systemPrefersDark = mediaQuery.matches;
 
-    // Initialize font
-    const userFont = getCookie("font") || "default";
-    currentFont = userFont;
+    /** @param {MediaQueryListEvent} e */
+    const handleMediaQueryChange = (e) => {
+      systemPrefersDark = e.matches;
+    };
+    
+    // Add listener
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handleMediaQueryChange);
+    } else {
+      mediaQuery.addListener(handleMediaQueryChange);
+    }
+
+    // Sync state on mount (ensuring cookies or system media query matches layout data)
+    const cookieTheme = getCookie("theme");
+    if (cookieTheme) {
+      currentTheme = cookieTheme;
+    }
+    const cookieFont = getCookie("font");
+    if (cookieFont) {
+      currentFont = cookieFont;
+    }
 
     // @ts-ignore
     if (typeof hljs !== "undefined") hljs.highlightAll();
@@ -168,6 +184,11 @@
     return () => {
       clearTimeout(adsenseTimer);
       triggerEvents.forEach(e => window.removeEventListener(e, handleInteraction));
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", handleMediaQueryChange);
+      } else {
+        mediaQuery.removeListener(handleMediaQueryChange);
+      }
     };
   });
 </script>
@@ -175,7 +196,14 @@
 <svelte:head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content={isDark ? "#1f1f1e" : "#faf9f5"} />
+  <title>Materio - The InsightRoom</title>
+  <meta name="description" content="The InsightRoom is a place to find insightful reads - a little more than academics." />
+  {#if currentTheme === 'system'}
+    <meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1f1f1e" media="(prefers-color-scheme: dark)" />
+  {:else}
+    <meta name="theme-color" content={currentTheme === 'dark' ? '#1f1f1e' : '#faf9f5'} />
+  {/if}
   <link
     rel="icon"
     type="image/x-icon"
@@ -189,10 +217,11 @@
   <link rel="preconnect" href="https://rsms.me/" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 
-  <!-- Preload Critical Styles -->
+  <!-- Preload Critical Styles & Font -->
   <link rel="preload" href="/assets/style/global.css" as="style" />
   <link rel="preload" href="/assets/style/style.css" as="style" />
   <link rel="preload" href="/assets/style/post.css" as="style" />
+  <link rel="preload" href="/assets/fonts/PPMori_Regular.otf" as="font" type="font/otf" crossorigin="anonymous" />
 
   <!-- Stylesheets -->
   <link rel="stylesheet" href="/assets/style/global.css" />
@@ -202,31 +231,24 @@
 
   <!-- Fonts (Non-blocking Asynchronous Loading) -->
   <link
-    href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Manrope:wght@200..800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
     rel="stylesheet"
     media="print"
-    onload={(e) => { e.currentTarget.media = 'all'; }}
+    onload={(e) => { if (e.currentTarget instanceof HTMLLinkElement) e.currentTarget.media = 'all'; }}
   />
   <link
     rel="stylesheet"
     href="https://rsms.me/inter/inter.css"
     media="print"
-    onload={(e) => { e.currentTarget.media = 'all'; }}
-  />
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css"
-    media="print"
-    onload={(e) => { e.currentTarget.media = 'all'; }}
+    onload={(e) => { if (e.currentTarget instanceof HTMLLinkElement) e.currentTarget.media = 'all'; }}
   />
 
   <noscript>
     <link
-      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Manrope:wght@200..800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css" />
   </noscript>
 
   <!-- Materioa Kit (Deferred to prevent parsing block) -->
@@ -256,5 +278,3 @@
   user={data.user}
   accessTier={data.accessTier}
 />
-
-

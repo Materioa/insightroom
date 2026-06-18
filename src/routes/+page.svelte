@@ -97,6 +97,10 @@
 
 <svelte:head>
   <title>Materio - The InsightRoom</title>
+  <meta
+    name="description"
+    content="The InsightRoom is a place to find insightful reads - a little more than academics."
+  />
   <meta property="og:title" content="Materio - The InsightRoom" />
   <meta
     property="og:description"
@@ -106,7 +110,7 @@
     property="og:image"
     content="https://materioa.vercel.app/assets/img/og-theinsroom.jpg"
   />
-  <meta property="og:url" content="https://materioa.vercel.app/room" />
+  <meta property="og:url" content="https://room.getmaterio.app" />
   <meta property="og:type" content="website" />
 </svelte:head>
 
@@ -136,6 +140,7 @@
                       src={post.image}
                       class="post-image rounded"
                       alt="{post.title} thumbnail"
+                      loading="lazy"
                     />
                   {/if}
                 {/if}
@@ -182,6 +187,7 @@
                 src={heroPost.image}
                 class="hero-image"
                 alt="{heroPost.title} thumbnail"
+                fetchpriority="high"
               />
             {/if}
             <div class="hero-meta">
@@ -268,6 +274,7 @@
                 src={post.image || ""}
                 class="post-image rounded"
                 alt="{post.title} thumbnail"
+                loading="lazy"
               />
             {/if}
             <div class="post-meta">

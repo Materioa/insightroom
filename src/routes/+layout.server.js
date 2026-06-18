@@ -78,21 +78,24 @@ export const load = async ({ cookies, fetch, url }) => {
         }
     }
 
+    const theme = cookies.get('theme') || 'system';
+    const font = cookies.get('font') || 'default';
+
     // Read token from cookies (for returning users)
     const token = cookies.get('materio_auth_token');
 
     if (!token) {
-        return { user: null, accessTier: 'guest' };
+        return { user: null, accessTier: 'guest', theme, font };
     }
 
     const { user, accessTier } = await validateToken(token, fetch, url);
 
     if (user) {
-        return { user, accessTier, token };
+        return { user, accessTier, token, theme, font };
     }
 
     // Token is invalid or expired, clear it
     cookies.delete('materio_auth_token', { path: '/' });
 
-    return { user: null, accessTier: 'guest' };
+    return { user: null, accessTier: 'guest', theme, font };
 };

@@ -2,6 +2,8 @@
   import { page } from "$app/stores";
   import { searchTerm, showSearchBoxStore } from "$lib/stores/search";
   import { dev, browser } from "$app/environment";
+  import { optimizeSupabaseUrl } from "$lib/utils/image.js";
+
 
   let {
     isPost = false,
@@ -286,9 +288,11 @@
         {#if user}
           <div class="profile-info">
             <img
-              src={user.profilePicture || "/assets/img/default-avatar.svg"}
+              src={optimizeSupabaseUrl(user.profilePicture || "/assets/img/default-avatar.svg", 30)}
               alt={user.displayName || user.username}
               class="profile-avatar"
+              width="30"
+              height="30"
             />
             <div class="profile-details">
               <button

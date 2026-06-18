@@ -89,7 +89,7 @@
 
 <footer class="site-footer">
   <div class="footer-img">
-    <img src="/assets/img/banner.svg" alt="Banner" />
+    <img src="/assets/img/banner.svg" alt="Banner" width="279" height="47" />
   </div>
   <div class="footer-content">
     <p>

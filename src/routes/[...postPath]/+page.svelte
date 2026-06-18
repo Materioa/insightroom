@@ -16,6 +16,8 @@
   import QRCodeGenerator from "$lib/components/QRCodeGenerator.svelte";
   import AISummary from "$lib/components/AISummary.svelte";
   import authorsData from "$lib/authors.json";
+  import { optimizeCloudinaryUrl, optimizeSupabaseUrl } from "$lib/utils/image.js";
+
 
   const authorsMap = /** @type {Record<string, {name: string, passportPhoto: string, tags: string[], description: string | string[]}>} */ (authorsData);
 
@@ -689,7 +691,7 @@
     content={`https://room.getmaterio.app/blog/${data.slug}`}
   />
   <meta property="og:type" content="article" />
-  <meta name="description" content={data.excerpt || ""} />
+  <meta name="description" content={data.excerpt || "For minds that want more - a lil more than academics."} />
   <meta name="twitter:card" content="summary_large_image" />
   <meta
     name="twitter:title"
@@ -899,10 +901,13 @@
             {:else}
               <!-- Image cover -->
               <img
-                src={data.image || ""}
+                src={optimizeCloudinaryUrl(data.image || "", 800)}
                 alt={data.title || "Cover image"}
                 class="post-cover"
                 style="border-radius: 12px; display: block; width: 100%; height: auto; object-fit: cover;"
+                fetchpriority="high"
+                width="700"
+                height="420"
               />
             {/if}
           </div>
@@ -941,15 +946,22 @@
                       style="width: 35px; height: 35px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(0,0,0,0.1);"
                     >
                       <img
-                        src={author.avatar}
+                        src={optimizeSupabaseUrl(author.avatar, 35)}
                         alt={author.name}
                         style="width: 100%; height: 100%; object-fit: cover;"
+                        width="35"
+                        height="35"
                       />
                     </div>
                     {#if authorsMap[author.name]}
                       <div class="author-hover-card">
                         <div class="author-hover-photo">
-                          <img src={authorsMap[author.name].passportPhoto} alt={author.name} />
+                          <img
+                            src={optimizeSupabaseUrl(authorsMap[author.name].passportPhoto, 90)}
+                            alt={author.name}
+                            width="90"
+                            height="115"
+                          />
                         </div>
                         <div class="author-hover-info">
                           <div class="author-hover-name">{authorsMap[author.name].name}</div>
@@ -1168,7 +1180,7 @@
 
               <!-- Materio Plus SVG Logo -->
               <div class="materio-plus-logo">
-                <img src="/assets/img/plus_shim.svg" alt="materio. plus" />
+                <img src="/assets/img/plus_shim.svg" alt="materio. plus" width="200" height="39" />
               </div>
 
               <!-- Benefits list -->
