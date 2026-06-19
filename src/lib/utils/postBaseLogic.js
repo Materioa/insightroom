@@ -1660,7 +1660,9 @@ export function initializeArtifacts() {
         iframe.style.display = 'block';
         iframe.setAttribute('scrolling', 'no');
         iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-downloads allow-forms allow-modals allow-popups');
-        iframe.srcdoc = rawHtml;
+        
+        const doctype = '<!DOCTYPE html>\n';
+        iframe.srcdoc = rawHtml.trim().toLowerCase().startsWith('<!doctype html') ? rawHtml : doctype + rawHtml;
 
         iframe.addEventListener('load', () => {
             try {
@@ -1674,12 +1676,6 @@ export function initializeArtifacts() {
                     // Set body class to match parent body for theme-specific CSS selectors
                     doc.body.className = document.body.className;
 
-                    // Get computed styles from parent body
-                    const bodyStyle = window.getComputedStyle(document.body);
-                    const parentFontFamily = bodyStyle.fontFamily;
-                    const parentColor = bodyStyle.color;
-                    const parentLineHeight = bodyStyle.lineHeight;
-
                     // Apply default styles to the iframe's body to match layout/font/theme while keeping background transparent
                     const style = doc.createElement('style');
                     style.textContent = `
@@ -1689,9 +1685,12 @@ export function initializeArtifacts() {
                             background: transparent !important;
                             overflow: hidden !important;
                             height: auto !important;
-                            font-family: ${parentFontFamily} !important;
-                            color: ${parentColor} !important;
-                            line-height: ${parentLineHeight} !important;
+                            min-height: 0 !important;
+                            font-family: inherit;
+                            color: var(--text, inherit) !important;
+                        }
+                        body {
+                            display: flow-root !important; /* Contains margins to accurately measure height */
                         }
                     `;
                     doc.head.appendChild(style);
@@ -1699,9 +1698,7 @@ export function initializeArtifacts() {
                     // Set up dynamic resize observer
                     const updateHeight = () => {
                         const height = Math.max(
-                            doc.documentElement.scrollHeight || 0,
                             doc.body.scrollHeight || 0,
-                            doc.documentElement.offsetHeight || 0,
                             doc.body.offsetHeight || 0
                         );
                         if (height > 0) {
@@ -1721,10 +1718,8 @@ export function initializeArtifacts() {
                             return;
                         }
                         try {
-                            const isDark = e.detail.isDark;
-                            doc.body.classList.toggle('dark-mode', isDark);
-                            const newBodyStyle = window.getComputedStyle(document.body);
-                            doc.body.style.setProperty('color', newBodyStyle.color, 'important');
+                            // Sync parent body classes (handles fonts and themes)
+                            doc.body.className = document.body.className;
                         } catch (err) {
                             console.error("Failed to update iframe theme:", err);
                         }
