@@ -26,9 +26,12 @@
 
   let postContentText = $state("");
   // If server provided pre-rendered content (for crawlers), use it immediately
-  let decodedContent = $state("");
-  let isLoading = $state(true);
+  // svelte-ignore state_referenced_locally
+  let decodedContent = $state(data.ssrContent || "");
+  // svelte-ignore state_referenced_locally
+  let isLoading = $state(!data.ssrContent);
   let claps = $state(0);
+  let postHasMath = $state(false);
 
   $effect.pre(() => {
     decodedContent = data.ssrContent || "";
@@ -342,6 +345,7 @@
   }
 
   function renderMath() {
+      if (!postHasMath) return;
       // @ts-ignore
       if (typeof renderMathInElement !== "undefined") {
           const options = {
@@ -375,7 +379,7 @@
     async function init() {
       try {
         // 1. Get post content (either SSR or dynamic fetch)
-        if (!_ssrContent && !_isLocked) {
+        if (!decodedContent && !_isLocked) {
           try {
             const category = encodeURIComponent(_categorySlug || _category || "_permalink");
             const slug = encodeURIComponent(_slug || "");
@@ -384,13 +388,14 @@
             const result = await res.json();
             if (!active) return;
             decodedContent = result.html;
+            isLoading = false;
           } catch (e) {
             console.error("Failed to load post content:", e);
+            isLoading = false;
           }
         } else {
-          decodedContent = _ssrContent || "";
+          isLoading = false;
         }
-        isLoading = false;
 
         if (!active) return;
 
@@ -402,6 +407,8 @@
         const hasPdf = contentStr.includes("attachment") || contentStr.includes("pdf");
         const hasKatex = contentStr.includes("$") || contentStr.includes("\\(") || contentStr.includes("\\[") || contentStr.includes("katex");
         const hasHighlight = contentStr.includes("<pre>") || contentStr.includes("code");
+
+        postHasMath = hasKatex;
 
         // 3. Dynamically import only the needed libraries
         const [
@@ -465,14 +472,6 @@
         // 5. Wait for Svelte DOM tick, then initialize post features
         await tick();
         if (!active) return;
-        const visEl = document.querySelector('.post-content-visible');
-        const contentEl = document.querySelector('.summary-capture');
-        if (visEl) {
-          visEl.innerHTML = decodedContent;
-        }
-        if (contentEl) {
-          contentEl.innerHTML = decodedContent;
-        }
         await initPostFeatures();
       } catch (err) {
         console.error("Failed to load dependencies dynamically:", err);
@@ -667,6 +666,22 @@
       };
     }
   });
+
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      const w = /** @type {any} */ (window);
+      if (w._tocScrollHandler) {
+        document.removeEventListener('scroll', w._tocScrollHandler);
+        w._tocScrollHandler = null;
+      }
+      if (w._tocDesktopResizeHandler) {
+        window.removeEventListener('resize', w._tocDesktopResizeHandler);
+        w._tocDesktopResizeHandler = null;
+      }
+      const menu = document.getElementById('custom-context-menu');
+      if (menu) menu.remove();
+    }
+  });
 </script>
 
 <svelte:window onkeydown={handleKeydown} onscroll={handleScroll} />
@@ -684,11 +699,11 @@
   />
   <meta
     property="og:image"
-    content={`https://room.getmaterio.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
+    content={`${$page.url.origin}/api/og-image?url=${encodeURIComponent(data.image || "/assets/img/og-theinsroom.jpg")}`}
   />
   <meta
     property="og:url"
-    content={`https://room.getmaterio.app/blog/${data.slug}`}
+    content={$page.url.href}
   />
   <meta property="og:type" content="article" />
   <meta name="description" content={data.excerpt || "For minds that want more - a lil more than academics."} />
@@ -700,7 +715,7 @@
   <meta name="twitter:description" content={data.excerpt || ""} />
   <meta
     name="twitter:image"
-    content={`https://room.getmaterio.app${data.image || "/assets/img/og-theinsroom.jpg"}`}
+    content={`${$page.url.origin}/api/og-image?url=${encodeURIComponent(data.image || "/assets/img/og-theinsroom.jpg")}`}
   />
   <!-- Post specific scripts are loaded dynamically from npm packages inside onMount -->
 
@@ -710,16 +725,16 @@
     "@type": "Article",
     "headline": data.title || "",
     "description": data.excerpt || "",
-    "image": data.image ? `https://room.getmaterio.app${data.image}` : "https://room.getmaterio.app/assets/img/og-theinsroom.jpg",
+    "image": `${$page.url.origin}/api/og-image?url=${encodeURIComponent(data.image || "/assets/img/og-theinsroom.jpg")}`,
     "datePublished": data.date || "",
     "publisher": {
       "@type": "Organization",
       "name": "Materio InsightRoom",
-      "url": "https://room.getmaterio.app"
+      "url": $page.url.origin
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-          "@id": `https://room.getmaterio.app/${data.categorySlug || ""}/${data.slug || ""}`
+      "@id": $page.url.href
     }
   })}</script>`}
 </svelte:head>
@@ -1263,9 +1278,13 @@
           <div
             class="summary-capture"
             style="display: none;"
-          ></div>
+          >
+            {@html decodedContent}
+          </div>
 
-          <div class="post-content-visible"></div>
+          <div class="post-content-visible">
+            {@html decodedContent}
+          </div>
         {/if}
       </div>
 

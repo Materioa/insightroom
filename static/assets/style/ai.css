@@ -122,6 +122,7 @@
    height: 10px;
    background: #ff5b32;
    border-radius: 50%;
+   margin-left: 8px;
    animation: breathe 2s ease-in-out infinite;
  }
 
@@ -160,63 +161,64 @@
    text-align: left;
  }
 
- .ai-response-text :global(p),
- .ai-response-text :global(li),
- .ai-response-text :global(h2),
- .ai-response-text :global(h3),
- .ai-response-text :global(h4) {
+ .ai-response-text p,
+ .ai-response-text li,
+ .ai-response-text h2,
+ .ai-response-text h3,
+ .ai-response-text h4 {
    margin: 0.4rem 0;
    text-align: left;
  }
 
- .ai-response-text :global(li) {
-   margin-left: 1.2rem;
+ .ai-response-text li {
+   margin-left: 2.2rem;
+   padding-left: 0.25rem;
    list-style: disc;
  }
 
- .ai-response-text :global(code) {
+ .ai-response-text code {
    background: rgba(0, 0, 0, 0.06);
    padding: 0.1rem 0.3rem;
    border-radius: 3px;
    font-size: 0.9em;
  }
 
- .ai-response-text :global(pre) {
+ .ai-response-text pre {
    margin: 0.75rem 0;
    overflow-x: auto;
  }
 
- .ai-response-text :global(pre code) {
+ .ai-response-text pre code {
    font-size: 13px;
    white-space: pre;
    background: transparent;
    padding: 0;
  }
 
- .ai-response-text :global(.ai-table) {
+ .ai-response-text .ai-table {
    width: 100%;
    border-collapse: collapse;
    margin: 0.75rem 0;
    font-size: 13px;
  }
 
- .ai-response-text :global(.ai-table th),
- .ai-response-text :global(.ai-table td) {
+ .ai-response-text .ai-table th,
+ .ai-response-text .ai-table td {
    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.15));
    padding: 0.5rem 0.75rem;
    text-align: left;
  }
 
- .ai-response-text :global(.ai-table th) {
+ .ai-response-text .ai-table th {
    background: var(--card-bg, rgba(0, 0, 0, 0.04));
    font-weight: 600;
  }
 
- .ai-response-text :global(.ai-table tr:nth-child(even) td) {
+ .ai-response-text .ai-table tr:nth-child(even) td {
    background: var(--card-bg, rgba(0, 0, 0, 0.02));
  }
 
- .ai-response-text :global(strong) {
+ .ai-response-text strong {
    font-weight: 600;
  }
 

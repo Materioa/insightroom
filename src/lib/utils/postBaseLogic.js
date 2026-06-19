@@ -17,6 +17,7 @@ export function initializePostBase() {
     initializeGraphviz();
     initializeFlashcards();
     initializeMCQSystem();
+    initializeArtifacts();
 }
 
 function initializeBlankCharFix() {
@@ -980,6 +981,8 @@ function toggleVideo(videoId) {
 
 
 function initializePrintEnhancements() {
+    if (window.__printEnhancementsInitialized) return;
+    window.__printEnhancementsInitialized = true;
     window.addEventListener('beforeprint', generatePrintElements);
     window.addEventListener('afterprint', cleanupPrintElements);
 }
@@ -1058,6 +1061,9 @@ function cleanupPrintElements() {
 }
 
 function initializeSecureMode() {
+    if (window.__secureModeInitialized) return;
+    window.__secureModeInitialized = true;
+
     document.addEventListener('keydown', function (e) {
         const key = e.key.toLowerCase();
         const isBlocked = key === 'f12' || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(key)) || (e.ctrlKey && key === 'u');
@@ -1086,7 +1092,7 @@ function initializeSecureMode() {
             const selection = window.getSelection();
             const selectedText = selection ? selection.toString().trim() : '';
             
-            if (selectedText) {
+            if (selectedText && selection && selection.rangeCount > 0) {
                 // Position near the end of the selection
                 const range = selection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
@@ -1630,4 +1636,109 @@ function initializeMCQSystem() {
             }
         });
     }
+}
+
+export function initializeArtifacts() {
+    if (typeof window === 'undefined') return;
+
+    document.querySelectorAll('.artifact-container').forEach(container => {
+        if (container.dataset.initialized) return;
+        container.dataset.initialized = 'true';
+
+        const innerDiv = container.querySelector('div');
+        if (!innerDiv) return;
+
+        const rawHtml = innerDiv.innerHTML;
+
+        const iframe = document.createElement('iframe');
+        iframe.className = 'artifact-iframe';
+        iframe.style.width = '100%';
+        iframe.style.height = '150px';
+        iframe.style.border = 'none';
+        iframe.style.background = 'transparent';
+        iframe.style.overflow = 'hidden';
+        iframe.style.display = 'block';
+        iframe.setAttribute('scrolling', 'no');
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-downloads allow-forms allow-modals allow-popups');
+        iframe.srcdoc = rawHtml;
+
+        iframe.addEventListener('load', () => {
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                if (doc && doc.body) {
+                    // Copy all stylesheet and font preconnect/link tags from the parent to render matching fonts/elements
+                    document.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], style').forEach(el => {
+                        doc.head.appendChild(el.cloneNode(true));
+                    });
+
+                    // Set body class to match parent body for theme-specific CSS selectors
+                    doc.body.className = document.body.className;
+
+                    // Get computed styles from parent body
+                    const bodyStyle = window.getComputedStyle(document.body);
+                    const parentFontFamily = bodyStyle.fontFamily;
+                    const parentColor = bodyStyle.color;
+                    const parentLineHeight = bodyStyle.lineHeight;
+
+                    // Apply default styles to the iframe's body to match layout/font/theme while keeping background transparent
+                    const style = doc.createElement('style');
+                    style.textContent = `
+                        html, body {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            background: transparent !important;
+                            overflow: hidden !important;
+                            height: auto !important;
+                            font-family: ${parentFontFamily} !important;
+                            color: ${parentColor} !important;
+                            line-height: ${parentLineHeight} !important;
+                        }
+                    `;
+                    doc.head.appendChild(style);
+
+                    // Set up dynamic resize observer
+                    const updateHeight = () => {
+                        const height = Math.max(
+                            doc.documentElement.scrollHeight || 0,
+                            doc.body.scrollHeight || 0,
+                            doc.documentElement.offsetHeight || 0,
+                            doc.body.offsetHeight || 0
+                        );
+                        if (height > 0) {
+                            iframe.style.height = `${height}px`;
+                        }
+                    };
+
+                    const observer = new ResizeObserver(updateHeight);
+                    observer.observe(doc.body);
+                    // @ts-ignore
+                    iframe._resizeObserver = observer;
+
+                    // Sync theme changes dynamically
+                    const themeListener = (e) => {
+                        if (!iframe.isConnected) {
+                            window.removeEventListener('themeChanged', themeListener);
+                            return;
+                        }
+                        try {
+                            const isDark = e.detail.isDark;
+                            doc.body.classList.toggle('dark-mode', isDark);
+                            const newBodyStyle = window.getComputedStyle(document.body);
+                            doc.body.style.setProperty('color', newBodyStyle.color, 'important');
+                        } catch (err) {
+                            console.error("Failed to update iframe theme:", err);
+                        }
+                    };
+                    window.addEventListener('themeChanged', themeListener);
+
+                    // Initial height calculation
+                    updateHeight();
+                }
+            } catch (e) {
+                console.error("Failed to setup iframe resources or resize observer:", e);
+            }
+        });
+
+        innerDiv.replaceWith(iframe);
+    });
 }

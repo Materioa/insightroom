@@ -391,8 +391,13 @@ For summarizing:
     // Inline code (but not inside pre blocks)
     result = result.replace(/`([^`]+)`/g, "<code>$1</code>");
 
-    // Bullet points
-    result = result.replace(/^[\-\*] (.+)$/gm, "<li>$1</li>");
+    // Bullet points (including nested ones with leading spaces)
+    result = result.replace(/^([ \t]*)[\-\*] (.+)$/gm, (_: string, spaces: string, content: string) => {
+      if (spaces && spaces.length > 0) {
+        return `<li style="margin-left: 3.5rem; list-style-type: circle;">${content}</li>`;
+      }
+      return `<li>${content}</li>`;
+    });
 
     // Numbered lists
     result = result.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");

@@ -1,8 +1,9 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, tick } from "svelte";
     import { page } from "$app/stores";
     import { Marked } from "marked";
     import { diffLines } from "diff";
+    import { initializeArtifacts } from "$lib/utils/postBaseLogic.js";
 
     export let data;
 
@@ -965,6 +966,9 @@
                     artifactHtml,
                 );
             });
+
+            await tick();
+            initializeArtifacts();
         }
     }
 
