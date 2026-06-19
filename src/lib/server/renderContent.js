@@ -18,6 +18,27 @@ export async function renderPostContent(rawContent) {
 
     let content = rawContent;
 
+    // ── Extract LaTeX display math blocks ──
+    /** @type {Record<string, string>} */
+    const mathBlocks = {};
+    const blockMathRegex = /\$\$([\s\S]+?)\$\$/g;
+    content = content.replace(blockMathRegex, (match, formula) => {
+        const id = Math.random().toString(36).substr(2, 9);
+        mathBlocks[id] = formula.trim();
+        return `<div data-math-block-placeholder="${id}"></div>`;
+    });
+
+    // ── Extract LaTeX inline math blocks ──
+    /** @type {Record<string, string>} */
+    const mathInlines = {};
+    // Matches inline math that starts and ends with $, but is not followed/preceded by whitespace
+    const inlineMathRegex = /\$([^\$\s](?:[^\$]*?[^\$\s])?)\$/g;
+    content = content.replace(inlineMathRegex, (match, formula) => {
+        const id = Math.random().toString(36).substr(2, 9);
+        mathInlines[id] = formula.trim();
+        return `<span data-math-inline-placeholder="${id}"></span>`;
+    });
+
     // ── Attachment shortcodes ──
     const attachmentRegex = /\[attachment:([^\]]+):([^\]:]+)\]/g;
     content = content.replace(attachmentRegex, (/** @type {string} */ match, /** @type {string} */ url, /** @type {string} */ title) => {
@@ -147,6 +168,18 @@ export async function renderPostContent(rawContent) {
     Object.entries(artifacts).forEach(([id, innerContent]) => {
         const artifactHtml = `<div class="artifact-container"><div>${innerContent}</div></div>`;
         html = html.replace(`<div data-artifact-placeholder="${id}"></div>`, artifactHtml);
+    });
+
+    // ── Restore LaTeX display math blocks ──
+    Object.entries(mathBlocks).forEach(([id, formula]) => {
+        const formulaHtml = `$$\n${formula}\n$$`;
+        html = html.replace(`<div data-math-block-placeholder="${id}"></div>`, formulaHtml);
+    });
+
+    // ── Restore LaTeX inline math blocks ──
+    Object.entries(mathInlines).forEach(([id, formula]) => {
+        const formulaHtml = `$${formula}$`;
+        html = html.replace(`<span data-math-inline-placeholder="${id}"></span>`, formulaHtml);
     });
 
     // Replace double-escaped blank characters
