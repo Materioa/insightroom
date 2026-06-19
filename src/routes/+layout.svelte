@@ -42,21 +42,6 @@
         header.classList.toggle("dark", isDark);
         header.classList.toggle("dark-mode", isDark);
       }
-
-      // Sync theme-color meta tag dynamically to match header colors
-      const themeColorMetas = document.querySelectorAll('meta[name="theme-color"]');
-      const targetColor = isDark ? '#1f1f1e' : '#faf9f5';
-      if (themeColorMetas.length === 0) {
-        const meta = document.createElement('meta');
-        meta.name = 'theme-color';
-        meta.content = targetColor;
-        document.head.appendChild(meta);
-      } else {
-        themeColorMetas.forEach(meta => {
-          meta.setAttribute('content', targetColor);
-          meta.removeAttribute('media');
-        });
-      }
       
       // Manage font classes
       const fontClasses = ["font-default", "font-secondary", "font-serif", "font-system", "font-dyslexic", "font-arizona"];
@@ -213,12 +198,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Materio - The InsightRoom</title>
   <meta name="description" content="The InsightRoom is a place to find insightful reads - a little more than academics." />
-  {#if currentTheme === 'system'}
-    <meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1f1f1e" media="(prefers-color-scheme: dark)" />
-  {:else}
-    <meta name="theme-color" content={currentTheme === 'dark' ? '#1f1f1e' : '#faf9f5'} />
-  {/if}
+  <meta name="theme-color" content={isDark ? '#1f1f1e' : '#faf9f5'} />
   <link
     rel="icon"
     type="image/x-icon"
