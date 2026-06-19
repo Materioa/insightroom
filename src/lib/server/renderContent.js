@@ -149,5 +149,8 @@ export async function renderPostContent(rawContent) {
         html = html.replace(`<div data-artifact-placeholder="${id}"></div>`, artifactHtml);
     });
 
+    // Replace double-escaped blank characters
+    html = html.replace(/&amp;#8206;/g, '\u200E');
+
     return html;
 }

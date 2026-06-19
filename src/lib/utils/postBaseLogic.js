@@ -21,11 +21,7 @@ export function initializePostBase() {
 }
 
 function initializeBlankCharFix() {
-    const postBody = document.querySelector('.post-body');
-    if (postBody) {
-        // Replace encoded blank character with actual unicode char if present
-        postBody.innerHTML = postBody.innerHTML.replace(/&amp;#8206;/g, '\u200E');
-    }
+    // Blank characters are resolved server-side before parsing/rendering HTML to avoid breaking Svelte hydration.
 }
 
 /* =========================================
@@ -884,62 +880,91 @@ function generateGenericPreview(fileExtension, canvas, ctx) {
     ctx.fillText("File", 50, 90);
 }
 
+/**
+ * @param {string} params
+ */
+function createVideoElement(params) {
+    const isCover = params.trim().endsWith(':cover');
+    const videoPath = isCover ? params.trim().slice(0, -6).trim() : params.trim();
+
+    const videoId = 'video-' + Math.random().toString(36).substr(2, 9);
+    const coverClass = isCover ? 'video-cover' : 'video-embed';
+
+    const container = document.createElement('div');
+    container.className = coverClass;
+
+    const video = document.createElement('video');
+    video.id = videoId;
+    video.muted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.src = videoPath;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('muted', '');
+    video.defaultMuted = true;
+
+    const controls = document.createElement('div');
+    controls.className = 'video-controls playing';
+    controls.onclick = () => toggleVideo(videoId);
+    controls.innerHTML = '<i class="fa-solid fa-pause"></i>';
+
+    container.appendChild(video);
+    container.appendChild(controls);
+
+    // Auto-play logic with retries
+    video.addEventListener('loadedmetadata', () => {
+        video.play().catch(e => console.log("Autoplay prevented", e));
+    });
+
+    return container;
+}
+
 function processVideoTags() {
     const postBody = document.querySelector('.post-body');
     if (!postBody) return;
 
     const videoTagRegex = /\[video:([^\]]+)\]/g;
-    const matches = [...postBody.innerHTML.matchAll(videoTagRegex)];
-    if (matches.length === 0) return;
 
-    let html = postBody.innerHTML;
-    matches.forEach((match, index) => {
-        html = html.replace(match[0], `<span class="video-placeholder" data-video-index="${index}" data-video-params="${match[1]}"></span>`);
-    });
-    postBody.innerHTML = html;
+    /** @param {Node} node */
+    function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.nodeValue || '';
+            let match;
+            let lastIndex = 0;
+            const frag = document.createDocumentFragment();
+            videoTagRegex.lastIndex = 0;
+            let found = false;
 
-    document.querySelectorAll('.video-placeholder').forEach(placeholder => {
-        // @ts-ignore
-        const params = placeholder.dataset.videoParams;
-        if (!params) return;
+            while ((match = videoTagRegex.exec(text)) !== null) {
+                found = true;
+                const [fullMatch, params] = match;
+                const start = match.index;
+                if (start > lastIndex) {
+                    frag.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+                }
+                const videoEl = createVideoElement(params);
+                frag.appendChild(videoEl);
+                lastIndex = start + fullMatch.length;
+            }
+            if (found) {
+                if (lastIndex < text.length) {
+                    frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+                }
+                if (node.parentNode) node.parentNode.replaceChild(frag, node);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE && !['A', 'SCRIPT', 'STYLE'].includes(node.nodeName)) {
+            const children = Array.from(node.childNodes);
+            for (const child of children) {
+                walk(child);
+            }
+        }
+    }
 
-        const isCover = params.trim().endsWith(':cover');
-        const videoPath = isCover ? params.trim().slice(0, -6).trim() : params.trim();
-
-        const videoId = 'video-' + Math.random().toString(36).substr(2, 9);
-        const coverClass = isCover ? 'video-cover' : 'video-embed';
-
-        const container = document.createElement('div');
-        container.className = coverClass;
-
-        const video = document.createElement('video');
-        video.id = videoId;
-        video.muted = true;
-        video.loop = true;
-        video.autoplay = true;
-        video.playsInline = true;
-        video.preload = 'auto';
-        video.src = videoPath;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('webkit-playsinline', '');
-        video.setAttribute('autoplay', '');
-        video.setAttribute('muted', '');
-        video.defaultMuted = true;
-
-        const controls = document.createElement('div');
-        controls.className = 'video-controls playing';
-        controls.onclick = () => toggleVideo(videoId);
-        controls.innerHTML = '<i class="fa-solid fa-pause"></i>';
-
-        container.appendChild(video);
-        container.appendChild(controls);
-        placeholder.replaceWith(container);
-
-        // Auto-play logic with retries
-        video.addEventListener('loadedmetadata', () => {
-            video.play().catch(e => console.log("Autoplay prevented", e));
-        });
-    });
+    walk(postBody);
 }
 
 /**

@@ -529,12 +529,11 @@
 
   $effect(() => {
     if (decodedContent) {
-      tick().then(() => {
-        const el = document.querySelector('.summary-capture');
-        if (el) {
-          postContentText = el.textContent || "";
-        }
-      });
+      if (typeof document !== 'undefined') {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = decodedContent;
+        postContentText = tempDiv.textContent || "";
+      }
     }
   });
 
@@ -1274,14 +1273,6 @@
             <div class="skeleton" style="width: 94%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
           </div>
         {:else}
-          <!-- Capture content for summary (hidden, no IDs to avoid duplicates) -->
-          <div
-            class="summary-capture"
-            style="display: none;"
-          >
-            {@html decodedContent}
-          </div>
-
           <div class="post-content-visible">
             {@html decodedContent}
           </div>
@@ -1312,16 +1303,6 @@
     />
   </div>
 
-  <!-- SSR content for crawlers/bots: rendered as a noscript fallback so
-       search engines, AI assistants, and ad verification bots (AdSense)
-       can always read the full article text even without JavaScript. -->
-  {#if data.ssrContent}
-    <noscript>
-      <div class="post-body post-content-visible">
-        {@html data.ssrContent}
-      </div>
-    </noscript>
-  {/if}
 </main>
 
 <!-- Site-level TOC sidebar - starts with no-transition to prevent flash on load -->

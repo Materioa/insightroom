@@ -42,6 +42,21 @@
         header.classList.toggle("dark", isDark);
         header.classList.toggle("dark-mode", isDark);
       }
+
+      // Sync theme-color meta tag dynamically to match header colors
+      const themeColorMetas = document.querySelectorAll('meta[name="theme-color"]');
+      const targetColor = isDark ? '#1f1f1e' : '#faf9f5';
+      if (themeColorMetas.length === 0) {
+        const meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        meta.content = targetColor;
+        document.head.appendChild(meta);
+      } else {
+        themeColorMetas.forEach(meta => {
+          meta.setAttribute('content', targetColor);
+          meta.removeAttribute('media');
+        });
+      }
       
       // Manage font classes
       const fontClasses = ["font-default", "font-secondary", "font-serif", "font-system", "font-dyslexic", "font-arizona"];
