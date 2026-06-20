@@ -44,9 +44,11 @@ export async function GET({ request, url }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);
 
-    // Get limit from query parameter
+    // Get limit and filters from query parameters
     const num = url.searchParams.get('num');
     const limit = num ? parseInt(num, 10) : null;
+    const subject = url.searchParams.get('subject');
+    const semester = url.searchParams.get('semester');
 
     const posts = await getAllPosts();
     const baseUrl = process.env.NODE_ENV === 'development' 
@@ -55,6 +57,15 @@ export async function GET({ request, url }) {
 
     // Filter and map to requested fields
     let filteredPosts = posts.filter((/** @type {any} */ p) => !p.hidden && !p.draft);
+
+    // Apply filters if specified
+    if (subject) {
+        filteredPosts = filteredPosts.filter((/** @type {any} */ p) => p.subject === subject);
+    }
+
+    if (semester) {
+        filteredPosts = filteredPosts.filter((/** @type {any} */ p) => p.semester === semester);
+    }
 
     // Apply limit if specified
     if (limit && !isNaN(limit) && limit > 0) {
