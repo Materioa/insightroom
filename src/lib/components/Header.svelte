@@ -17,6 +17,7 @@
   } = $props();
 
   let showSettingsMenu = $state(false);
+  let showHomeSearch = $state(false);
 
   function toggleSettingsMenu() {
     showSettingsMenu = !showSettingsMenu;
@@ -70,45 +71,32 @@
 <header class="site-header">
   <a href="/" class="header-logo" role="button" aria-label="Go to homepage"></a>
 
-  <!-- Search box for home layout -->
-  {#if isHome}
-    <div class="header-search">
-      <input
-        type="text"
-        id="search-input"
-        placeholder="Search posts..."
-        aria-label="Search posts"
-        bind:value={$searchTerm}
-      />
-      <i class="fa-solid fa-search"></i>
-    </div>
-  {/if}
-
   <!-- Settings container with toggle button and unified modal -->
   <div class="settings-container">
-    {#if isPost}
-      <button
-        class="header-search-trigger"
-        onclick={() => showSearchBoxStore.update(v => !v)}
-        aria-label="Search this post"
-        title="Search this post"
+    <!-- Search box trigger for all layouts -->
+    <button
+      class="header-search-trigger"
+      onclick={() => showSearchBoxStore.update(v => !v)}
+      aria-label="Search"
+      title="Search"
+    >
+      <svg
+        width="18"
+        height="18"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <svg
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.25"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </button>
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </button>
 
+    {#if isPost}
       <button
         class="toc-mobile-toggle"
         data-state="closed"
@@ -320,6 +308,17 @@
             </div>
           </div>
           <div class="profile-actions">
+            {#if accessTier === "super" || accessTier === "plus"}
+              <button
+                type="button"
+                class="menu-item writer-btn"
+                onclick={() => window.location.href = "/writer"}
+                style="margin-bottom: 4px;"
+              >
+                <i class="fa-regular fa-user-pen"></i>
+                Go to Writer
+              </button>
+            {/if}
             <button
               type="button"
               class="menu-item logout"
@@ -369,7 +368,6 @@
   }
 
   .header-search-trigger:hover {
-    background-color: rgba(128, 128, 128, 0.15);
     color: var(--brand-orange, #ff5400);
     transform: scale(1.05);
   }
@@ -383,6 +381,6 @@
   }
 
   :global(.dark) .header-search-trigger:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
   }
 </style>

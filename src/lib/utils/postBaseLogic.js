@@ -1666,19 +1666,42 @@ function initializeMCQSystem() {
 export function initializeArtifacts() {
     if (typeof window === 'undefined') return;
 
+    // Process and move cover artifacts if present
+    const coverSource = document.querySelector('[data-cover-artifact-source] .artifact-container');
+    const coverTarget = document.getElementById('post-cover-target');
+    if (coverTarget) {
+        if (coverSource) {
+            coverTarget.innerHTML = '';
+            coverTarget.appendChild(coverSource);
+            coverTarget.style.display = 'block';
+            
+            // Set initial scroll progress if not inside editor preview
+            if (!coverTarget.closest('.preview-box')) {
+                const scrollY = window.scrollY || document.documentElement.scrollTop;
+                const progress = Math.min(scrollY / 250, 1);
+                coverTarget.style.setProperty('--progress', String(progress));
+            }
+        } else {
+            coverTarget.innerHTML = '';
+            coverTarget.style.display = 'none';
+        }
+    }
+
     document.querySelectorAll('.artifact-container').forEach(container => {
         if (container.dataset.initialized) return;
         container.dataset.initialized = 'true';
 
-        const innerDiv = container.querySelector('div');
-        if (!innerDiv) return;
+        const template = container.querySelector('template');
+        const innerNode = template || container.querySelector('div');
+        if (!innerNode) return;
 
-        const rawHtml = innerDiv.innerHTML;
+        const rawHtml = innerNode.innerHTML;
 
         const iframe = document.createElement('iframe');
         iframe.className = 'artifact-iframe';
         iframe.style.width = '100%';
-        iframe.style.height = '150px';
+        const isCover = container.closest('#post-cover-target');
+        iframe.style.height = isCover ? '450px' : '150px';
         iframe.style.border = 'none';
         iframe.style.background = 'transparent';
         iframe.style.overflow = 'hidden';
@@ -1687,7 +1710,37 @@ export function initializeArtifacts() {
         iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-downloads allow-forms allow-modals allow-popups');
         
         const doctype = '<!DOCTYPE html>\n';
-        iframe.srcdoc = rawHtml.trim().toLowerCase().startsWith('<!doctype html') ? rawHtml : doctype + rawHtml;
+        let srcdocHtml = rawHtml.trim().toLowerCase().startsWith('<!doctype html') ? rawHtml : doctype + rawHtml;
+        
+        // Auto-inject local D3, TopoJSON, and Map Data if used, avoiding external network requests
+        let injectedScripts = '';
+        if (srcdocHtml.includes('d3.') && !srcdocHtml.includes('d3.v7.min.js') && !srcdocHtml.includes('npm/d3')) {
+            injectedScripts += '<script src="/assets/lib/d3.v7.min.js"></script>\n';
+        }
+        if (srcdocHtml.includes('topojson') && !srcdocHtml.includes('topojson-client')) {
+            injectedScripts += '<script src="/assets/lib/topojson-client.min.js"></script>\n';
+        }
+        if ((srcdocHtml.includes('d3.geo') || srcdocHtml.includes('topojson')) && !srcdocHtml.includes('world-110m.js')) {
+            injectedScripts += '<script src="/assets/lib/world-110m.js"></script>\n';
+        }
+        
+        // Add import map for modern ES modules
+        injectedScripts += `
+        <script type="importmap">
+        {
+            "imports": {
+                "d3": "/assets/lib/d3.esm.js",
+                "topojson-client": "/assets/lib/topojson-client.esm.js"
+            }
+        }
+        </script>
+        `;
+        
+        if (injectedScripts) {
+            srcdocHtml = srcdocHtml.replace(/<!doctype html>/i, '$&\n' + injectedScripts);
+        }
+
+        iframe.srcdoc = srcdocHtml;
 
         iframe.addEventListener('load', () => {
             try {
@@ -1703,14 +1756,14 @@ export function initializeArtifacts() {
 
                     // Apply default styles to the iframe's body to match layout/font/theme while keeping background transparent
                     const style = doc.createElement('style');
+                    const isCoverIframe = iframe.closest('#post-cover-target');
                     style.textContent = `
                         html, body {
                             margin: 0 !important;
                             padding: 0 !important;
                             background: transparent !important;
                             overflow: hidden !important;
-                            height: auto !important;
-                            min-height: 0 !important;
+                            ${isCoverIframe ? '' : 'height: auto !important; min-height: 0 !important;'}
                             font-family: inherit;
                             color: var(--text, inherit) !important;
                         }
@@ -1759,6 +1812,6 @@ export function initializeArtifacts() {
             }
         });
 
-        innerDiv.replaceWith(iframe);
+        innerNode.replaceWith(iframe);
     });
 }

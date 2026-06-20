@@ -1,6 +1,6 @@
 <script>
-  import { onMount } from "svelte";
-  import { searchTerm } from "$lib/stores/search";
+  import { onMount, tick } from "svelte";
+  import { searchTerm, showSearchBoxStore } from "$lib/stores/search";
 
   /** @type {{ data: import('./$types').PageData }} */
   let { data } = $props();
@@ -25,6 +25,26 @@
   // Search
   /** @type {any[]} */
   let searchResults = $state([]);
+
+  /** @type {HTMLInputElement | null} */
+  let searchInputRef = $state(null);
+
+  $effect(() => {
+    if ($showSearchBoxStore) {
+      tick().then(() => searchInputRef?.focus());
+    }
+  });
+
+  /** @param {KeyboardEvent} e */
+  function handleKeydown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      showSearchBoxStore.set(true);
+    } else if (e.key === 'Escape' && $showSearchBoxStore) {
+      showSearchBoxStore.set(false);
+      e.preventDefault();
+    }
+  }
 
   // Reactively update search results when $searchTerm changes
   $effect(() => {
@@ -95,8 +115,10 @@
   }
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <svelte:head>
-  <title>Materio - The InsightRoom</title>
+  <title>Insightroom</title>
   <meta
     name="description"
     content="The InsightRoom is a place to find insightful reads - a little more than academics."
@@ -113,6 +135,27 @@
   <meta property="og:url" content="https://room.getmaterio.app" />
   <meta property="og:type" content="website" />
 </svelte:head>
+
+<!-- Custom Search UI -->
+{#if $showSearchBoxStore}
+  <div class="custom-search-box">
+    <div class="search-input-wrapper">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        bind:this={searchInputRef}
+        bind:value={$searchTerm}
+        placeholder="Search posts..."
+        type="text"
+      />
+    </div>
+    <div class="search-controls">
+      <div class="divider"></div>
+      <button class="icon-btn close-btn" onclick={() => showSearchBoxStore.set(false)} title="Close (Esc)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+{/if}
 
 <div class="home-container">
   <!-- Hero Section -->

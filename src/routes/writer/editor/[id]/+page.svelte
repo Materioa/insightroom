@@ -940,6 +940,14 @@
                 }
             );
 
+            // Cover replacement - extract cover BEFORE markdown parsing
+            const coverRegex = /```(?:cover|artifact:cover)\s*\n([\s\S]*?)\n```/g;
+            let coverHtml = '';
+            rawContent = rawContent.replace(coverRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
+                coverHtml = innerContent;
+                return ''; // remove from body
+            });
+
             // Artifact replacement - extract artifacts BEFORE markdown parsing to preserve HTML
             const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
             /** @type {Record<string, string>} */
@@ -966,6 +974,11 @@
                     artifactHtml,
                 );
             });
+
+            // Append cover artifact source
+            if (coverHtml) {
+                previewHtml += `<div data-cover-artifact-source style="display:none;"><div class="artifact-container"><div>${coverHtml}</div></div></div>`;
+            }
 
             await tick();
             initializeArtifacts();
@@ -1149,6 +1162,7 @@
 
                 {#if isPreviewMode}
                     <div class="preview-box">
+                        <div id="post-cover-target" style="margin-bottom: 1.5rem; display: none;"></div>
                         {@html previewHtml}
                     </div>
                 {:else}
@@ -2814,5 +2828,24 @@
         .author-field-row {
             grid-template-columns: 1fr 1fr 30px;
         }
+    }
+
+    /* Style overrides for the cover target inside editor preview */
+    .preview-box #post-cover-target {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        left: 0 !important;
+        corner-shape: squircle !important;
+        border-radius: 40px !important;
+        padding: 5px !important;
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
+        background: #e7e3df !important;
+    }
+    :global(body.dark-mode) .preview-box #post-cover-target,
+    :global(body.dark) .preview-box #post-cover-target {
+        background: #2c2c2a !important;
     }
 </style>

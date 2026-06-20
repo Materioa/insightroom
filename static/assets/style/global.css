@@ -745,7 +745,6 @@ body.dark .qr-code-container {
 }
 
 .settings-toggle-btn:hover {
-    background-color: rgba(128, 128, 128, 0.15);
     transform: scale(1.05);
 }
 

@@ -868,7 +868,6 @@ body.dark-mode .post-toc .toc a {
 }
 
 .toc-mobile-toggle:hover {
-  background-color: rgba(128, 128, 128, 0.15);
   color: var(--brand-orange, #ff5400);
   transform: scale(1.05);
 }
@@ -884,7 +883,7 @@ body.dark-mode .toc-mobile-toggle {
 
 .dark .toc-mobile-toggle:hover,
 body.dark-mode .toc-mobile-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .toc-mobile-icon {

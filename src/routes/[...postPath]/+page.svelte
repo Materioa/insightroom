@@ -1,5 +1,6 @@
 <script>
   import { onMount, tick, onDestroy } from "svelte";
+  import { fade } from 'svelte/transition';
   import {
     addHeadingAnchorLinks,
     initializeListenComponent,
@@ -32,6 +33,8 @@
   let isLoading = $state(!data.ssrContent);
   let claps = $state(0);
   let postHasMath = $state(false);
+  
+  let hasCoverArtifact = $derived(decodedContent && decodedContent.includes('data-cover-artifact-source'));
 
   $effect.pre(() => {
     decodedContent = data.ssrContent || "";
@@ -54,11 +57,56 @@
   // Reading Progress Bar State
   let scrollProgress = $state(0);
 
+  // Lightbox State
+  let showLightbox = $state(false);
+  /** @type {{ type: 'image' | 'video' | null, src: string | null, alt: string | null }} */
+  let lightboxMedia = $state({ type: null, src: null, alt: null });
+
+  function closeLightbox() {
+    showLightbox = false;
+    setTimeout(() => {
+      lightboxMedia = { type: null, src: null, alt: null };
+    }, 200);
+  }
+
+  /** @param {MouseEvent} event */
+  function handleContentClick(event) {
+    const target = /** @type {HTMLElement} */ (event.target);
+    if (!target) return;
+    
+    let current = target;
+    while (current && current !== event.currentTarget) {
+      if (current.closest('.locked-content-wrapper') || current.closest('.author-hover-card') || current.closest('.post-author-stack')) return;
+      
+      if (current.tagName === 'IMG' && !current.classList.contains('no-lightbox')) {
+        const img = /** @type {HTMLImageElement} */ (current);
+        lightboxMedia = { type: 'image', src: img.src, alt: img.alt };
+        showLightbox = true;
+        return;
+      } else if (current.tagName === 'VIDEO' && !current.classList.contains('no-lightbox')) {
+        const video = /** @type {HTMLVideoElement} */ (current);
+        const source = video.querySelector('source');
+        lightboxMedia = { type: 'video', src: video.src || (source ? source.src : null), alt: '' };
+        if (lightboxMedia.src) showLightbox = true;
+        return;
+      }
+      current = /** @type {HTMLElement} */ (current.parentElement);
+    }
+  }
+
   function handleScroll() {
     if (typeof window === 'undefined') return;
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     scrollProgress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+
+    if (hasCoverArtifact) {
+      const target = document.getElementById('post-cover-target');
+      if (target) {
+        const progress = Math.min(scrollTop / 250, 1);
+        target.style.setProperty('--progress', String(progress));
+      }
+    }
   }
 
   async function clapPost() {
@@ -686,10 +734,10 @@
 <svelte:window onkeydown={handleKeydown} onscroll={handleScroll} />
 
 <svelte:head>
-  <title>{data.title} - Materio InsightRoom</title>
+  <title>{data.title} - Insightroom</title>
   <meta
     property="og:title"
-    content={data.title || "Materio - The InsightRoom"}
+    content={data.title || "Insightroom"}
   />
   <meta
     property="og:description"
@@ -709,33 +757,36 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta
     name="twitter:title"
-    content={data.title || "Materio - The InsightRoom"}
+    content={data.title || "Insightroom"}
   />
-  <meta name="twitter:description" content={data.excerpt || ""} />
-  <meta
-    name="twitter:image"
-    content={`${$page.url.origin}/api/og-image?url=${encodeURIComponent(data.image || "/assets/img/og-theinsroom.jpg")}`}
-  />
-  <!-- Post specific scripts are loaded dynamically from npm packages inside onMount -->
+  <meta property="article:published_time" content={new Date(data.date).toISOString()} />
+  
+  {#if data.tags && data.tags.length > 0}
+    {#each data.tags as tag}
+      <meta property="article:tag" content={tag} />
+    {/each}
+  {/if}
 
-  <!-- JSON-LD Article structured data for search engines -->
-  {@html `<script type="application/ld+json">${JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "headline": data.title || "",
-    "description": data.excerpt || "",
-    "image": `${$page.url.origin}/api/og-image?url=${encodeURIComponent(data.image || "/assets/img/og-theinsroom.jpg")}`,
-    "datePublished": data.date || "",
-    "publisher": {
-      "@type": "Organization",
-      "name": "Materio InsightRoom",
-      "url": $page.url.origin
-    },
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": $page.url.href
+  <!-- JSON-LD Structured Data for SEO -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": {JSON.stringify(data.title)},
+      "description": {JSON.stringify(data.description)},
+      {#if data.coverImage}"image": {JSON.stringify(new URL(data.coverImage, $page.url.origin).toString())},{/if}
+      "datePublished": {JSON.stringify(new Date(data.date).toISOString())},
+      "publisher": {
+        "@type": "Organization",
+        "name": "Insightroom",
+        "url": $page.url.origin
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": $page.url.href
+      }
     }
-  })}</script>`}
+  </script>
 </svelte:head>
 
 <div class="reading-progress-bar" style="width: {scrollProgress}%;"></div>
@@ -881,51 +932,56 @@
         </p>
       {/if}
 
-      {#if isLoading}
-        <div style="display: block; position: relative; margin: 1.5rem auto; max-width: 700px;">
-          <div class="skeleton" style="width: 100%; height: 400px; border-radius: 17px;"></div>
-        </div>
-      {:else if data.image}
-        <div
-          style="display: block; position: relative; margin: 1.5rem auto; max-width: 700px;"
-        >
-          <div
-            class="post-image-frame"
-            style="padding: 5px; border-radius: 17px;"
-          >
-            {#if isVideo(data.image)}
-              <!-- Video cover -->
-              <div class="video-cover" style="margin: 0;">
-                <video id="cover-video" muted loop style="border-radius: 12px;">
-                  <source
-                    src={data.image || ""}
-                    type={getVideoType(data.image)}
-                  />
-                  Your browser does not support the video tag.
-                </video>
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div
-                  class="video-controls paused"
-                  onclick={() => toggleVideo("cover-video")}
-                >
-                  <i class="fa-solid fa-play"></i>
-                </div>
-              </div>
-            {:else}
-              <!-- Image cover -->
-              <img
-                src={optimizeCloudinaryUrl(data.image || "", 800)}
-                alt={data.title || "Cover image"}
-                class="post-cover"
-                style="border-radius: 12px; display: block; width: 100%; height: auto; object-fit: cover;"
-                fetchpriority="high"
-                width="700"
-                height="420"
-              />
-            {/if}
+      <!-- Cover Artifact Target -->
+      <div id="post-cover-target" style="display: {hasCoverArtifact ? 'block' : 'none'};"></div>
+
+      {#if !hasCoverArtifact}
+        {#if isLoading}
+          <div style="display: block; position: relative; margin: 1.5rem auto; max-width: 700px;">
+            <div class="skeleton" style="width: 100%; height: 400px; border-radius: 17px;"></div>
           </div>
-        </div>
+        {:else if data.image}
+          <div
+            style="display: block; position: relative; margin: 1.5rem auto; max-width: 700px;"
+          >
+            <div
+              class="post-image-frame"
+              style="padding: 5px; border-radius: 17px;"
+            >
+              {#if isVideo(data.image)}
+                <!-- Video cover -->
+                <div class="video-cover" style="margin: 0;">
+                  <video id="cover-video" muted loop style="border-radius: 12px;">
+                    <source
+                      src={data.image || ""}
+                      type={getVideoType(data.image)}
+                    />
+                    Your browser does not support the video tag.
+                  </video>
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div
+                    class="video-controls paused"
+                    onclick={() => toggleVideo("cover-video")}
+                  >
+                    <i class="fa-solid fa-play"></i>
+                  </div>
+                </div>
+              {:else}
+                <!-- Image cover -->
+                <img
+                  src={optimizeCloudinaryUrl(data.image || "", 800)}
+                  alt={data.title || "Cover image"}
+                  class="post-cover"
+                  style="border-radius: 12px; display: block; width: 100%; height: auto; object-fit: cover;"
+                  fetchpriority="high"
+                  width="700"
+                  height="420"
+                />
+              {/if}
+            </div>
+          </div>
+        {/if}
       {/if}
 
       {#if isLoading}
@@ -1273,7 +1329,9 @@
             <div class="skeleton" style="width: 94%; height: 20px; margin-bottom: 12px; border-radius: 4px;"></div>
           </div>
         {:else}
-          <div class="post-content-visible">
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="post-content-visible" onclick={handleContentClick}>
             {@html decodedContent}
           </div>
         {/if}
@@ -1354,6 +1412,24 @@
   }}
 ></div>
 
+{#if showLightbox}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="lightbox-overlay" onclick={closeLightbox} transition:fade={{ duration: 200 }}>
+    <button class="lightbox-close" aria-label="Close full screen">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <div class="lightbox-content" onclick={(e) => e.stopPropagation()}>
+      {#if lightboxMedia.type === 'image'}
+        <img src={lightboxMedia.src} alt={lightboxMedia.alt} />
+      {:else if lightboxMedia.type === 'video'}
+        <!-- svelte-ignore a11y_media_has_caption -->
+        <video src={lightboxMedia.src} controls autoplay></video>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 <style>
   :global(::-webkit-scrollbar) {
     display: none;
@@ -1417,150 +1493,7 @@
     100% { transform: translate(0, -50px) scale(1.2); opacity: 0; } 
   }
 
-  /* Custom Search Box Styles */
-  .custom-search-box {
-    position: fixed;
-    top: 70px;
-    right: 20px;
-    z-index: 9999;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    display: flex;
-    align-items: center;
-    padding: 6px 12px;
-    gap: 12px;
-    font-family: inherit;
-    animation: slideDown 0.2s ease-out;
-  }
-  @keyframes slideDown {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  .search-input-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(0,0,0,0.04);
-    border-radius: 6px;
-    padding: 4px 8px;
-  }
-  .search-input-wrapper input {
-    border: none;
-    background: transparent;
-    outline: none;
-    font-size: 14px;
-    width: 180px;
-    color: #333;
-  }
-  .search-icon {
-    color: #888;
-    font-size: 12px;
-  }
-  .search-controls {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .match-count {
-    font-size: 12px;
-    color: #666;
-    min-width: 40px;
-    text-align: center;
-    margin-right: 8px;
-  }
-  .icon-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #555;
-    transition: background 0.1s;
-  }
-  .icon-btn:hover:not(:disabled) {
-    background: rgba(0,0,0,0.08);
-  }
-  .icon-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-  .divider {
-    width: 1px;
-    height: 16px;
-    background: #ddd;
-    margin: 0 4px;
-  }
-  .close-btn:hover {
-    color: #e53935;
-    background: rgba(229, 57, 53, 0.1);
-  }
 
-  /* highlight styles */
-  :global(mark.search-mark) {
-    background-color: #ffd54f !important;
-    color: #000 !important;
-    padding: 2px 0;
-    border-radius: 2px;
-  }
-  :global(mark.search-mark.active) {
-    background-color: #ff9800 !important;
-  }
-  :global(body.dark-mode .custom-search-box) {
-    background: #2a2a2a;
-    border-color: #444;
-  }
-  :global(body.dark-mode .search-input-wrapper) {
-    background: rgba(255,255,255,0.05);
-  }
-  :global(body.dark-mode .search-input-wrapper input) {
-    color: #fff;
-  }
-  :global(body.dark-mode .icon-btn) {
-    color: #bbb;
-  }
-  :global(body.dark-mode .icon-btn:hover:not(:disabled)) {
-    background: rgba(255,255,255,0.1);
-  }
-  :global(body.dark-mode .divider) {
-    background: #555;
-  }
-  :global(body.dark-mode .match-count) {
-    color: #aaa;
-  }
-
-  @media (max-width: 768px) {
-    .custom-search-box {
-      left: 12px;
-      right: 12px;
-      top: 70px;
-      padding: 6px 10px;
-      gap: 8px;
-    }
-    .search-input-wrapper {
-      flex: 1;
-      min-width: 0;
-      gap: 6px;
-      padding: 4px 6px;
-    }
-    .search-input-wrapper input {
-      width: 100%;
-      min-width: 0;
-    }
-    .match-count {
-      min-width: unset;
-      margin-right: 4px;
-      font-size: 11px;
-    }
-    .search-controls {
-      gap: 2px;
-    }
-  }
   .reading-progress-bar {
     position: fixed;
     top: 0;
@@ -1646,5 +1579,93 @@
       width: 100%;
       justify-content: center;
     }
+  }
+
+  #post-cover-target {
+    --progress: 0;
+    position: relative;
+    box-sizing: border-box;
+    overflow: hidden;
+    
+    /* Breakthrough margin / breakout logic */
+    width: calc(100vw - (100vw - 100%) * var(--progress));
+    margin-left: calc(-50vw * (1 - var(--progress)));
+    margin-right: calc(-50vw * (1 - var(--progress)));
+    left: calc(50% * (1 - var(--progress)));
+    
+    /* Morph to squircle frame matching .post-image-frame */
+    corner-shape: squircle !important;
+    border-radius: calc(40px * var(--progress)) !important;
+    padding: calc(5px * var(--progress));
+    
+    margin-top: calc(1.5rem * var(--progress));
+    margin-bottom: calc(1.5rem * var(--progress));
+    
+    /* Background transitions */
+    background: rgba(231, 227, 223, var(--progress));
+    
+    /* Optimize rendering and performance */
+    will-change: width, margin, left, border-radius, padding, background-color;
+    transform: translate3d(0, 0, 0);
+  }
+
+  :global(body.dark-mode) #post-cover-target,
+  :global(body.dark) #post-cover-target {
+    background: rgba(44, 44, 42, var(--progress));
+  }
+
+  /* --- Lightbox Styles --- */
+  .lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    color: white;
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  .lightbox-close:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.05);
+  }
+  .lightbox-content {
+    max-width: 80vw;
+    max-height: 80vh;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox-content img, .lightbox-content video {
+    max-width: 80vw;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   }
 </style>

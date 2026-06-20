@@ -145,6 +145,14 @@ export async function renderPostContent(rawContent) {
         `</div>`;
     });
 
+    // ── Cover artifact code blocks (extract before markdown parsing) ──
+    const coverRegex = /```(?:cover|artifact:cover)\s*\n([\s\S]*?)\n```/g;
+    let coverHtml = '';
+    content = content.replace(coverRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
+        coverHtml = innerContent;
+        return ''; // remove it from the main body content
+    });
+
     // ── Artifact code blocks (extract before markdown parsing) ──
     const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
     /** @type {Record<string, string>} */
@@ -166,7 +174,7 @@ export async function renderPostContent(rawContent) {
 
     // ── Restore artifacts ──
     Object.entries(artifacts).forEach(([id, innerContent]) => {
-        const artifactHtml = `<div class="artifact-container"><div>${innerContent}</div></div>`;
+        const artifactHtml = `<div class="artifact-container"><template>${innerContent}</template></div>`;
         html = html.replace(`<div data-artifact-placeholder="${id}"></div>`, artifactHtml);
     });
 
@@ -184,6 +192,11 @@ export async function renderPostContent(rawContent) {
 
     // Replace double-escaped blank characters
     html = html.replace(/&amp;#8206;/g, '\u200E');
+
+    // ── Append cover artifact source if present ──
+    if (coverHtml) {
+        html += `<div data-cover-artifact-source style="display:none;"><div class="artifact-container"><template>${coverHtml}</template></div></div>`;
+    }
 
     return html;
 }
