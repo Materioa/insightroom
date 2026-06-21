@@ -72,6 +72,9 @@
             "OAuth2": [
               "admin"
             ]
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "requestBody": {
@@ -120,6 +123,9 @@
             "OAuth2": [
               "admin"
             ]
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -171,6 +177,9 @@
             "OAuth2": [
               "admin"
             ]
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "requestBody": {
@@ -233,6 +242,10 @@
             }
           }
         }
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     },
     "schemas": {

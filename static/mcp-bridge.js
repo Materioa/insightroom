@@ -79,6 +79,9 @@ async function startSseConnection() {
     }
 }
 
+// Track processed JSON-RPC IDs to prevent duplicate stdout logs
+const processedIds = new Set();
+
 /**
  * Handles incoming SSE events from the remote server.
  * @param {string} eventName 
@@ -99,6 +102,10 @@ function handleSseEvent(eventName, data) {
         // Start listening to stdin now that we have the endpoint
         startStdinReader();
     } else if (eventName === 'message') {
+        try {
+            const parsed = JSON.parse(data);
+            if (parsed.id !== undefined) processedIds.add(parsed.id);
+        } catch {}
         // Print the JSON-RPC message straight to stdout for the MCP client
         console.log(data);
     }
@@ -142,6 +149,14 @@ function startStdinReader() {
             // If the body is non-empty, print it to stdout.
             const text = await res.text();
             if (text.trim()) {
+                try {
+                    const parsed = JSON.parse(text);
+                    // Avoid duplicating the response if SSE already processed it
+                    if (parsed.id !== undefined && processedIds.has(parsed.id)) {
+                        return;
+                    }
+                    if (parsed.id !== undefined) processedIds.add(parsed.id);
+                } catch {}
                 console.log(text);
             }
         } catch (err) {
