@@ -52,6 +52,39 @@ function slugify(text) {
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ request, url, fetch }) {
+    // Log the GET request details for debugging at the very top
+    try {
+        const db = await getDb();
+        const debugCol = db.collection('mcp_debug_logs');
+        /** @type {Record<string, string>} */
+        const headersObj = {};
+        for (const [k, v] of request.headers.entries()) {
+            if (k.toLowerCase() === 'authorization') {
+                headersObj[k] = v.substring(0, 15) + '...';
+            } else {
+                headersObj[k] = v;
+            }
+        }
+        // Extract token safely for log check
+        const authHeader = request.headers.get('Authorization');
+        let tempToken = '';
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            tempToken = authHeader.substring(7);
+        } else {
+            tempToken = url.searchParams.get('token') || '';
+        }
+        await debugCol.insertOne({
+            timestamp: new Date(),
+            method: 'GET',
+            url: url.toString(),
+            searchParams: Object.fromEntries(url.searchParams.entries()),
+            headers: headersObj,
+            hasToken: !!tempToken
+        });
+    } catch (e) {
+        console.error('[MCP Debug Log] Failed to write GET log:', e);
+    }
+
     // 1. Get Token from Header or Query Param
     const authHeader = request.headers.get('Authorization');
     let token = '';
@@ -79,31 +112,6 @@ export async function GET({ request, url, fetch }) {
         tokenValidationResult = { user: null, accessTier: null };
     }
     const { user, accessTier } = tokenValidationResult;
-
-    // Log the GET request details for debugging
-    try {
-        const db = await getDb();
-        const debugCol = db.collection('mcp_debug_logs');
-        /** @type {Record<string, string>} */
-        const headersObj = {};
-        for (const [k, v] of request.headers.entries()) {
-            if (k.toLowerCase() === 'authorization') {
-                headersObj[k] = v.substring(0, 15) + '...';
-            } else {
-                headersObj[k] = v;
-            }
-        }
-        await debugCol.insertOne({
-            timestamp: new Date(),
-            method: 'GET',
-            url: url.toString(),
-            searchParams: Object.fromEntries(url.searchParams.entries()),
-            headers: headersObj,
-            authSuccess: !!(user && accessTier === 'super')
-        });
-    } catch (e) {
-        console.error('[MCP Debug Log] Failed to write log:', e);
-    }
 
     if (!user || accessTier !== 'super') {
         return new Response('Unauthorized: Admin access required', {
