@@ -66,7 +66,9 @@
         "operationId": "publishPost",
         "security": [
           {
-            "OAuth2": []
+            "OAuth2": [
+              "admin"
+            ]
           }
         ],
         "requestBody": {
@@ -112,7 +114,9 @@
         "operationId": "deletePost",
         "security": [
           {
-            "OAuth2": []
+            "OAuth2": [
+              "admin"
+            ]
           }
         ],
         "parameters": [
@@ -161,7 +165,9 @@
         "operationId": "uploadImage",
         "security": [
           {
-            "OAuth2": []
+            "OAuth2": [
+              "admin"
+            ]
           }
         ],
         "requestBody": {
@@ -219,7 +225,9 @@
           "authorizationCode": {
             "authorizationUrl": "https://room.getmaterio.app/authorize",
             "tokenUrl": "https://room.getmaterio.app/token",
-            "scopes": {}
+            "scopes": {
+              "admin": "Full admin access to create, update, and delete posts"
+            }
           }
         }
       }
