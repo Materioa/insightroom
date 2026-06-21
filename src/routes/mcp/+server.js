@@ -84,6 +84,7 @@ export async function GET({ request, url, fetch }) {
     try {
         const db = await getDb();
         const debugCol = db.collection('mcp_debug_logs');
+        /** @type {Record<string, string>} */
         const headersObj = {};
         for (const [k, v] of request.headers.entries()) {
             if (k.toLowerCase() === 'authorization') {
@@ -175,6 +176,7 @@ export async function POST({ request, url, fetch }) {
     try {
         const db = await getDb();
         const debugCol = db.collection('mcp_debug_logs');
+        /** @type {Record<string, string>} */
         const headersObj = {};
         for (const [k, v] of request.headers.entries()) {
             // Mask authorization token for privacy
