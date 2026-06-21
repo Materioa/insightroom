@@ -1,13 +1,25 @@
 import { json } from '@sveltejs/kit';
 import { v2 as cloudinary } from 'cloudinary';
 import { env } from '$env/dynamic/private';
+import { validateToken } from '$lib/server/auth.js';
 import fs from 'fs';
 import path from 'path';
 
-/** @param {import('@sveltejs/kit').RequestEvent} event */
-export async function POST({ request, cookies }) {
-    const token = cookies.get('materio_auth_token');
+export async function POST({ request, cookies, fetch, url }) {
+    // Basic auth check supporting both Cookies and Bearer tokens
+    let token = cookies.get('materio_auth_token');
+    const authHeader = request.headers.get('Authorization');
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+    }
     if (!token) return json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (authHeader) {
+        const { user, accessTier } = await validateToken(token, fetch, url);
+        if (!user || accessTier !== 'super') {
+            return json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+        }
+    }
 
     const data = await request.formData();
     const file = data.get('file');

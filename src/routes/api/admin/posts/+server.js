@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { getPostsCollection, getDb } from '$lib/server/db.js';
 import { ObjectId } from 'mongodb';
+import { validateToken } from '$lib/server/auth.js';
 
 /** @param {string} text */
 function slugify(text) {
@@ -9,10 +10,21 @@ function slugify(text) {
 }
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
-export async function POST({ request, cookies }) {
-    // Basic auth check
-    const token = cookies.get('materio_auth_token');
+export async function POST({ request, cookies, fetch, url }) {
+    // Basic auth check supporting both Cookies and Bearer tokens
+    let token = cookies.get('materio_auth_token');
+    const authHeader = request.headers.get('Authorization');
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+    }
     if (!token) return json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (authHeader) {
+        const { user, accessTier } = await validateToken(token, fetch, url);
+        if (!user || accessTier !== 'super') {
+            return json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+        }
+    }
 
     try {
         const body = await request.json();
@@ -82,10 +94,21 @@ export async function POST({ request, cookies }) {
 }
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
-export async function DELETE({ request, cookies, url }) {
-    // Basic auth check
-    const token = cookies.get('materio_auth_token');
+export async function DELETE({ request, cookies, url, fetch }) {
+    // Basic auth check supporting both Cookies and Bearer tokens
+    let token = cookies.get('materio_auth_token');
+    const authHeader = request.headers.get('Authorization');
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+    }
     if (!token) return json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (authHeader) {
+        const { user, accessTier } = await validateToken(token, fetch, url);
+        if (!user || accessTier !== 'super') {
+            return json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+        }
+    }
 
     try {
         const id = url.searchParams.get('id');

@@ -40,6 +40,7 @@ export function OPTIONS({ request }) {
     });
 }
 
+/** @type {import('@sveltejs/kit').RequestHandler} */
 export async function GET({ request, url }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);
@@ -51,8 +52,8 @@ export async function GET({ request, url }) {
     const semester = url.searchParams.get('semester');
 
     const posts = await getAllPosts();
-    const baseUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5173' 
+    const baseUrl = process.env.NODE_ENV === 'development'
+        ? 'http://localhost:5173'
         : 'https://room.getmaterio.app';
 
     // Filter and map to requested fields
