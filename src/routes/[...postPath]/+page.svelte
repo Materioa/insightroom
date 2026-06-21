@@ -18,6 +18,8 @@
   import AISummary from "$lib/components/AISummary.svelte";
   import authorsData from "$lib/authors.json";
   import { optimizeCloudinaryUrl, optimizeSupabaseUrl } from "$lib/utils/image.js";
+  import AnalyticsTracker from "$lib/components/AnalyticsTracker.svelte";
+  import PostAnalyticsModal from "$lib/components/PostAnalyticsModal.svelte";
 
 
   const authorsMap = /** @type {Record<string, {name: string, passportPhoto: string, tags: string[], description: string | string[]}>} */ (authorsData);
@@ -26,6 +28,8 @@
   let { data } = $props();
 
   let postContentText = $state("");
+  let showAnalyticsModal = $state(false);
+  let showAdminDropdown = $state(false);
   // If server provided pre-rendered content (for crawlers), use it immediately
   // svelte-ignore state_referenced_locally
   let decodedContent = $state(data.ssrContent || "");
@@ -117,6 +121,9 @@
     claps += 1;
     hasApplauded = true;
     showBurst = true;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('post-clap', { detail: { count: 1 } }));
+    }
     setTimeout(() => {
       showBurst = false;
     }, 600);
@@ -731,7 +738,16 @@
   });
 </script>
 
-<svelte:window onkeydown={handleKeydown} onscroll={handleScroll} />
+<svelte:window 
+  onkeydown={handleKeydown} 
+  onscroll={handleScroll} 
+  onclick={(e) => {
+    const target = /** @type {HTMLElement | null} */ (e.target);
+    if (target && showAdminDropdown && !target.closest('.mobile-only-admin-actions')) {
+      showAdminDropdown = false;
+    }
+  }}
+/>
 
 <svelte:head>
   <title>{data.title} - Insightroom</title>
@@ -1185,7 +1201,50 @@
                 title="Print"
               ></i>
             {/if}
-            {#if data.accessTier === 'super' || data.accessTier === 'plus'}
+            {#if data.accessTier === 'super'}
+              <!-- Desktop Action Buttons -->
+              <div class="desktop-only-admin-actions">
+                <a
+                  href={`/writer/editor/${data.postId}`}
+                  style="color: var(--text); display: flex; align-items: center; justify-content: center; text-decoration: none;"
+                  title="Edit Post"
+                >
+                  <i class="fa-regular fa-user-pen" style="font-size: 14px; cursor: pointer;"></i>
+                </a>
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <i
+                  class="fa-regular fa-chart-simple"
+                  onclick={() => showAnalyticsModal = true}
+                  style="font-size: 14px; cursor: pointer; color: var(--text);"
+                  title="Post Analytics"
+                ></i>
+              </div>
+
+              <!-- Mobile Dropdown Actions -->
+              <div class="mobile-only-admin-actions">
+                <button
+                  class="admin-dropdown-toggle"
+                  onclick={() => showAdminDropdown = !showAdminDropdown}
+                  title="Admin Menu"
+                  style="background: none; border: none; padding: 4px; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                >
+                  <i class="fa-regular fa-ellipsis-vertical" style="font-size: 14px;"></i>
+                </button>
+                {#if showAdminDropdown}
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div class="admin-dropdown-menu" onclick={() => showAdminDropdown = false}>
+                    <a href={`/writer/editor/${data.postId}`} class="dropdown-item">
+                      <i class="fa-regular fa-user-pen"></i> Edit Post
+                    </a>
+                    <button class="dropdown-item" onclick={() => showAnalyticsModal = true}>
+                      <i class="fa-regular fa-chart-simple"></i> Post Analytics
+                    </button>
+                  </div>
+                {/if}
+              </div>
+            {:else if data.accessTier === 'plus'}
               <a
                 href={`/writer/editor/${data.postId}`}
                 style="color: var(--text); display: flex; align-items: center; justify-content: center; text-decoration: none;"
@@ -1361,6 +1420,12 @@
     />
   </div>
 
+  <!-- Client-side analytics tracker -->
+  {#if data.postId}
+    <AnalyticsTracker postId={data.postId} slug={data.slug} title={data.title} />
+  {/if}
+
+
 </main>
 
 <!-- Site-level TOC sidebar - starts with no-transition to prevent flash on load -->
@@ -1430,6 +1495,15 @@
   </div>
 {/if}
 
+<!-- Specific post analytics modal pop-up for admins -->
+{#if showAnalyticsModal && data.postId}
+  <PostAnalyticsModal
+    postId={data.postId}
+    postTitle={data.title}
+    onClose={() => showAnalyticsModal = false}
+  />
+{/if}
+
 <style>
   :global(::-webkit-scrollbar) {
     display: none;
@@ -1441,6 +1515,68 @@
 
   :global(a.link-pill) {
     font-family: var(--font-primary, "PP Mori", sans-serif) !important;
+  }
+
+  /* Analytics dropdown & action row classes */
+  .desktop-only-admin-actions {
+    display: none;
+  }
+  .mobile-only-admin-actions {
+    display: block;
+    position: relative;
+  }
+  @media (min-width: 601px) {
+    .desktop-only-admin-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .mobile-only-admin-actions {
+      display: none;
+    }
+  }
+  .admin-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    background: var(--dropdown-bg, #fff);
+    border: 1px solid var(--dropdown-border, #e2e8f0);
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    min-width: 155px;
+    overflow: hidden;
+  }
+  :global(body.dark) .admin-dropdown-menu {
+    --dropdown-bg: #1e1e1e;
+    --dropdown-border: #333;
+  }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text, #1e293b);
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    text-decoration: none;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .dropdown-item:hover {
+    background: var(--hover-bg, #f1f5f9);
+    color: var(--text, #1e293b);
+  }
+  :global(body.dark) .dropdown-item:hover {
+    --hover-bg: #2d2d2d;
   }
 
   /* Clap Burst Animation */

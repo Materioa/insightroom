@@ -14,7 +14,9 @@
   let bodyClass = $derived(isPost ? "body-post" : isHome ? "blog-layout" : "");
   
   // Reactive Svelte 5 Runes for Theme and Font
+  // svelte-ignore state_referenced_locally
   let currentTheme = $state(data.theme || "system");
+  // svelte-ignore state_referenced_locally
   let currentFont = $state(data.font || "default");
   let systemPrefersDark = $state(false);
 
@@ -24,11 +26,7 @@
     (currentTheme === "system" && systemPrefersDark)
   );
 
-  // React to prop changes from page navigation/layout data reload
-  $effect.pre(() => {
-    if (data.theme) currentTheme = data.theme;
-    if (data.font) currentFont = data.font;
-  });
+  // Prop changes from navigation are handled by initial state + mount sync
 
   $effect(() => {
     if (browser) {
@@ -53,7 +51,12 @@
       document.body.classList.toggle("blog-layout", isHome);
 
       // Dispatch event for components like Mermaid
-      window.dispatchEvent(new CustomEvent("themeChanged", { detail: { isDark } }));
+      // @ts-ignore
+      if (window._lastThemeDark !== isDark) {
+        window.dispatchEvent(new CustomEvent("themeChanged", { detail: { isDark } }));
+        // @ts-ignore
+        window._lastThemeDark = isDark;
+      }
     }
   });
 
@@ -97,6 +100,7 @@
     if (!browser) return;
     currentFont = font;
     setCookie("font", font, 30);
+    window.dispatchEvent(new CustomEvent("fontChanged", { detail: { font } }));
   }
 
   // Make setters globally available

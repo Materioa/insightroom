@@ -7,6 +7,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { env } from '$env/dynamic/private';
 import crypto from 'crypto';
 import { resolveAttribution } from '$lib/attribution.js';
+import { getPostAnalytics, getGeneralAnalytics } from '$lib/server/analytics.js';
 
 // In-memory registry of active SSE streams (for environments where processes persist)
 /** @type {Map<string, ReadableStreamDefaultController>} */
@@ -362,6 +363,27 @@ export async function POST({ request, url, fetch }) {
                                     filename: { type: 'string', description: 'The preferred file name (optional).' }
                                 },
                                 required: ['image']
+                            }
+                        },
+                        {
+                            name: 'get_post_analytics',
+                            description: 'Retrieve detailed engagement and interaction analytics for a specific post by its ID or slug (views, reading time, scroll depth, claps, location stats, button clicks, settings changes).',
+                            inputSchema: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string', description: 'The MongoDB ObjectId of the post.' },
+                                    slug: { type: 'string', description: 'The post slug.' }
+                                }
+                            }
+                        },
+                        {
+                            name: 'get_general_analytics',
+                            description: 'Retrieve collective site-wide analytics dashboard metrics (overall views, total reading time, average scroll depth, retention rate, geographic top countries, and traffic timeline).',
+                            inputSchema: {
+                                type: 'object',
+                                properties: {
+                                    days: { type: 'integer', description: 'Number of days of timeline data to return (default is 30).' }
+                                }
                             }
                         }
                     ]
@@ -762,6 +784,45 @@ async function handleToolCall(name, args, currentUser, request) {
                     };
                 }
             }
+        }
+
+        case 'get_post_analytics': {
+            const { id, slug } = args;
+            let postId = id;
+            if (!postId && slug) {
+                const row = await collection.findOne({ slug });
+                if (row) {
+                    postId = row._id.toString();
+                }
+            }
+            if (!postId) {
+                return {
+                    isError: true,
+                    content: [{ type: 'text', text: 'Post not found.' }]
+                };
+            }
+            const data = await getPostAnalytics(postId);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(data, null, 2)
+                    }
+                ]
+            };
+        }
+
+        case 'get_general_analytics': {
+            const { days } = args;
+            const data = await getGeneralAnalytics(days || 30);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(data, null, 2)
+                    }
+                ]
+            };
         }
 
         default:

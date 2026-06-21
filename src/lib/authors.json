@@ -24,5 +24,11 @@
       "For minds that want more",
       "than just academics."
     ]
+  },
+  "Claude": {
+    "name": "Claude",
+    "passportPhoto": "",
+    "tags": [],
+    "description": []
   }
 }
