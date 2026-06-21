@@ -109,7 +109,7 @@ export async function GET({ request, url, fetch }) {
             activeSessions.set(sessionId, controller);
 
             // Send initial endpoint message to let the client know where to send POST messages
-            const endpointUri = `${url.pathname}?sessionId=${sessionId}&token=${encodeURIComponent(token)}`;
+            const endpointUri = `${url.origin}${url.pathname}?sessionId=${sessionId}&token=${encodeURIComponent(token)}`;
             const initEvent = `event: endpoint\ndata: ${endpointUri}\n\n`;
             controller.enqueue(new TextEncoder().encode(initEvent));
 
