@@ -3,6 +3,7 @@ import { getPostsCollection, getDb } from '$lib/server/db.js';
 import { ObjectId } from 'mongodb';
 import { validateToken } from '$lib/server/auth.js';
 
+/** @type {import('@sveltejs/kit').RequestHandler} */
 export async function GET({ request, url, cookies, fetch }) {
     // Basic auth check supporting both Cookies and Bearer tokens
     let token = cookies.get('materio_auth_token');

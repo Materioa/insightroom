@@ -5,6 +5,7 @@ import { validateToken } from '$lib/server/auth.js';
 import fs from 'fs';
 import path from 'path';
 
+/** @type {import('@sveltejs/kit').RequestHandler} */
 export async function POST({ request, cookies, fetch, url }) {
     // Basic auth check supporting both Cookies and Bearer tokens
     let token = cookies.get('materio_auth_token');
