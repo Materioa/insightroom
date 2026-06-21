@@ -187,6 +187,24 @@
                   "file"
                 ]
               }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "description": "The public image URL or base64 data URI (data:image/...;base64,...)"
+                  },
+                  "filename": {
+                    "type": "string",
+                    "description": "The preferred filename (optional)"
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
             }
           }
         },

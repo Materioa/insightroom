@@ -20,18 +20,62 @@ export async function POST({ request, cookies, fetch, url }) {
         return json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }
 
-    const data = await request.formData();
-    const file = data.get('file');
+    let buffer;
+    let fileType = 'image/png';
+    let originalName = 'upload.png';
 
-    if (!file || !(file instanceof File)) {
-        return json({ error: 'No file uploaded' }, { status: 400 });
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        const body = await request.json();
+        const { image, filename } = body;
+        if (!image) {
+            return json({ error: 'Image URL or base64 data is required in the JSON payload' }, { status: 400 });
+        }
+        if (filename) {
+            originalName = filename;
+        }
+
+        if (image.startsWith('data:')) {
+            // Parse base64 data URI
+            const match = image.match(/^data:([^;]+);base64,(.+)$/);
+            if (!match) {
+                return json({ error: 'Invalid base64 image data URI format' }, { status: 400 });
+            }
+            fileType = match[1];
+            buffer = Buffer.from(match[2], 'base64');
+        } else if (image.startsWith('http://') || image.startsWith('https://')) {
+            // Fetch external image
+            try {
+                const imgRes = await fetch(image);
+                if (!imgRes.ok) throw new Error(`Status ${imgRes.status}`);
+                fileType = imgRes.headers.get('Content-Type') || 'image/png';
+                const arrayBuffer = await imgRes.arrayBuffer();
+                buffer = Buffer.from(arrayBuffer);
+            } catch (err) {
+                // @ts-ignore
+                console.error('Failed to fetch external URL:', err.message);
+                // @ts-ignore
+                return json({ error: `Failed to fetch image URL: ${err.message}` }, { status: 400 });
+            }
+        } else {
+            // Raw base64 string
+            buffer = Buffer.from(image, 'base64');
+        }
+    } else {
+        const data = await request.formData();
+        const file = data.get('file');
+
+        if (!file || !(file instanceof File)) {
+            return json({ error: 'No file uploaded' }, { status: 400 });
+        }
+        originalName = file.name;
+        fileType = file.type;
+        const arrayBuffer = await file.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const isVideo = file.type.startsWith('video/') || 
-                    ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(file.name.split('.').pop()?.toLowerCase() || '');
+    const isVideo = fileType.startsWith('video/') || 
+                    ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(originalName.split('.').pop()?.toLowerCase() || '');
 
     // If Cloudinary is configured, use it
     if (env.CLOUDINARY_URL || (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET)) {
@@ -61,7 +105,7 @@ export async function POST({ request, cookies, fetch, url }) {
     } else {
         // Fallback to local upload inside static/uploads
         try {
-            const ext = file.name.split('.').pop() || 'png';
+            const ext = originalName.split('.').pop() || 'png';
             const filename = `${Date.now()}-${Math.round(Math.random() * 1000)}.${ext}`;
             const uploadDir = path.resolve(process.cwd(), 'static/uploads');
             
