@@ -65,8 +65,39 @@ export async function GET({ request, url, fetch }) {
         return new Response('Unauthorized: Missing Token', { status: 401 });
     }
 
-    // 2. Validate Token and Access Tier (Must be super user / admin)
-    const { user, accessTier } = await validateToken(token, fetch, url);
+    // Validate Token and Access Tier (Must be super user / admin)
+    let tokenValidationResult;
+    try {
+        tokenValidationResult = await validateToken(token, fetch, url);
+    } catch (e) {
+        tokenValidationResult = { user: null, accessTier: null };
+    }
+    const { user, accessTier } = tokenValidationResult;
+
+    // Log the GET request details for debugging
+    try {
+        const db = await getDb();
+        const debugCol = db.collection('mcp_debug_logs');
+        const headersObj = {};
+        for (const [k, v] of request.headers.entries()) {
+            if (k.toLowerCase() === 'authorization') {
+                headersObj[k] = v.substring(0, 15) + '...';
+            } else {
+                headersObj[k] = v;
+            }
+        }
+        await debugCol.insertOne({
+            timestamp: new Date(),
+            method: 'GET',
+            url: url.toString(),
+            searchParams: Object.fromEntries(url.searchParams.entries()),
+            headers: headersObj,
+            authSuccess: !!(user && accessTier === 'super')
+        });
+    } catch (e) {
+        console.error('[MCP Debug Log] Failed to write log:', e);
+    }
+
     if (!user || accessTier !== 'super') {
         return new Response('Unauthorized: Admin access required', { status: 403 });
     }
@@ -120,11 +151,37 @@ export async function POST({ request, url, fetch }) {
 
     // Read JSON-RPC request ID safely to ensure valid JSON-RPC format
     let rpcId = null;
+    let bodyData = null;
     try {
         const clonedReq = request.clone();
-        const bodyData = await clonedReq.json();
+        bodyData = await clonedReq.json();
         rpcId = bodyData.id || null;
     } catch {}
+
+    // Log the request details for debugging
+    try {
+        const db = await getDb();
+        const debugCol = db.collection('mcp_debug_logs');
+        const headersObj = {};
+        for (const [k, v] of request.headers.entries()) {
+            // Mask authorization token for privacy
+            if (k.toLowerCase() === 'authorization') {
+                headersObj[k] = v.substring(0, 15) + '...';
+            } else {
+                headersObj[k] = v;
+            }
+        }
+        await debugCol.insertOne({
+            timestamp: new Date(),
+            method: 'POST',
+            url: url.toString(),
+            searchParams: Object.fromEntries(url.searchParams.entries()),
+            headers: headersObj,
+            body: bodyData
+        });
+    } catch (e) {
+        console.error('[MCP Debug Log] Failed to write log:', e);
+    }
 
     if (!token) {
         return json({
