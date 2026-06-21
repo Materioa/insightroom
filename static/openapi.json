@@ -216,6 +216,16 @@
   },
   "components": {
     "securitySchemes": {
+      "OAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://getmaterio.app/account/sso",
+            "tokenUrl": "https://getmaterio.app/api/v2/auth?action=oauth_token",
+            "scopes": {}
+          }
+        }
+      },
       "BearerAuth": {
         "type": "http",
         "scheme": "bearer"

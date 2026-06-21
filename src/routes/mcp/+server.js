@@ -12,6 +12,17 @@ import crypto from 'crypto';
 const activeSessions = new Map();
 
 // Helper to send JSON-RPC event to SSE stream
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+};
+
+/** @type {import('./$types').RequestHandler} */
+export async function OPTIONS() {
+    return new Response(null, { headers: corsHeaders });
+}
 /**
  * @param {string} sessionId
  * @param {any} message
@@ -337,15 +348,24 @@ async function handleToolCall(name, args, currentUser) {
     switch (name) {
         case 'list_posts': {
             const posts = await getAllPosts();
-            const postsWithoutContent = posts.map(post => {
-                const { content, ...rest } = post;
-                return rest;
-            });
+            const lightweightPosts = posts.map(post => ({
+                id: post.id,
+                title: post.title,
+                slug: post.slug,
+                categorySlug: post.categorySlug,
+                date: post.date,
+                url: post.url,
+                hidden: post.hidden,
+                draft: post.draft,
+                visibility: post.visibility,
+                excerpt: post.excerpt,
+                image: post.image
+            }));
             return {
                 content: [
                     {
                         type: 'text',
-                        text: JSON.stringify(postsWithoutContent, null, 2)
+                        text: JSON.stringify(lightweightPosts, null, 2)
                     }
                 ]
             };
