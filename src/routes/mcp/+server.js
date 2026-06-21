@@ -6,6 +6,7 @@ import { ObjectId } from 'mongodb';
 import { v2 as cloudinary } from 'cloudinary';
 import { env } from '$env/dynamic/private';
 import crypto from 'crypto';
+import { resolveAttribution } from '$lib/attribution.js';
 
 // In-memory registry of active SSE streams (for environments where processes persist)
 /** @type {Map<string, ReadableStreamDefaultController>} */
@@ -47,39 +48,7 @@ function slugify(text) {
     if (!text) return '';
     return text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
 }
-/**
- * Maps a given name to a domain or parses it if it looks like a domain,
- * returning the Google S2 favicon URL.
- * @param {string | undefined} name
- * @param {string | undefined} explicitAvatar
- * @returns {string | undefined}
- */
-function resolveAvatar(name, explicitAvatar) {
-    if (explicitAvatar) return explicitAvatar;
-    if (!name) return undefined;
 
-    const trimmed = name.trim().toLowerCase();
-    
-    // Map common AI/service names to their domains
-    let domain = '';
-    if (trimmed === 'claude' || trimmed === 'claude.ai') {
-        domain = 'claude.ai';
-    } else if (trimmed === 'chatgpt' || trimmed === 'chatgpt.com' || trimmed === 'openai') {
-        domain = 'openai.com';
-    } else if (trimmed === 'gemini' || trimmed === 'gemini.google.com') {
-        domain = 'gemini.google.com';
-    } else if (trimmed === 'deepseek' || trimmed === 'deepseek.com') {
-        domain = 'deepseek.com';
-    } else if (trimmed.includes('.')) {
-        domain = trimmed;
-    }
-
-    if (domain) {
-        return `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
-    }
-
-    return undefined;
-}
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ request, url, fetch }) {
@@ -305,7 +274,7 @@ export async function POST({ request, url, fetch }) {
 
             case 'tools/call': {
                 const { name, arguments: args } = params;
-                result = await handleToolCall(name, args, user);
+                result = await handleToolCall(name, args, user, request);
                 break;
             }
 
@@ -340,8 +309,9 @@ export async function POST({ request, url, fetch }) {
  * @param {string} name
  * @param {any} args
  * @param {any} currentUser
+ * @param {Request} request
  */
-async function handleToolCall(name, args, currentUser) {
+async function handleToolCall(name, args, currentUser, request) {
     const collection = await getPostsCollection();
     const db = await getDb();
 
@@ -429,11 +399,14 @@ async function handleToolCall(name, args, currentUser) {
             if (!slug) slug = slugify(title);
             metadata = metadata || {};
 
-            // Automatically resolve author avatar
-            const avatar = resolveAvatar(metadata.author_name, metadata.author_avatar);
-            if (avatar) {
-                metadata.author_avatar = avatar;
-            }
+            // Automatically resolve author avatar and display name
+            const attribution = resolveAttribution({
+                author_name: metadata.author_name,
+                author_avatar: metadata.author_avatar
+            }, request.headers);
+
+            metadata.author_name = metadata.author_name || attribution.displayName;
+            metadata.author_avatar = metadata.author_avatar || attribution.avatar;
 
             const draft = metadata.draft ? true : false;
             const category = draft ? 'draft' : (metadata.category || '').trim();
@@ -479,8 +452,12 @@ async function handleToolCall(name, args, currentUser) {
                 };
             }
 
-            // Resolve editor avatar
-            const resolvedAvatar = resolveAvatar(saved_by_name, saved_by_avatar);
+            // Resolve editor avatar and details
+            const attribution = resolveAttribution({
+                saved_by_name,
+                saved_by_display_name,
+                saved_by_avatar
+            }, request.headers);
 
             // Save previous version in version history
             const versionsCollection = db.collection('post_versions');
@@ -490,9 +467,9 @@ async function handleToolCall(name, args, currentUser) {
                 content: oldPost.content,
                 metadata: oldPost.metadata || {},
                 updated_at: oldPost.updated_at || oldPost.created_at || new Date(),
-                saved_by_name: saved_by_name || currentUser.username || 'MCP Server',
-                saved_by_display_name: saved_by_display_name || currentUser.name || 'MCP Server',
-                saved_by_avatar: resolvedAvatar || currentUser.avatar || '/assets/img/default-avatar.svg',
+                saved_by_name: attribution.name,
+                saved_by_display_name: attribution.displayName,
+                saved_by_avatar: attribution.avatar,
                 version_saved_at: new Date()
             });
 
@@ -505,11 +482,15 @@ async function handleToolCall(name, args, currentUser) {
 
             // Merge metadata properties if metadata is provided
             if (metadata !== undefined) {
-                // Automatically resolve author avatar
-                const authorAvatar = resolveAvatar(metadata.author_name, metadata.author_avatar);
-                if (authorAvatar) {
-                    metadata.author_avatar = authorAvatar;
-                }
+                // Automatically resolve author avatar and details
+                const authorAttribution = resolveAttribution({
+                    author_name: metadata.author_name,
+                    author_avatar: metadata.author_avatar
+                }, request.headers);
+                
+                metadata.author_name = metadata.author_name || authorAttribution.displayName;
+                metadata.author_avatar = metadata.author_avatar || authorAttribution.avatar;
+
                 const newMetadata = { ...(oldPost.metadata || {}), ...metadata };
                 updateDoc.metadata = newMetadata;
                 if (newMetadata.excerpt !== undefined) updateDoc.excerpt = newMetadata.excerpt;

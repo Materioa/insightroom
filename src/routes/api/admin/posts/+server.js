@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { getPostsCollection, getDb } from '$lib/server/db.js';
 import { ObjectId } from 'mongodb';
 import { validateToken } from '$lib/server/auth.js';
+import { resolveAttribution } from '$lib/attribution.js';
 
 /** @param {string} text */
 function slugify(text) {
@@ -32,6 +33,18 @@ export async function POST({ request, cookies, fetch, url }) {
         if (!title) return json({ error: 'Title is required' }, { status: 400 });
         if (!slug) slug = slugify(title);
 
+        metadata = metadata || {};
+        const attribution = resolveAttribution({
+            saved_by_name,
+            saved_by_display_name,
+            saved_by_avatar,
+            author_name: metadata.author_name,
+            author_avatar: metadata.author_avatar
+        }, request.headers);
+
+        metadata.author_name = metadata.author_name || attribution.displayName;
+        metadata.author_avatar = metadata.author_avatar || attribution.avatar;
+
         const draft = metadata.draft ? true : false;
         const category = draft ? 'draft' : (metadata.category || '').trim();
         const categorySlug = draft ? 'draft' : slugify(category);
@@ -57,9 +70,9 @@ export async function POST({ request, cookies, fetch, url }) {
                     content: oldPost.content,
                     metadata: oldPost.metadata,
                     updated_at: oldPost.updated_at || oldPost.created_at || new Date(),
-                    saved_by_name: saved_by_name || metadata.author_name || 'Materio',
-                    saved_by_display_name: saved_by_display_name || metadata.author_name || 'Materio',
-                    saved_by_avatar: saved_by_avatar || metadata.author_avatar || '/assets/img/default-avatar.svg',
+                    saved_by_name: attribution.name,
+                    saved_by_display_name: attribution.displayName,
+                    saved_by_avatar: attribution.avatar,
                     version_saved_at: new Date()
                 });
             }
