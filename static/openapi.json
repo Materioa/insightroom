@@ -64,9 +64,9 @@
     },
     "/api/admin/posts": {
       "post": {
-        "summary": "Create or Update Post",
-        "description": "Create a new post or update an existing post by providing its ObjectId.",
-        "operationId": "savePost",
+        "summary": "Publish (Create) or Update Post",
+        "description": "Publish a new post to the database or update an existing post. Leave the id field blank or set it to 'new' to publish a new post.",
+        "operationId": "publishPost",
         "security": [
           {
             "OAuth2": []

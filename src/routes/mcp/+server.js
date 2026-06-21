@@ -218,7 +218,7 @@ export async function POST({ request, url, fetch }) {
                         },
                         {
                             name: 'create_post',
-                            description: 'Create a new post in the insightroom database.',
+                            description: 'Create and publish a new post in the insightroom database.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
@@ -246,7 +246,7 @@ export async function POST({ request, url, fetch }) {
                         },
                         {
                             name: 'update_post',
-                            description: 'Update an existing post details, content, or metadata.',
+                            description: 'Update or edit details, content, or metadata of an existing published post.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {

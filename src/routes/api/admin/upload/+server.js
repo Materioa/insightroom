@@ -14,11 +14,9 @@ export async function POST({ request, cookies, fetch, url }) {
     }
     if (!token) return json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (authHeader) {
-        const { user, accessTier } = await validateToken(token, fetch, url);
-        if (!user || accessTier !== 'super') {
-            return json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
-        }
+    const { user, accessTier } = await validateToken(token, fetch, url);
+    if (!user || accessTier !== 'super') {
+        return json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }
 
     const data = await request.formData();
