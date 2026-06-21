@@ -51,10 +51,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PostExcerpt"
-                  }
+                  "$ref": "#/components/schemas/PostExcerpt"
                 }
               }
             }
