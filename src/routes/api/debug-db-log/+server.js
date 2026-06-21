@@ -8,6 +8,7 @@ export async function GET({ request }) {
         const debugCol = db.collection('mcp_debug_logs');
         
         console.log('Testing request.headers.entries()...');
+        /** @type {Record<string, string>} */
         const headersObj = {};
         for (const [k, v] of request.headers.entries()) {
             headersObj[k] = v;
