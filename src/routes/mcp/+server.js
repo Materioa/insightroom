@@ -188,7 +188,7 @@ export async function POST({ request, url, fetch }) {
             jsonrpc: '2.0',
             id: rpcId,
             error: { code: -32001, message: 'Unauthorized: Missing Token' }
-        });
+        }, { headers: corsHeaders });
     }
 
     const { user, accessTier } = await validateToken(token, fetch, url);
@@ -197,7 +197,7 @@ export async function POST({ request, url, fetch }) {
             jsonrpc: '2.0',
             id: rpcId,
             error: { code: -32003, message: 'Unauthorized: Admin privileges required' }
-        });
+        }, { headers: corsHeaders });
     }
 
     // 2. Parse JSON-RPC message
@@ -205,12 +205,12 @@ export async function POST({ request, url, fetch }) {
     try {
         body = await request.json();
     } catch (err) {
-        return json({ jsonrpc: '2.0', error: { code: -32700, message: 'Parse error' }, id: null }, { status: 400 });
+        return json({ jsonrpc: '2.0', error: { code: -32700, message: 'Parse error' }, id: null }, { status: 400, headers: corsHeaders });
     }
 
     const { jsonrpc, id, method, params } = body;
     if (jsonrpc !== '2.0' || !method) {
-        return json({ jsonrpc: '2.0', error: { code: -32600, message: 'Invalid Request' }, id: id || null }, { status: 400 });
+        return json({ jsonrpc: '2.0', error: { code: -32600, message: 'Invalid Request' }, id: id || null }, { status: 400, headers: corsHeaders });
     }
 
     const sessionId = url.searchParams.get('sessionId') || '';
@@ -374,7 +374,7 @@ export async function POST({ request, url, fetch }) {
         sendSseMessage(sessionId, responsePayload);
     }
 
-    return json(responsePayload);
+    return json(responsePayload, { headers: corsHeaders });
 }
 
 /**
