@@ -118,13 +118,29 @@ export async function POST({ request, url, fetch }) {
         token = url.searchParams.get('token') || '';
     }
 
+    // Read JSON-RPC request ID safely to ensure valid JSON-RPC format
+    let rpcId = null;
+    try {
+        const clonedReq = request.clone();
+        const bodyData = await clonedReq.json();
+        rpcId = bodyData.id || null;
+    } catch {}
+
     if (!token) {
-        return json({ error: 'Unauthorized: Missing Token' }, { status: 401 });
+        return json({
+            jsonrpc: '2.0',
+            id: rpcId,
+            error: { code: -32001, message: 'Unauthorized: Missing Token' }
+        });
     }
 
     const { user, accessTier } = await validateToken(token, fetch, url);
     if (!user || accessTier !== 'super') {
-        return json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
+        return json({
+            jsonrpc: '2.0',
+            id: rpcId,
+            error: { code: -32003, message: 'Unauthorized: Admin privileges required' }
+        });
     }
 
     // 2. Parse JSON-RPC message
