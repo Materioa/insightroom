@@ -62,7 +62,13 @@ export async function GET({ request, url, fetch }) {
     }
 
     if (!token) {
-        return new Response('Unauthorized: Missing Token', { status: 401 });
+        return new Response('Unauthorized: Missing Token', {
+            status: 401,
+            headers: {
+                'WWW-Authenticate': `Bearer error="invalid_token", metadata="${url.origin}/.well-known/oauth-protected-resource"`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
     }
 
     // Validate Token and Access Tier (Must be super user / admin)
@@ -99,7 +105,13 @@ export async function GET({ request, url, fetch }) {
     }
 
     if (!user || accessTier !== 'super') {
-        return new Response('Unauthorized: Admin access required', { status: 403 });
+        return new Response('Unauthorized: Admin access required', {
+            status: 403,
+            headers: {
+                'WWW-Authenticate': `Bearer error="insufficient_scope", metadata="${url.origin}/.well-known/oauth-protected-resource"`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
     }
 
     // 3. Setup SSE Stream
