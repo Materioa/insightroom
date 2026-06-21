@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { getDb } from '$lib/server/db.js';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,32 @@ const corsHeaders = {
 export async function handle({ event, resolve }) {
     const url = event.url;
     
+    // Log .well-known endpoints for debugging
+    if (url.pathname.startsWith('/.well-known/')) {
+        try {
+            const db = await getDb();
+            const debugCol = db.collection('mcp_debug_logs');
+            /** @type {Record<string, string>} */
+            const headersObj = {};
+            for (const [k, v] of event.request.headers.entries()) {
+                if (k.toLowerCase() === 'authorization') {
+                    headersObj[k] = v.substring(0, 15) + '...';
+                } else {
+                    headersObj[k] = v;
+                }
+            }
+            await debugCol.insertOne({
+                timestamp: new Date(),
+                method: event.request.method,
+                url: url.toString(),
+                searchParams: Object.fromEntries(url.searchParams.entries()),
+                headers: headersObj
+            });
+        } catch (e) {
+            console.error('[MCP Debug Log] Failed to write well-known log:', e);
+        }
+    }
+
     // Intercept OPTIONS preflight requests for .well-known routes
     if (event.request.method === 'OPTIONS' && url.pathname.startsWith('/.well-known/')) {
         return new Response(null, { headers: corsHeaders });
