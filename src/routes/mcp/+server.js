@@ -254,7 +254,14 @@ export async function POST({ request, url, fetch }) {
                     serverInfo: {
                         name: 'insightroom-mcp-server',
                         version: '1.0.0'
-                    }
+                    },
+                    instructions: `You are the Insightroom content writer agent. The user will use slash commands in the chat. Map them as follows:
+- When the user types "/create <title>", call the tool "create_post" with that title (and set draft to true in metadata).
+- When the user types "/outline <topic/content>", call the tool "outline" with that topic, then use the returned proprietary style guidelines to generate a high-quality article draft/outline in clean markdown format. Show it in the chat.
+- When the user types "/publish", take the last generated markdown article and write it to the post by calling "update_post" with the post ID, setting the "content" parameter, and setting the "draft" field to false in metadata.
+- When the user types "/delete", call the tool "delete_post" with the active post ID.
+
+Always remember the active post ID returned from "create_post" or "list_posts" to perform subsequent operations like publish or delete.`
                 };
                 break;
 
@@ -263,14 +270,20 @@ export async function POST({ request, url, fetch }) {
                     tools: [
                         {
                             name: 'list_posts',
+                            title: 'List Posts',
                             description: 'Retrieve a list of all posts in the insightroom database with their metadata.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {}
-                            }
+                            },
+                            readOnlyHint: true,
+                            destructiveHint: false,
+                            idempotentHint: true,
+                            openWorldHint: false
                         },
                         {
                             name: 'get_post',
+                            title: 'Get Post Details',
                             description: 'Fetch the full details of a specific post by its ID, slug, or permalink.',
                             inputSchema: {
                                 type: 'object',
@@ -280,10 +293,15 @@ export async function POST({ request, url, fetch }) {
                                     categorySlug: { type: 'string', description: 'The slug of the post category.' },
                                     permalink: { type: 'string', description: 'The custom permalink URL.' }
                                 }
-                            }
+                            },
+                            readOnlyHint: true,
+                            destructiveHint: false,
+                            idempotentHint: true,
+                            openWorldHint: false
                         },
                         {
                             name: 'create_post',
+                            title: 'Create Post',
                             description: 'Create and publish a new post in the insightroom database.',
                             inputSchema: {
                                 type: 'object',
@@ -308,10 +326,15 @@ export async function POST({ request, url, fetch }) {
                                     }
                                 },
                                 required: ['title']
-                            }
+                            },
+                            readOnlyHint: false,
+                            destructiveHint: false,
+                            idempotentHint: false,
+                            openWorldHint: false
                         },
                         {
                             name: 'update_post',
+                            title: 'Update Post',
                             description: 'Update or edit details, content, or metadata of an existing published post.',
                             inputSchema: {
                                 type: 'object',
@@ -340,10 +363,15 @@ export async function POST({ request, url, fetch }) {
                                     saved_by_avatar: { type: 'string', description: "Explicit avatar URL of the editor." }
                                 },
                                 required: ['id']
-                            }
+                            },
+                            readOnlyHint: false,
+                            destructiveHint: false,
+                            idempotentHint: true,
+                            openWorldHint: false
                         },
                         {
                             name: 'delete_post',
+                            title: 'Delete Post',
                             description: 'Permanently delete a post and its revision/version history.',
                             inputSchema: {
                                 type: 'object',
@@ -351,22 +379,32 @@ export async function POST({ request, url, fetch }) {
                                     id: { type: 'string', description: 'The unique MongoDB ObjectId of the post to delete.' }
                                 },
                                 required: ['id']
-                            }
+                            },
+                            readOnlyHint: false,
+                            destructiveHint: true,
+                            idempotentHint: true,
+                            openWorldHint: false
                         },
                         {
                             name: 'upload_image',
-                            description: 'Upload an image from a base64 encoded string or external public URL to Cloudinary (or local upload fallback) and return the secure asset URL.',
+                            title: 'Upload Image Asset',
+                            description: 'Upload an image to Cloudinary (or local upload fallback) and return the secure asset URL. Supports base64 data URI, external public URL, or a local file path.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
-                                    image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL.' },
+                                    image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL. Deprecated: use filePath instead where possible.' },
+                                    filePath: { type: 'string', description: 'The local filesystem path of the image on the client, or the resolved file URL.' },
                                     filename: { type: 'string', description: 'The preferred file name (optional).' }
-                                },
-                                required: ['image']
-                            }
+                                }
+                            },
+                            readOnlyHint: false,
+                            destructiveHint: false,
+                            idempotentHint: false,
+                            openWorldHint: false
                         },
                         {
                             name: 'get_post_analytics',
+                            title: 'Get Post Analytics',
                             description: 'Retrieve detailed engagement and interaction analytics for a specific post by its ID or slug (views, reading time, scroll depth, claps, location stats, button clicks, settings changes).',
                             inputSchema: {
                                 type: 'object',
@@ -374,17 +412,42 @@ export async function POST({ request, url, fetch }) {
                                     id: { type: 'string', description: 'The MongoDB ObjectId of the post.' },
                                     slug: { type: 'string', description: 'The post slug.' }
                                 }
-                            }
+                            },
+                            readOnlyHint: true,
+                            destructiveHint: false,
+                            idempotentHint: true,
+                            openWorldHint: false
                         },
                         {
                             name: 'get_general_analytics',
+                            title: 'Get Site-Wide Analytics',
                             description: 'Retrieve collective site-wide analytics dashboard metrics (overall views, total reading time, average scroll depth, retention rate, geographic top countries, and traffic timeline).',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
                                     days: { type: 'integer', description: 'Number of days of timeline data to return (default is 30).' }
                                 }
-                            }
+                            },
+                            readOnlyHint: true,
+                            destructiveHint: false,
+                            idempotentHint: true,
+                            openWorldHint: false
+                        },
+                        {
+                            name: 'outline',
+                            title: 'Generate Outline and Writing Guidelines',
+                            description: 'Retrieve the proprietary style guidelines and instructions to write or outline content for a specific topic.',
+                            inputSchema: {
+                                type: 'object',
+                                properties: {
+                                    topic: { type: 'string', description: 'The topic or post details to write an outline for.' }
+                                },
+                                required: ['topic']
+                            },
+                            readOnlyHint: true,
+                            destructiveHint: false,
+                            idempotentHint: true,
+                            openWorldHint: false
                         }
                     ]
                 };
@@ -673,45 +736,94 @@ async function handleToolCall(name, args, currentUser, request) {
         }
 
         case 'upload_image': {
-            const { image, filename } = args;
-            if (!image) {
+            const { image, filePath, filename } = args;
+            if (!image && !filePath) {
                 return {
                     isError: true,
-                    content: [{ type: 'text', text: 'Image base64 or URL is required.' }]
+                    content: [{ type: 'text', text: 'Either image (base64/URL) or filePath is required.' }]
                 };
             }
 
+            /** @type {any} */
             let buffer;
             let fileType = 'image/png';
+            let resolvedFilename = filename;
 
-            if (image.startsWith('data:')) {
-                // Parse base64 data URI
-                const match = image.match(/^data:([^;]+);base64,(.+)$/);
-                if (!match) {
-                    return {
-                        isError: true,
-                        content: [{ type: 'text', text: 'Invalid base64 image data URI format.' }]
-                    };
+            if (filePath) {
+                if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+                    // Fetch external image
+                    try {
+                        const imgRes = await globalThis.fetch(filePath);
+                        if (!imgRes.ok) throw new Error(`Status ${imgRes.status}`);
+                        fileType = imgRes.headers.get('Content-Type') || 'image/png';
+                        const arrayBuffer = await imgRes.arrayBuffer();
+                        buffer = Buffer.from(arrayBuffer);
+                    } catch (/** @type {any} */ fetchErr) {
+                        return {
+                            isError: true,
+                            content: [{ type: 'text', text: `Failed to fetch external image URL from filePath: ${fetchErr.message}` }]
+                        };
+                    }
+                } else {
+                    // Read local file
+                    try {
+                        const fs = await import('fs');
+                        const path = await import('path');
+                        const resolvedPath = path.resolve(filePath);
+                        if (!fs.existsSync(resolvedPath)) {
+                            return {
+                                isError: true,
+                                content: [{ type: 'text', text: `Local file not found at path: ${filePath}` }]
+                            };
+                        }
+                        buffer = fs.readFileSync(resolvedPath);
+                        // Guess file type from extension
+                        const ext = path.extname(filePath).toLowerCase();
+                        if (ext === '.jpg' || ext === '.jpeg') fileType = 'image/jpeg';
+                        else if (ext === '.gif') fileType = 'image/gif';
+                        else if (ext === '.webp') fileType = 'image/webp';
+                        else if (ext === '.svg') fileType = 'image/svg+xml';
+                        
+                        if (!resolvedFilename) {
+                            resolvedFilename = path.basename(filePath);
+                        }
+                    } catch (/** @type {any} */ readErr) {
+                        return {
+                            isError: true,
+                            content: [{ type: 'text', text: `Failed to read local file: ${readErr.message}` }]
+                        };
+                    }
                 }
-                fileType = match[1];
-                buffer = Buffer.from(match[2], 'base64');
-            } else if (image.startsWith('http://') || image.startsWith('https://')) {
-                // Fetch external image
-                try {
-                    const imgRes = await globalThis.fetch(image);
-                    if (!imgRes.ok) throw new Error(`Status ${imgRes.status}`);
-                    fileType = imgRes.headers.get('Content-Type') || 'image/png';
-                    const arrayBuffer = await imgRes.arrayBuffer();
-                    buffer = Buffer.from(arrayBuffer);
-                } catch (/** @type {any} */ fetchErr) {
-                    return {
-                        isError: true,
-                        content: [{ type: 'text', text: `Failed to fetch external image URL: ${fetchErr.message}` }]
-                    };
+            } else if (image) {
+                if (image.startsWith('data:')) {
+                    // Parse base64 data URI
+                    const match = image.match(/^data:([^;]+);base64,(.+)$/);
+                    if (!match) {
+                        return {
+                            isError: true,
+                            content: [{ type: 'text', text: 'Invalid base64 image data URI format.' }]
+                        };
+                    }
+                    fileType = match[1];
+                    buffer = Buffer.from(match[2], 'base64');
+                } else if (image.startsWith('http://') || image.startsWith('https://')) {
+                    // Fetch external image
+                    try {
+                        const imgRes = await globalThis.fetch(image);
+                        if (!imgRes.ok) throw new Error(`Status ${imgRes.status}`);
+                        fileType = imgRes.headers.get('Content-Type') || 'image/png';
+                        const arrayBuffer = await imgRes.arrayBuffer();
+                        buffer = Buffer.from(arrayBuffer);
+                    } catch (/** @type {any} */ fetchErr) {
+                        return {
+                            isError: true,
+                            content: [{ type: 'text', text: `Failed to fetch external image URL: ${fetchErr.message}` }]
+                        };
+                    }
+                } else {
+                    // Raw base64 string
+                    buffer = Buffer.from(image, 'base64');
                 }
-            } else {
-                // Raw base64 string
-                buffer = Buffer.from(image, 'base64');
             }
 
             // Upload via Cloudinary
@@ -754,7 +866,7 @@ async function handleToolCall(name, args, currentUser, request) {
                 // Fallback to local upload inside static/uploads
                 try {
                     const ext = fileType.split('/').pop() || 'png';
-                    const namePart = filename ? slugify(filename.split('.')[0]) : `${Date.now()}-${Math.round(Math.random() * 1000)}`;
+                    const namePart = resolvedFilename ? slugify(resolvedFilename.split('.')[0]) : `${Date.now()}-${Math.round(Math.random() * 1000)}`;
                     const finalFilename = `${namePart}.${ext}`;
                     const uploadDir = 'static/uploads';
 
@@ -820,6 +932,236 @@ async function handleToolCall(name, args, currentUser, request) {
                     {
                         type: 'text',
                         text: JSON.stringify(data, null, 2)
+                    }
+                ]
+            };
+        }
+
+        case 'outline': {
+            const { topic } = args;
+            const styleGuidelines = `# Insightroom Writer
+
+You are an academic technical notes writer. When a user provides a syllabus topic list and subject name, you produce complete, exam-ready notes in Markdown and always output them as a downloadable \`.md\` file.
+
+You research concepts using **GeeksforGeeks as your primary source**. Do not include any citations, references, or source links anywhere in the output — not inline, not at the end, nowhere.
+
+---
+
+## Output Format
+
+- Always output a \`.md\` file — never plain text in chat
+- No YAML frontmatter
+- No citations, footnotes, or source references of any kind
+- Pure Markdown: headings, tables, code blocks, bullet lists only
+
+---
+
+## File Structure
+
+- \`#\` H1 — one per syllabus topic
+- \`##\` H2 — descriptive sub-sections inside each topic
+- \`###\` H3 — named steps, variants, or sub-types
+- Every \`#\` topic ends with \`## MCQ\`
+- Topics separated by \`---\`
+
+---
+## MCQ Block (ends every \`#\` topic)
+
+MCQ
+[mcq: Question text here | Option A | *Correct option* | Option C | Option D]
+
+Or multiline format:
+
+[mcq:
+Question text here
+- Option A
+- Option B
+- Option C
+- *Correct option*
+]
+
+Rules:
+- Exactly 4 options.
+- Exactly 1 correct answer.
+- Mark the correct answer with \`*\` or \`**\`.
+---
+
+## Section Anatomy (follow in order)
+
+### 1. Opening Paragraph
+- 2–3 sentences describing a concrete scenario/problem in **"you"-addressed language**
+- Do NOT open with a definition
+- Do NOT start with "In this section" or "This topic covers"
+
+**Good:** "You set dark mode on in an app, close it, reopen it — dark mode is still on. The app remembered your choice without any database. That's Shared Preferences at work."
+
+**Bad:** "Shared Preferences is an Android API that stores key-value pairs."
+
+### 2. Formal Definition
+- 1–2 sentences after the scenario
+- Bold the key technical term on first use: \`**Shared Preferences**\`
+
+### 3. Analogy Block (only when concept is genuinely abstract)
+- Maximum one per \`#\` section
+- NEVER write "Think of it like this:" as a prose sentence
+- ALWAYS format as a bold-labelled bullet list:
+Without X: familiar negative scenario
+
+With X: familiar positive scenario
+
+text
+
+Or multi-part:
+Your laptop: Your home (private, only you)
+
+Hosting server: An apartment building
+
+Hosting company: The landlord
+
+text
+
+### 4. Sub-section Headings (\`##\`)
+Must be descriptive phrases — never generic labels:
+
+| ❌ Avoid | ✅ Use |
+|---|---|
+| \`## Overview\` | \`## What It Can Store\` |
+| \`## Details\` | \`## How Data Flows\` |
+| \`## Introduction\` | \`## Why Deploy Backend First?\` |
+| \`## Features\` | \`## What a Hosting Server Provides\` |
+
+### 5. Comparison Tables
+Always 3 meaningful columns:
+
+| Feature | Option A | Option B |
+|---|---|---|
+| What it is | ... | ... |
+| Best for | ... | ... |
+| Example | ... | ... |
+
+### 6. Code Blocks — Context → Code → Explanation (always)
+
+One sentence before the block saying what we're about to do.
+
+\`\`\`kotlin
+// code here
+\`\`\`
+
+One sentence after saying what this does or what to notice.
+
+- Language-specific fencing: \`kotlin\`, \`java\`, \`bash\`, \`xml\`, \`text\`
+- Inline code for filenames, methods, paths: \`onCreate()\`, \`.env\`, \`MODE_PRIVATE\`
+- Multi-step procedures: use \`### Step N: Verb + What\` with one code block per step
+
+### 7. Bullet Lists with Bold Labels
+For properties, options, named items:
+Development: localhost:3000
+
+Production: MongoDB Atlas
+
+Why Atlas? Free tier, always online
+
+text
+
+Plain bullets only when no label is needed.
+
+### 8. Technical Diagrams
+Instead of ASCII or text diagrams, use \`mermaid\`, \`graphviz\`, \`d3\`, \`markmap\`, or any appropriate tool to make accurate to scale or accurate to facts/theory diagrams.
+
+### 9. Bridging Sentences Between Topics
+Open each new \`#\` topic by acknowledging the previous one:
+
+- "Now that you've built your own SQLite database, consider this:"
+- "You've already seen how Docker packages your backend."
+- "Shared Preferences works for small settings, but it breaks down fast when your data has structure."
+
+### 10. Inline Callouts
+Use GitHub-style blockquote callouts for notes, tips, and warnings. Supported types: \`[!NOTE]\`, \`[!TIP]\`, \`[!IMPORTANT]\`, \`[!WARNING]\`, \`[!CAUTION]\`.
+
+> [!WARNING]
+> Never store passwords in Shared Preferences. Use EncryptedSharedPreferences instead.
+
+### 11. MCQ Block (ends every \`#\` topic)
+MCQ
+[Question — tests understanding, not word-for-word recall]
+
+[Option 1]
+
+[Option 2]
+
+[Option 3]
+
+[Option 4]
+
+text
+
+- Exactly 4 options, exactly 1 correct (bolded)
+- CRITICAL: You must completely randomize which option (1, 2, 3, or 4) is the correct answer for each question. Do not favor option C.
+- Distractors MUST NOT be obviously false. They must require the reader to have deeply understood the theory above to eliminate them. Use common tricky edge cases or subtle misunderstandings.
+
+---
+
+## Depth Requirements
+
+Every \`#\` topic must cover all five levels:
+
+| Level | What to Include |
+|---|---|
+| Conceptual | What it is, why it exists, what problem it solves |
+| Structural | Key classes, components, interfaces involved |
+| Operational | Step-by-step usage with working code |
+| Comparative | How it differs from the alternative |
+| Applied | A complete working example in consistent context |
+
+---
+
+## Voice Rules
+
+- Address the reader as "you" throughout
+- Use active voice: "Android deletes this on uninstall" not "This is deleted by Android"
+- Bold technical terms inline on first use
+- Short sentences for key points; vary sentence length overall
+- No filler openers, no "In conclusion", no end-of-section summaries
+
+---
+
+## Hard Rules — Never Break
+
+- Never open a section with a definition — scenario first, always
+- Never write an analogy as a prose sentence — always as a bold-labelled bullet list
+- Never use generic sub-headings: Overview, Details, Introduction, Features, Usage
+- Never drop a code block without prose before and after it
+- Never end a section with a summary paragraph
+- Never write "In conclusion", "To summarise", or "In this section we will"
+- Never use three consecutive \`#\` sections that all start with an analogy
+- Every \`#\` topic must end with exactly one MCQ
+- No citations, references, or source links anywhere in the output
+
+---
+
+## Subject-Specific Defaults Examples (NOT TO BE FOLLOWED BLINDLY BUT ONLY REFERENCED !!)
+
+**Android Development**
+- All code in Kotlin
+- Use one consistent example app throughout the unit (e.g., Student Records app)
+- Reuse class names across sections: \`DatabaseHelper\`, \`MyContentProvider\`
+- Always include \`AndroidManifest.xml\` snippets where the topic requires it
+
+**MEAN Stack / Web Development**
+- Consistent example: bookstore app
+- Backend URL: \`https://bookstore-api.onrender.com\`
+- Frontend URL: \`https://mybookstore.netlify.app\`
+- Always distinguish dev vs prod explicitly in environment examples
+
+**Any Subject**
+- Pick one example domain at the start and use it for every code snippet in the unit
+- Never switch example contexts between sections mid-unit`;
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Guidelines retrieved successfully for topic: "${topic}".\n\n${styleGuidelines}`
                     }
                 ]
             };

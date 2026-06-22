@@ -24,11 +24,14 @@ export const load = async ({ parent }) => {
 
     // Mark which posts are visible to this user
     // We can define 'hasAccess' for client-side filtering logic if needed
-    const postsWithAccess = posts.map(post => ({
-        ...post,
-        // We'll just pass all properties from the post object which now includes 'url'
-        hasAccess: post.visibility !== 'private' || accessTier === 'super' || accessTier === 'plus'
-    }));
+    const postsWithAccess = posts.map(post => {
+        const { content, ...rest } = post;
+        return {
+            ...rest,
+            // We'll just pass all properties from the post object which now includes 'url'
+            hasAccess: post.visibility !== 'private' || accessTier === 'super' || accessTier === 'plus'
+        };
+    });
 
     // Extract categories
     const categories = [...new Set(posts.flatMap(post => {

@@ -15,6 +15,10 @@ export const load = async () => {
         cats === 'whats-new' || cats === "What's New";
 
       return isWhatsNew;
+    })
+    .map(post => {
+      const { content, ...rest } = post;
+      return rest;
     });
 
   return { changelogs };

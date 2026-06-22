@@ -12,7 +12,7 @@ static/uploads
 # OS
 .DS_Store
 Thumbs.db
-
+.vscode
 # Env
 .env
 .env.*

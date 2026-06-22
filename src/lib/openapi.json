@@ -194,16 +194,17 @@
                 "properties": {
                   "image": {
                     "type": "string",
-                    "description": "The public image URL or base64 data URI (data:image/...;base64,...)"
+                    "description": "The public image URL or base64 data URI (data:image/...;base64,...). Optional if filePath is provided."
+                  },
+                  "filePath": {
+                    "type": "string",
+                    "description": "The local filesystem path or resolved file URL of the image. Optional if image is provided."
                   },
                   "filename": {
                     "type": "string",
                     "description": "The preferred filename (optional)"
                   }
-                },
-                "required": [
-                  "image"
-                ]
+                }
               }
             }
           }

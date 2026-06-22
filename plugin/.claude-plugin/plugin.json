@@ -1,0 +1,8 @@
+{
+  "name": "insightroom",
+  "version": "1.0.0",
+  "description": "Insightroom content writer plugin supporting creation, outlining, publishing, and deletion of posts.",
+  "author": {
+    "name": "Materio"
+  }
+}
