@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { resolveAttribution } from '$lib/attribution.js';
 import { getPostAnalytics, getGeneralAnalytics } from '$lib/server/analytics.js';
 import { styleGuidelines } from '$lib/server/guidelines.js';
+import { resolveUploadInput } from '$lib/server/uploadImage.js';
 
 // In-memory registry of active SSE streams (for environments where processes persist)
 /** @type {Map<string, ReadableStreamDefaultController>} */
@@ -389,14 +390,73 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                         {
                             name: 'upload_image',
                             title: 'Upload Image Asset',
-                            description: 'Upload an image to Cloudinary (or local upload fallback) and return the secure asset URL. Supports base64 data URI, external public URL, or a local file path.',
+                            description: 'Upload an image to Cloudinary (or local upload fallback) and return the secure asset URL. Supports uploaded file objects, local file paths, external URLs, and base64 data URIs.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
-                                    image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL. Deprecated: use filePath instead where possible.' },
-                                    filePath: { type: 'string', description: 'The local filesystem path of the image on the client, or the resolved file URL.' },
+                                    image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL.' },
+                                    filePath: { type: 'string', description: 'A local filesystem path or resolved file URL for the image.' },
+                                    file: {
+                                        anyOf: [
+                                            { type: 'string', description: 'Absolute local path to an uploaded image file.' },
+                                            {
+                                                type: 'object',
+                                                description: 'Runtime-provided uploaded file reference.',
+                                                properties: {
+                                                    path: { type: 'string' },
+                                                    filePath: { type: 'string' },
+                                                    url: { type: 'string' },
+                                                    name: { type: 'string' },
+                                                    filename: { type: 'string' },
+                                                    mimeType: { type: 'string' }
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    image_file: {
+                                        anyOf: [
+                                            { type: 'string', description: 'Absolute local path to an uploaded image file.' },
+                                            {
+                                                type: 'object',
+                                                description: 'Runtime-provided uploaded image file reference.',
+                                                properties: {
+                                                    path: { type: 'string' },
+                                                    filePath: { type: 'string' },
+                                                    url: { type: 'string' },
+                                                    name: { type: 'string' },
+                                                    filename: { type: 'string' },
+                                                    mimeType: { type: 'string' }
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    uploadedFile: {
+                                        anyOf: [
+                                            { type: 'string', description: 'Absolute local path to an uploaded image file.' },
+                                            {
+                                                type: 'object',
+                                                description: 'Compatibility wrapper for uploaded file references.',
+                                                properties: {
+                                                    path: { type: 'string' },
+                                                    filePath: { type: 'string' },
+                                                    url: { type: 'string' },
+                                                    name: { type: 'string' },
+                                                    filename: { type: 'string' },
+                                                    mimeType: { type: 'string' }
+                                                }
+                                            }
+                                        ]
+                                    },
                                     filename: { type: 'string', description: 'The preferred file name (optional).' }
                                 }
+                            },
+                            outputSchema: {
+                                type: 'object',
+                                properties: {
+                                    success: { type: 'boolean' },
+                                    url: { type: 'string' }
+                                },
+                                required: ['success', 'url']
                             },
                             readOnlyHint: false,
                             destructiveHint: false,
@@ -737,94 +797,21 @@ async function handleToolCall(name, args, currentUser, request) {
         }
 
         case 'upload_image': {
-            const { image, filePath, filename } = args;
-            if (!image && !filePath) {
-                return {
-                    isError: true,
-                    content: [{ type: 'text', text: 'Either image (base64/URL) or filePath is required.' }]
-                };
-            }
-
             /** @type {any} */
             let buffer;
             let fileType = 'image/png';
-            let resolvedFilename = filename;
+            let resolvedFilename = typeof args?.filename === 'string' ? args.filename : undefined;
 
-            if (filePath) {
-                if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-                    // Fetch external image
-                    try {
-                        const imgRes = await globalThis.fetch(filePath);
-                        if (!imgRes.ok) throw new Error(`Status ${imgRes.status}`);
-                        fileType = imgRes.headers.get('Content-Type') || 'image/png';
-                        const arrayBuffer = await imgRes.arrayBuffer();
-                        buffer = Buffer.from(arrayBuffer);
-                    } catch (/** @type {any} */ fetchErr) {
-                        return {
-                            isError: true,
-                            content: [{ type: 'text', text: `Failed to fetch external image URL from filePath: ${fetchErr.message}` }]
-                        };
-                    }
-                } else {
-                    // Read local file
-                    try {
-                        const fs = await import('fs');
-                        const path = await import('path');
-                        const resolvedPath = path.resolve(filePath);
-                        if (!fs.existsSync(resolvedPath)) {
-                            return {
-                                isError: true,
-                                content: [{ type: 'text', text: `Local file not found at path: ${filePath}` }]
-                            };
-                        }
-                        buffer = fs.readFileSync(resolvedPath);
-                        // Guess file type from extension
-                        const ext = path.extname(filePath).toLowerCase();
-                        if (ext === '.jpg' || ext === '.jpeg') fileType = 'image/jpeg';
-                        else if (ext === '.gif') fileType = 'image/gif';
-                        else if (ext === '.webp') fileType = 'image/webp';
-                        else if (ext === '.svg') fileType = 'image/svg+xml';
-                        
-                        if (!resolvedFilename) {
-                            resolvedFilename = path.basename(filePath);
-                        }
-                    } catch (/** @type {any} */ readErr) {
-                        return {
-                            isError: true,
-                            content: [{ type: 'text', text: `Failed to read local file: ${readErr.message}` }]
-                        };
-                    }
-                }
-            } else if (image) {
-                if (image.startsWith('data:')) {
-                    // Parse base64 data URI
-                    const match = image.match(/^data:([^;]+);base64,(.+)$/);
-                    if (!match) {
-                        return {
-                            isError: true,
-                            content: [{ type: 'text', text: 'Invalid base64 image data URI format.' }]
-                        };
-                    }
-                    fileType = match[1];
-                    buffer = Buffer.from(match[2], 'base64');
-                } else if (image.startsWith('http://') || image.startsWith('https://')) {
-                    // Fetch external image
-                    try {
-                        const imgRes = await globalThis.fetch(image);
-                        if (!imgRes.ok) throw new Error(`Status ${imgRes.status}`);
-                        fileType = imgRes.headers.get('Content-Type') || 'image/png';
-                        const arrayBuffer = await imgRes.arrayBuffer();
-                        buffer = Buffer.from(arrayBuffer);
-                    } catch (/** @type {any} */ fetchErr) {
-                        return {
-                            isError: true,
-                            content: [{ type: 'text', text: `Failed to fetch external image URL: ${fetchErr.message}` }]
-                        };
-                    }
-                } else {
-                    // Raw base64 string
-                    buffer = Buffer.from(image, 'base64');
-                }
+            try {
+                const resolvedUpload = await resolveUploadInput(args || {}, globalThis.fetch.bind(globalThis));
+                buffer = resolvedUpload.buffer;
+                fileType = resolvedUpload.fileType;
+                resolvedFilename = resolvedFilename || resolvedUpload.originalName;
+            } catch (/** @type {any} */ inputErr) {
+                return {
+                    isError: true,
+                    content: [{ type: 'text', text: inputErr.message }]
+                };
             }
 
             // Upload via Cloudinary
@@ -958,3 +945,4 @@ async function handleToolCall(name, args, currentUser, request) {
             };
     }
 }
+
