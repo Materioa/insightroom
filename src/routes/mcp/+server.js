@@ -395,58 +395,7 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                 type: 'object',
                                 properties: {
                                     image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL.' },
-                                    filePath: { type: 'string', description: 'A local filesystem path or resolved file URL for the image.' },
-                                    file: {
-                                        anyOf: [
-                                            { type: 'string', description: 'Absolute local path to an uploaded image file.' },
-                                            {
-                                                type: 'object',
-                                                description: 'Runtime-provided uploaded file reference.',
-                                                properties: {
-                                                    path: { type: 'string' },
-                                                    filePath: { type: 'string' },
-                                                    url: { type: 'string' },
-                                                    name: { type: 'string' },
-                                                    filename: { type: 'string' },
-                                                    mimeType: { type: 'string' }
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    image_file: {
-                                        anyOf: [
-                                            { type: 'string', description: 'Absolute local path to an uploaded image file.' },
-                                            {
-                                                type: 'object',
-                                                description: 'Runtime-provided uploaded image file reference.',
-                                                properties: {
-                                                    path: { type: 'string' },
-                                                    filePath: { type: 'string' },
-                                                    url: { type: 'string' },
-                                                    name: { type: 'string' },
-                                                    filename: { type: 'string' },
-                                                    mimeType: { type: 'string' }
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    uploadedFile: {
-                                        anyOf: [
-                                            { type: 'string', description: 'Absolute local path to an uploaded image file.' },
-                                            {
-                                                type: 'object',
-                                                description: 'Compatibility wrapper for uploaded file references.',
-                                                properties: {
-                                                    path: { type: 'string' },
-                                                    filePath: { type: 'string' },
-                                                    url: { type: 'string' },
-                                                    name: { type: 'string' },
-                                                    filename: { type: 'string' },
-                                                    mimeType: { type: 'string' }
-                                                }
-                                            }
-                                        ]
-                                    },
+                                    local_path: { type: 'string', description: 'A local filesystem path to the image on the server.' },
                                     filename: { type: 'string', description: 'The preferred file name (optional).' }
                                 }
                             },
@@ -797,6 +746,7 @@ async function handleToolCall(name, args, currentUser, request) {
         }
 
         case 'upload_image': {
+            console.log("UPLOAD_IMAGE_HANDLER_ENTERED");
             /** @type {any} */
             let buffer;
             let fileType = 'image/png';

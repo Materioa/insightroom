@@ -173,6 +173,7 @@ async function loadFromImageField(image, fetchImpl, preferredName) {
 /**
  * @param {{
  *   image?: unknown;
+ *   local_path?: unknown;
  *   filePath?: unknown;
  *   file?: unknown;
  *   image_file?: unknown;
@@ -187,7 +188,8 @@ export async function resolveUploadInput(input, fetchImpl) {
     const fileCandidate = normalizeFileCandidate(input.file)
         || normalizeFileCandidate(input.image_file)
         || normalizeFileCandidate(input.uploadedFile)
-        || normalizeFileCandidate(input.filePath);
+        || normalizeFileCandidate(input.filePath)
+        || normalizeFileCandidate(input.local_path);
 
     if (fileCandidate?.path) {
         if (isHttpUrl(fileCandidate.path)) {
