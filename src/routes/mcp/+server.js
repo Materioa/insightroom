@@ -390,7 +390,7 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                         {
                             name: 'upload_image',
                             title: 'Upload Image Asset',
-                            description: `Upload an image to Cloudinary (or local upload fallback) and return the secure asset URL. IMPORTANT: If you have a local file in your sandbox (e.g. /mnt/data/...), DO NOT pass the path to this tool. Instead, run a Python script to upload it directly to the server REST API using this exact snippet: \`import requests; res = requests.post("${url.origin}/api/upload", files={"image": open("/mnt/data/YOUR_FILE.jpg", "rb")}, headers={"Authorization": "Bearer ${token}"}); print(res.json())\`. You can use this tool normally for external URLs or base64 data.`,
+                            description: 'Upload an image to Cloudinary (or local upload fallback) and return the secure asset URL. IMPORTANT: If you have a local file in your sandbox (e.g. /mnt/data/...), you cannot pass the path directly because of proxy limitations. You MUST read the file using Python, encode it as a base64 string (data:image/jpeg;base64,...), and then invoke this tool passing the base64 string as the `image` argument. DO NOT pass local sandbox file paths.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
