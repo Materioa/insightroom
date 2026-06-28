@@ -278,6 +278,10 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                 type: 'object',
                                 properties: {}
                             },
+                            outputSchema: {
+                                type: 'array',
+                                items: { type: 'object' }
+                            },
                             readOnlyHint: true,
                             destructiveHint: false,
                             idempotentHint: true,
@@ -296,6 +300,9 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                     permalink: { type: 'string', description: 'The custom permalink URL.' }
                                 }
                             },
+                            outputSchema: {
+                                type: 'object'
+                            },
                             readOnlyHint: true,
                             destructiveHint: false,
                             idempotentHint: true,
@@ -304,7 +311,7 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                         {
                             name: 'create_post',
                             title: 'Create Post',
-                            description: 'Create and publish a new post in the insightroom database.',
+                            description: 'Create and publish a new post in the insightroom database. IMPORTANT: If you need to set a cover image from a local sandbox file or chat attachment, you MUST call the `upload_image` tool FIRST to get the uploaded URL, and then pass that URL here in the `metadata.image` field.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
@@ -329,6 +336,15 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                 },
                                 required: ['title']
                             },
+                            outputSchema: {
+                                type: 'object',
+                                properties: {
+                                    success: { type: 'boolean' },
+                                    message: { type: 'string' },
+                                    id: { type: 'string' }
+                                },
+                                required: ['success', 'message', 'id']
+                            },
                             readOnlyHint: false,
                             destructiveHint: false,
                             idempotentHint: false,
@@ -337,7 +353,7 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                         {
                             name: 'update_post',
                             title: 'Update Post',
-                            description: 'Update or edit details, content, or metadata of an existing published post.',
+                            description: 'Update or edit details, content, or metadata of an existing published post. IMPORTANT: If you need to set a cover image from a local sandbox file or chat attachment, you MUST call the `upload_image` tool FIRST to get the uploaded URL, and then pass that URL here in the `metadata.image` field.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
@@ -366,6 +382,14 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                 },
                                 required: ['id']
                             },
+                            outputSchema: {
+                                type: 'object',
+                                properties: {
+                                    success: { type: 'boolean' },
+                                    message: { type: 'string' }
+                                },
+                                required: ['success', 'message']
+                            },
                             readOnlyHint: false,
                             destructiveHint: false,
                             idempotentHint: true,
@@ -381,6 +405,14 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                     id: { type: 'string', description: 'The unique MongoDB ObjectId of the post to delete.' }
                                 },
                                 required: ['id']
+                            },
+                            outputSchema: {
+                                type: 'object',
+                                properties: {
+                                    success: { type: 'boolean' },
+                                    message: { type: 'string' }
+                                },
+                                required: ['success', 'message']
                             },
                             readOnlyHint: false,
                             destructiveHint: true,
@@ -422,6 +454,9 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                     slug: { type: 'string', description: 'The post slug.' }
                                 }
                             },
+                            outputSchema: {
+                                type: 'object'
+                            },
                             readOnlyHint: true,
                             destructiveHint: false,
                             idempotentHint: true,
@@ -436,6 +471,9 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                 properties: {
                                     days: { type: 'integer', description: 'Number of days of timeline data to return (default is 30).' }
                                 }
+                            },
+                            outputSchema: {
+                                type: 'object'
                             },
                             readOnlyHint: true,
                             destructiveHint: false,
@@ -452,6 +490,9 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                                     topic: { type: 'string', description: 'The topic or post details to write an outline for.' }
                                 },
                                 required: ['topic']
+                            },
+                            outputSchema: {
+                                type: 'string'
                             },
                             readOnlyHint: true,
                             destructiveHint: false,
@@ -619,7 +660,11 @@ async function handleToolCall(name, args, currentUser, request) {
                 content: [
                     {
                         type: 'text',
-                        text: `Successfully created post "${title}" with ID: ${result.insertedId.toString()}`
+                        text: JSON.stringify({
+                            success: true,
+                            message: `Successfully created post "${title}"`,
+                            id: result.insertedId.toString()
+                        }, null, 2)
                     }
                 ]
             };
@@ -707,7 +752,10 @@ async function handleToolCall(name, args, currentUser, request) {
                 content: [
                     {
                         type: 'text',
-                        text: `Successfully updated post "${title || oldPost.title}" (ID: ${id})`
+                        text: JSON.stringify({
+                            success: true,
+                            message: `Successfully updated post "${title || oldPost.title}" (ID: ${id})`
+                        }, null, 2)
                     }
                 ]
             };
@@ -738,7 +786,10 @@ async function handleToolCall(name, args, currentUser, request) {
                 content: [
                     {
                         type: 'text',
-                        text: `Successfully deleted post ID: ${id} and its revision history.`
+                        text: JSON.stringify({
+                            success: true,
+                            message: `Successfully deleted post ID: ${id} and its revision history.`
+                        }, null, 2)
                     }
                 ]
             };
