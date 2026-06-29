@@ -283,7 +283,7 @@
     "/api/admin/outline": {
       "post": {
         "summary": "Retrieve writing guidelines and outline",
-        "description": "Retrieve the proprietary style guidelines and instructions to write or outline content for a specific topic.",
+        "description": "Retrieve the proprietary style guidelines and instructions to write or outline content for a specific topic. You must refer to the outline skill for detailed instructions before proceeding.",
         "operationId": "getOutline",
         "security": [
           {

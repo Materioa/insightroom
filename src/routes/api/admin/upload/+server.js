@@ -5,6 +5,7 @@ import { validateToken } from '$lib/server/auth.js';
 import { resolveUploadInput } from '$lib/server/uploadImage.js';
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
 export async function POST({ request, cookies, fetch, url }) {
@@ -48,7 +49,21 @@ export async function POST({ request, cookies, fetch, url }) {
         originalName = file.name;
         fileType = file.type;
         const arrayBuffer = await file.arrayBuffer();
+        /** @type {any} */
         buffer = Buffer.from(arrayBuffer);
+    }
+
+    // Convert image to optimized WebP
+    if (fileType.startsWith('image/') && !fileType.includes('svg') && !fileType.includes('gif')) {
+        try {
+            buffer = await sharp(/** @type {any} */ (buffer))
+                .webp({ quality: 80 })
+                .toBuffer();
+            fileType = 'image/webp';
+            originalName = originalName.replace(/\.[^/.]+$/, "") + ".webp";
+        } catch (err) {
+            console.error('[Admin Upload] Sharp compression failed:', err);
+        }
     }
 
     // If Cloudinary is configured, use it
@@ -94,5 +109,59 @@ export async function POST({ request, cookies, fetch, url }) {
             console.error('Local upload failed:', err);
             return json({ error: 'Local upload failed' }, { status: 500 });
         }
+    }
+}
+
+/** @type {import('@sveltejs/kit').RequestHandler} */
+export async function DELETE({ request, cookies, fetch, url }) {
+    let token = cookies.get('materio_auth_token');
+    const authHeader = request.headers.get('Authorization');
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+    }
+    if (!token) return json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { user, accessTier } = await validateToken(token, fetch, url);
+    if (!user || accessTier !== 'super') {
+        return json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    try {
+        const { url: fileUrl } = await request.json();
+        if (!fileUrl) return json({ error: 'Missing url' }, { status: 400 });
+
+        if (env.CLOUDINARY_URL || (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET)) {
+            cloudinary.config({
+                cloud_name: env.CLOUDINARY_CLOUD_NAME,
+                api_key: env.CLOUDINARY_API_KEY,
+                api_secret: env.CLOUDINARY_API_SECRET
+            });
+
+            const uploadSplit = fileUrl.split('/upload/');
+            if (uploadSplit.length > 1) {
+                const afterUpload = uploadSplit[1];
+                const pathParts = afterUpload.split('/');
+                const publicIdWithExt = pathParts[0].match(/^v\d+$/) ? pathParts.slice(1).join('/') : pathParts.join('/');
+                const publicId = publicIdWithExt.replace(/\.[^/.]+$/, "");
+                
+                await new Promise((resolve, reject) => {
+                    cloudinary.uploader.destroy(publicId, (/** @type {any} */ error, /** @type {any} */ result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    });
+                });
+            }
+            return json({ success: true });
+        } else {
+            const fileName = fileUrl.split('/').pop();
+            const filePath = path.resolve(process.cwd(), 'static/uploads', fileName);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+            return json({ success: true });
+        }
+    } catch (err) {
+        console.error('Delete failed:', err);
+        return json({ error: 'Failed to delete' }, { status: 500 });
     }
 }

@@ -4,6 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { env } from '$env/dynamic/private';
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -58,9 +59,23 @@ export async function POST({ request, url, fetch }) {
     }
 
     const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const fileType = imageFile.type || 'image/png';
-    const originalName = imageFile.name || 'upload.png';
+    /** @type {any} */
+    let buffer = Buffer.from(arrayBuffer);
+    let fileType = imageFile.type || 'image/png';
+    let originalName = imageFile.name || 'upload.png';
+
+    // Convert image to optimized WebP
+    if (fileType.startsWith('image/') && !fileType.includes('svg') && !fileType.includes('gif')) {
+        try {
+            buffer = await sharp(/** @type {any} */ (buffer))
+                .webp({ quality: 80 })
+                .toBuffer();
+            fileType = 'image/webp';
+            originalName = originalName.replace(/\.[^/.]+$/, "") + ".webp";
+        } catch (err) {
+            console.error('[API Upload] Sharp compression failed:', err);
+        }
+    }
 
     // 3. Upload to Cloudinary or Local
     if (env.CLOUDINARY_URL || (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET)) {

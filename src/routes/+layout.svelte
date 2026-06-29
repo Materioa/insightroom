@@ -11,6 +11,7 @@
 
   let isPost = $derived(!!$page.params.postPath);
   let isHome = $derived($page.url.pathname === "/");
+  let isMcpUpload = $derived($page.url.pathname.includes("/mcp-upload"));
   let bodyClass = $derived(isPost ? "body-post" : isHome ? "blog-layout" : "");
   
   // Reactive Svelte 5 Runes for Theme and Font
@@ -254,6 +255,7 @@
   <script src="https://materioa.github.io/kit/6a787c7335.js" crossorigin="anonymous" defer></script>
 </svelte:head>
 
+{#if !isMcpUpload}
 <Header
   {isPost}
   {isHome}
@@ -264,11 +266,13 @@
   user={data.user}
   accessTier={data.accessTier}
 />
+{/if}
 
-<main>
+<main style={isMcpUpload ? "padding: 0; margin: 0; max-width: none;" : ""}>
   {@render children()}
 </main>
 
+{#if !isMcpUpload}
 <Footer
   {setTheme}
   {currentTheme}
@@ -277,3 +281,4 @@
   user={data.user}
   accessTier={data.accessTier}
 />
+{/if}

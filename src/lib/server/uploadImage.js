@@ -196,6 +196,11 @@ export async function resolveUploadInput(input, fetchImpl) {
             return loadFromUrl(fileCandidate.path, fetchImpl, preferredName || fileCandidate.name, fileCandidate.mimeType);
         }
 
+        // If a base64 string or data URI is passed into a path parameter, route it to loadFromImageField
+        if (fileCandidate.path.startsWith('data:') || (fileCandidate.source === 'string' && fileCandidate.path.length > 64 && /^[A-Za-z0-9+/=\s]+$/.test(fileCandidate.path.trim()))) {
+            return loadFromImageField(fileCandidate.path, fetchImpl, preferredName || fileCandidate.name);
+        }
+
         return loadFromLocalPath(fileCandidate.path, preferredName || fileCandidate.name, fileCandidate.mimeType);
     }
 
@@ -203,6 +208,6 @@ export async function resolveUploadInput(input, fetchImpl) {
         return loadFromImageField(input.image, fetchImpl, preferredName);
     }
 
-    throw new Error('Either image, filePath, file, image_file, or uploadedFile is required');
+    throw new Error('Either image, local_path, filePath, file, image_file, or uploadedFile is required');
 }
 

@@ -422,12 +422,14 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                         {
                             name: 'upload_image',
                             title: 'Upload Image Asset',
-                            description: 'Upload an image to Cloudinary (or local fallback). IMPORTANT: If you have a local file in your sandbox (e.g. /mnt/data/...), it CANNOT be accessed by the server, and the sandbox CANNOT make HTTP requests. You MUST read the file, COMPRESS it using PIL (resize to max 800px width and save as WEBP with 70% quality to avoid JSON truncation), convert it to a base64 data URI (data:image/webp;base64,...), and pass it in the `image` argument. DO NOT pass file paths.',
+                            description: 'Upload an image to Cloudinary (or local fallback). Provide the image URL, base64 data URI, or local path.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
-                                    image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL. Do NOT pass sandbox file paths.' },
-                                    filename: { type: 'string', description: 'The preferred file name (optional).' }
+                                    image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL.' },
+                                    local_path: { type: 'string', description: 'A local filesystem path to the image on the server.' },
+                                    filename: { type: 'string', description: 'The preferred file name (optional).' },
+                                    post_id: { type: 'string', description: 'The MongoDB ObjectId of the post being edited (optional, used to generate the upload widget link if upload fails).' }
                                 }
                             },
                             outputSchema: {
@@ -802,16 +804,59 @@ async function handleToolCall(name, args, currentUser, request) {
             let fileType = 'image/png';
             let resolvedFilename = typeof args?.filename === 'string' ? args.filename : undefined;
 
+            const postId = args?.post_id || args?.id || args?.postId || '';
+            const widgetUrl = postId ? `http://localhost:5173/writer/mcp-upload?id=${postId}` : '';
+            const widgetMsg = postId 
+                ? `\n\nAlternatively, you can upload the image manually using the Image Placement Widget:\n${widgetUrl}`
+                : `\n\nAlternatively, you can open the post in the editor and upload the image manually.`;
+
+            // If called without any image source (e.g. just post_id), return the widget as a successful response
+            if (widgetUrl && !args?.image && !args?.local_path && !args?.file && !args?.filePath && !args?.image_file && !args?.uploadedFile) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `Please use the inline Image Placement Widget below to upload and tag your images. Once you are done, let me know so I can proceed.`
+                        },
+                        {
+                            type: 'resource',
+                            resource: {
+                                uri: widgetUrl,
+                                mimeType: 'text/html',
+                                text: `<html><body style="margin:0;padding:0;"><iframe src="${widgetUrl}" style="width:100%; height:550px; border:none; border-radius:12px;"></iframe></body></html>`
+                            }
+                        }
+                    ]
+                };
+            }
+
+            /**
+             * @param {string} errText
+             * @returns {{ isError: true, content: Array<any> }}
+             */
+            const makeErrorResponse = (errText) => {
+                /** @type {any[]} */
+                const content = [{ type: 'text', text: errText }];
+                if (widgetUrl) {
+                    content.push({
+                        type: 'resource',
+                        resource: {
+                            uri: widgetUrl,
+                            mimeType: 'text/html',
+                            text: `<html><body style="margin:0;padding:0;"><iframe src="${widgetUrl}" style="width:100%; height:550px; border:none; border-radius:12px;"></iframe></body></html>`
+                        }
+                    });
+                }
+                return { isError: true, content };
+            };
+
             try {
                 const resolvedUpload = await resolveUploadInput(args || {}, globalThis.fetch.bind(globalThis));
                 buffer = resolvedUpload.buffer;
                 fileType = resolvedUpload.fileType;
                 resolvedFilename = resolvedFilename || resolvedUpload.originalName;
             } catch (/** @type {any} */ inputErr) {
-                return {
-                    isError: true,
-                    content: [{ type: 'text', text: inputErr.message }]
-                };
+                return makeErrorResponse(`${inputErr.message}${widgetMsg}`);
             }
 
             // Upload via Cloudinary
@@ -845,10 +890,7 @@ async function handleToolCall(name, args, currentUser, request) {
                     };
                 } catch (/** @type {any} */ cloudinaryErr) {
                     console.error('[MCP Upload] Cloudinary error:', cloudinaryErr);
-                    return {
-                        isError: true,
-                        content: [{ type: 'text', text: `Cloudinary upload failed: ${cloudinaryErr.message}` }]
-                    };
+                    return makeErrorResponse(`Cloudinary upload failed: ${cloudinaryErr.message}${widgetMsg}`);
                 }
             } else {
                 // Fallback to local upload inside static/uploads
@@ -878,10 +920,7 @@ async function handleToolCall(name, args, currentUser, request) {
                     };
                 } catch (/** @type {any} */ localErr) {
                     console.error('[MCP Upload] Local storage error:', localErr);
-                    return {
-                        isError: true,
-                        content: [{ type: 'text', text: `Local upload failed: ${localErr.message}` }]
-                    };
+                    return makeErrorResponse(`Local upload failed: ${localErr.message}${widgetMsg}`);
                 }
             }
         }
