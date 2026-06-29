@@ -797,15 +797,7 @@ async function handleToolCall(name, args, currentUser, request) {
                 content: [
                     {
                         type: 'text',
-                        text: `Please use the inline Image Placement Widget below to upload and tag your images. Once you are done, let me know so I can proceed.`
-                    },
-                    {
-                        type: 'resource',
-                        resource: {
-                            uri: widgetUrl,
-                            mimeType: 'text/html',
-                            text: `<html><body style="margin:0;padding:0;"><iframe src="${widgetUrl}" style="width:100%; height:550px; border:none; border-radius:12px;"></iframe></body></html>`
-                        }
+                        text: `Please open the Image Placement Widget to upload and tag your images:\n\n[Open Upload Widget](${widgetUrl})\n\nOnce you are done, let me know so I can proceed.`
                     }
                 ]
             };
