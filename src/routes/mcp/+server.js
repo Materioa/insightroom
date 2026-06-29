@@ -422,27 +422,19 @@ Always remember the active post ID returned from "create_post" or "list_posts" t
                         {
                             name: 'upload_image',
                             title: 'Upload Image Asset',
-                            description: 'Upload an image to Cloudinary (or local fallback). Provide the image URL, base64 data URI, or local path.',
+                            description: 'Use this tool to render an interactive UI widget in the chat where the user can manually select or drag-and-drop images to upload. Call this tool when the user asks to upload images manually, or if you need to upload an image for a post.',
                             inputSchema: {
                                 type: 'object',
                                 properties: {
-                                    image: { type: 'string', description: 'The base64 encoded data URI (e.g. data:image/png;base64,...) or a public HTTP/HTTPS URL.' },
-                                    local_path: { type: 'string', description: 'A local filesystem path to the image on the server.' },
-                                    filename: { type: 'string', description: 'The preferred file name (optional).' },
-                                    post_id: { type: 'string', description: 'The MongoDB ObjectId of the post being edited (optional, used to generate the upload widget link if upload fails).' }
+                                    post_id: { type: 'string', description: 'The MongoDB ObjectId of the post being edited (optional).' }
                                 }
                             },
                             outputSchema: {
-                                type: 'object',
-                                properties: {
-                                    success: { type: 'boolean' },
-                                    url: { type: 'string' }
-                                },
-                                required: ['success', 'url']
+                                type: 'object'
                             },
-                            readOnlyHint: false,
+                            readOnlyHint: true,
                             destructiveHint: false,
-                            idempotentHint: false,
+                            idempotentHint: true,
                             openWorldHint: false
                         },
                         {
@@ -798,131 +790,25 @@ async function handleToolCall(name, args, currentUser, request) {
         }
 
         case 'upload_image': {
-            console.log("UPLOAD_IMAGE_HANDLER_ENTERED");
-            /** @type {any} */
-            let buffer;
-            let fileType = 'image/png';
-            let resolvedFilename = typeof args?.filename === 'string' ? args.filename : undefined;
-
             const postId = args?.post_id || args?.id || args?.postId || '';
-            const widgetUrl = postId ? `http://localhost:5173/writer/mcp-upload?id=${postId}` : '';
-            const widgetMsg = postId 
-                ? `\n\nAlternatively, you can upload the image manually using the Image Placement Widget:\n${widgetUrl}`
-                : `\n\nAlternatively, you can open the post in the editor and upload the image manually.`;
-
-            // If called without any image source (e.g. just post_id), return the widget as a successful response
-            if (widgetUrl && !args?.image && !args?.local_path && !args?.file && !args?.filePath && !args?.image_file && !args?.uploadedFile) {
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: `Please use the inline Image Placement Widget below to upload and tag your images. Once you are done, let me know so I can proceed.`
-                        },
-                        {
-                            type: 'resource',
-                            resource: {
-                                uri: widgetUrl,
-                                mimeType: 'text/html',
-                                text: `<html><body style="margin:0;padding:0;"><iframe src="${widgetUrl}" style="width:100%; height:550px; border:none; border-radius:12px;"></iframe></body></html>`
-                            }
-                        }
-                    ]
-                };
-            }
-
-            /**
-             * @param {string} errText
-             * @returns {{ isError: true, content: Array<any> }}
-             */
-            const makeErrorResponse = (errText) => {
-                /** @type {any[]} */
-                const content = [{ type: 'text', text: errText }];
-                if (widgetUrl) {
-                    content.push({
+            const widgetUrl = `http://localhost:5173/writer/mcp-upload${postId ? '?id=' + postId : ''}`;
+            
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Please use the inline Image Placement Widget below to upload and tag your images. Once you are done, let me know so I can proceed.`
+                    },
+                    {
                         type: 'resource',
                         resource: {
                             uri: widgetUrl,
                             mimeType: 'text/html',
                             text: `<html><body style="margin:0;padding:0;"><iframe src="${widgetUrl}" style="width:100%; height:550px; border:none; border-radius:12px;"></iframe></body></html>`
                         }
-                    });
-                }
-                return { isError: true, content };
-            };
-
-            try {
-                const resolvedUpload = await resolveUploadInput(args || {}, globalThis.fetch.bind(globalThis));
-                buffer = resolvedUpload.buffer;
-                fileType = resolvedUpload.fileType;
-                resolvedFilename = resolvedFilename || resolvedUpload.originalName;
-            } catch (/** @type {any} */ inputErr) {
-                return makeErrorResponse(`${inputErr.message}${widgetMsg}`);
-            }
-
-            // Upload via Cloudinary
-            if (env.CLOUDINARY_URL || (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET)) {
-                cloudinary.config({
-                    cloud_name: env.CLOUDINARY_CLOUD_NAME,
-                    api_key: env.CLOUDINARY_API_KEY,
-                    api_secret: env.CLOUDINARY_API_SECRET
-                });
-
-                try {
-                    const uploadResult = await new Promise((resolve, reject) => {
-                        const uploadStream = cloudinary.uploader.upload_stream(
-                            { folder: 'insightroom', resource_type: 'image' },
-                            (error, result) => {
-                                if (error) reject(error);
-                                else resolve(result);
-                            }
-                        );
-                        uploadStream.end(buffer);
-                    });
-                    // @ts-ignore
-                    return {
-                        content: [
-                            {
-                                type: 'text',
-                                // @ts-ignore
-                                text: JSON.stringify({ success: true, url: uploadResult.secure_url }, null, 2)
-                            }
-                        ]
-                    };
-                } catch (/** @type {any} */ cloudinaryErr) {
-                    console.error('[MCP Upload] Cloudinary error:', cloudinaryErr);
-                    return makeErrorResponse(`Cloudinary upload failed: ${cloudinaryErr.message}${widgetMsg}`);
-                }
-            } else {
-                // Fallback to local upload inside static/uploads
-                try {
-                    const ext = fileType.split('/').pop() || 'png';
-                    const namePart = resolvedFilename ? slugify(resolvedFilename.split('.')[0]) : `${Date.now()}-${Math.round(Math.random() * 1000)}`;
-                    const finalFilename = `${namePart}.${ext}`;
-                    const uploadDir = 'static/uploads';
-
-                    const fs = await import('fs');
-                    const path = await import('path');
-                    const resolvedUploadDir = path.resolve(process.cwd(), uploadDir);
-
-                    if (!fs.existsSync(resolvedUploadDir)) {
-                        fs.mkdirSync(resolvedUploadDir, { recursive: true });
                     }
-
-                    fs.writeFileSync(path.join(resolvedUploadDir, finalFilename), buffer);
-
-                    return {
-                        content: [
-                            {
-                                type: 'text',
-                                text: JSON.stringify({ success: true, url: `/uploads/${finalFilename}` }, null, 2)
-                            }
-                        ]
-                    };
-                } catch (/** @type {any} */ localErr) {
-                    console.error('[MCP Upload] Local storage error:', localErr);
-                    return makeErrorResponse(`Local upload failed: ${localErr.message}${widgetMsg}`);
-                }
-            }
+                ]
+            };
         }
 
         case 'get_post_analytics': {
