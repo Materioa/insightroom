@@ -43,7 +43,7 @@
   --bg: #faf9f5;
   --text: #000000;
   --link: #007aff;
-  --card-bg: #ffffff;
+  --card-bg: #faf9f5;
   --border: #ddd;
   --foot: #e4e0da;
   --brand-orange: #ff5400;
@@ -874,12 +874,12 @@ pre code.hljs {
 
 /* Light mode code blocks */
 body:not(.dark) pre {
-  background: #ffffff;
+  background: #faf9f5;
   border: 1px solid #e9ecef;
 }
 
 body:not(.dark) pre code {
-  background: #ffffff;
+  background: #faf9f5;
   color: #212529;
 }
 
@@ -1206,7 +1206,7 @@ table td code {
   border-radius: 16px;
   background:
     radial-gradient(circle, rgba(0, 0, 0, 0.15) 1px, transparent 1px),
-    var(--bg, #fff);
+    var(--bg, #faf9f5);
   background-size: 20px 20px;
   border: 1px solid var(--border, #e0e0e0);
   overflow: hidden;
@@ -1266,7 +1266,7 @@ table td code {
   right: 1rem;
   display: flex;
   gap: 0.5rem;
-  background: var(--card-bg, #ffffff);
+  background: var(--card-bg, #faf9f5);
   border: 1px solid var(--border, #e0e0e0);
   padding: 0.25rem 0.5rem;
   border-radius: 8px;
@@ -1547,12 +1547,12 @@ pre code ::-moz-selection {
 }
 
 .flashcard-front {
-  background: var(--bg, #fff);
+  background: var(--bg, #faf9f5);
   color: var(--text, #212529);
 }
 
 .flashcard-back {
-  background: var(--card-bg, #ffffff);
+  background: var(--card-bg, #faf9f5);
   color: var(--text, #212529);
   transform: rotateY(180deg);
 }
@@ -1594,7 +1594,7 @@ pre code ::-moz-selection {
   height: 40px;
   border-radius: 50%;
   border: 1px solid var(--border, #ddd);
-  background: var(--bg, #fff);
+  background: var(--bg, #faf9f5);
   color: var(--text, #333);
   cursor: pointer;
   display: flex;
@@ -1867,7 +1867,7 @@ pre code ::-moz-selection {
     font-size: 12pt !important;
     line-height: 1.6 !important;
     color: #000 !important;
-    background: #fff !important;
+    background: #faf9f5 !important;
     margin: 0 !important;
     padding: 0 !important;
   }
@@ -2214,7 +2214,7 @@ pre code ::-moz-selection {
     border-collapse: separate !important;
     border-spacing: 0 !important;
     margin: 0.5rem 0 !important;
-    background: #fff !important;
+    background: #faf9f5 !important;
     border-radius: 8px !important;
     font-size: 9pt !important;
     page-break-inside: auto !important;
@@ -2242,7 +2242,7 @@ pre code ::-moz-selection {
   }
 
   table tr:nth-child(even) {
-    background: #ffffff !important;
+    background: #faf9f5 !important;
   }
 
   table tr:hover {
@@ -2253,7 +2253,7 @@ pre code ::-moz-selection {
   .mermaid-diagram {
     text-align: center !important;
     margin: 0.5rem 0 !important;
-    background: #fff !important;
+    background: #faf9f5 !important;
     border-radius: 8px !important;
     padding: 0.5rem !important;
     border: 1px solid #ddd !important;
@@ -2693,7 +2693,7 @@ body.dark-mode .locked-bottom-image .locked-img-dark {
   top: 70px;
   right: 20px;
   z-index: 9999;
-  background: #fff;
+  background: #faf9f5;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);

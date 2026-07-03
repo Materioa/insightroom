@@ -1539,7 +1539,7 @@
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
-    background: var(--dropdown-bg, #fff);
+    background: var(--dropdown-bg, #faf9f5);
     border: 1px solid var(--dropdown-border, #e2e8f0);
     border-radius: 12px;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);

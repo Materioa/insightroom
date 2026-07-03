@@ -269,7 +269,7 @@
     width: 220px;
     outline: none;
     color: var(--text, #333);
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #faf9f5);
     transition: border-color 0.2s;
   }
 
@@ -286,7 +286,7 @@
   }
 
   .summary-card {
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #faf9f5);
     border: 1px solid var(--border, #e5e5e5);
     border-radius: 20px;
     padding: 20px;
@@ -343,7 +343,7 @@
   }
 
   .chart-box, .geographic-box {
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #faf9f5);
     border: 1px solid var(--border, #e5e5e5);
     border-radius: 20px;
     padding: 24px;
@@ -405,7 +405,7 @@
 
   /* Table style */
   .table-container {
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #faf9f5);
     border: 1px solid var(--border, #e5e5e5);
     border-radius: 20px;
     overflow: hidden;

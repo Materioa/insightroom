@@ -173,7 +173,7 @@
   }
 
   .modal-card {
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #faf9f5);
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
     border-radius: 36px;
     corner-shape: squircle;

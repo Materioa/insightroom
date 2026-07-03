@@ -38,28 +38,28 @@ Drop the reader into the middle of something happening — not a lecture, not a 
 
 **Rules:**
 - 2–3 sentences max
-- Address the reader as "you" — but not in the "you run a hospital" setup-style. Make it immediate.
-- Do NOT open with a definition
-- Do NOT start with "In this section", "This topic covers", or "Imagine you are a..."
-- NEVER use the pattern: "You are a [role]. You need [thing]. That thing is [concept]." — this is the formula to break.
+- Address the reader as "you" — mid-task, not mid-setup
+- No definitions first
+- No "In this section", "This topic covers", "Imagine you are a...", or "You are a [role] who needs [thing]"
 
 **Rotate through these opening modes** (don't use the same one twice in a row):
 
 | Mode | Description | Example |
 |---|---|---|
-| **Action-first** | Drop mid-task | "You push a commit. The build fails. The error isn't in your code — it's in how the system fetched a stale cache from three deploys ago." |
-| **Broken state** | Start with something already going wrong | "Dark mode turns off every time you reopen the app. The user filed a bug report. The setting was never saved — just assumed." |
-| **Contrast** | Show before/after without the role-setup | "A request with no auth header hits your endpoint. Without a check, it returns 200. With one, it returns 401 and logs the attempt." |
-| **Single sharp fact** | Lead with what surprises most people | "SQLite runs on the device. No server, no connection string, no network — just a file on disk that SQL queries like a real database." |
-| **Consequence** | Open at the moment things break | "The cache expired. The fallback hit the database. The database was under load. The whole page timed out for 40,000 users." |
+| **Action-first** | Drop mid-task, no preamble | "You push a commit. The build fails. The error isn't in your code — it's in how the system fetched a stale cache from three deploys ago." |
+| **Broken state** | Start with something already wrong | "Dark mode turns off every time you reopen the app. The user filed a bug report. The setting was never saved — just assumed." |
+| **Contrast** | Before/after, no setup | "A request with no auth header hits your endpoint. Without a check, it returns 200. With one, it returns 401 and logs the attempt." |
+| **Single sharp fact** | The thing that surprises most people | "SQLite runs on the device. No server, no connection string, no network — just a file on disk that SQL queries like a real database." |
+| **Consequence** | Open at the moment of failure | "The cache expired. The fallback hit the database. The database was under load. The whole page timed out for 40,000 users." |
+| **Dry observation** | State something counterintuitive, flatly | "Most race conditions aren't bugs in the logic. They're bugs in the assumption that two things won't happen at the same time." |
 
-**Good:**
+The dry observation mode is useful for theory-heavy topics where there's no natural "action" to drop into. Keep it cold — no exclamation, no "surprisingly", no "interestingly". Just the observation.
+
+The target: a sentence that could be the second sentence of a conversation, not the first of a lecture.
+
 > "You set dark mode on in an app, close it, reopen it — dark mode is still on. The app remembered your choice without any database. That's Shared Preferences at work."
 
-**Bad (formula to avoid):**
-> "You run a hospital. Doctors need patient records. Billing needs insurance data. Admins need scheduling. All of them need different pieces of data — instantly, accurately, and from anywhere. Without a system to organize, process, and deliver that information, the hospital collapses into chaos. That system keeping everything connected is an information system."
-
-What's wrong with the bad example: it's a stage-set, not a scenario. It names three roles, lists three needs, states the obvious consequence, then lands on the definition. Readers stop reading by sentence three. Don't stage-set. Drop in.
+The pattern to avoid is the stage-set: three roles listed, three needs listed, obvious consequence stated, definition dropped at the end. By sentence three, the reader has already clocked the formula and stopped. Skip the setup.
 
 ---
 
@@ -148,19 +148,35 @@ Instead of ASCII or text diagrams, use `mermaid`, `graphviz`, `d3`, `markmap`, o
 ---
 
 ### 9. Bridging Sentences Between Topics
-Open each new `#` topic by acknowledging the previous one naturally — not with a recap sentence:
+The first sentence of a new topic can reference the previous one — but as a fact, not a check-in.
 
-- "Now that you've built your own SQLite database, consider this:"
-- "You've already seen how Docker packages your backend."
-- "Shared Preferences works for small settings, but it breaks down fast when your data has structure."
+- "Shared Preferences works for small settings, but falls apart the moment data has structure."
+- "Docker packages the backend. The next problem is where it actually runs."
+- "SQLite handles the data. Content Providers handle who else gets to touch it."
+
+Don't recap what the reader just read. Reference it and move.
 
 ---
 
 ### 10. Inline Callouts
+
 Use GitHub-style blockquote callouts for notes, tips, and warnings. Supported types: `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`.
+
+Callouts are the one place in the notes where voice is permitted. Use them for:
+- The tradeoff nobody mentions in textbooks
+- The mistake everyone makes once
+- The thing that's technically correct but misleading in practice
 
 > [!WARNING]
 > Never store passwords in Shared Preferences. Use EncryptedSharedPreferences instead.
+
+> [!NOTE]
+> The docs say this method is "deprecated but still supported." Read: it works until the next major release removes it without warning.
+
+> [!TIP]
+> If your query is fast in isolation but slow in production, the problem is usually missing indexes — not the query itself.
+
+Keep callouts short (1–3 sentences). Long callouts get skipped. The value is in the interruption, not the length.
 
 ---
 
@@ -219,12 +235,35 @@ Every `#` topic must cover all five levels:
 
 ## Voice Rules
 
-- Address the reader as "you" throughout — but as someone already in the middle of doing something, not someone being explained things from scratch
+- Address the reader as "you" — mid-task, not mid-orientation
 - Use active voice: "Android deletes this on uninstall" not "This is deleted by Android"
 - Bold technical terms inline on first use
-- Short sentences for key points; vary sentence length overall
+- **Vary sentence rhythm.** Mix short declarative punches with longer compound observations. Three sentences of identical length in a row is a metronome, not prose. Break it.
 - No filler openers, no "In conclusion", no end-of-section summaries
-- Vary sentence rhythm: mix 5-word punches with longer compound observations. Monotone length reads like a textbook.
+
+### Precision over personality
+
+The exact word is more interesting than the enthusiastic one. "Stores key-value pairs persistently" is forgettable. "Survives a reboot" is not. Precise language earns attention; enthusiasm spends it.
+
+- Cut filler intensifiers: very, quite, really, extremely, incredibly, essentially
+- Name tradeoffs plainly. "Convenient but not thread-safe." One sentence, then move on.
+- A sentence that says one thing clearly beats a sentence that says three things warmly.
+
+### Wit through restraint
+
+Wry observations belong in callouts, not inline. A dry aside in the main prose interrupts the reading; in a callout, the reader opts in.
+
+The register to aim for is understatement. "This is the part most tutorials skip, then wonder why things break." Not excitement — just a sentence that says the thing everyone knows but nobody writes down.
+
+Callout examples that hit the right note:
+
+> [!NOTE]
+> The official docs call this "eventually consistent." In practice: don't depend on it being fast.
+
+> [!TIP]
+> SharedPreferences works fine until it doesn't — then you're debugging a race condition at 2am.
+
+Relatability for its own sake is a trap. Coffee shops, traffic jams, pizza orders — these analogies signal that the writer didn't trust the concept to hold attention on its own.
 
 ---
 
@@ -241,6 +280,10 @@ Every `#` topic must cover all five levels:
 - Never make the correct MCQ answer longer than the distractors
 - Every `#` topic must end with exactly one MCQ block
 - No citations, references, or source links anywhere in the output
+- Never use filler intensifiers: very, quite, really, extremely, incredibly, essentially
+- Never use exclamation marks in technical explanations
+- Never open with "Fun fact:", "Interestingly,", "Surprisingly,", or "Did you know"
+- Never force a daily-life analogy onto a concept that doesn't need one — if the technical explanation is already clear, the analogy is padding
 
 ---
 

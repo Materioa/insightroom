@@ -741,7 +741,7 @@ body.dark-mode code {
   }
 
   .post-body table td {
-    background-color: #ffffff !important;
+    background-color: #faf9f5 !important;
     color: #333 !important;
   }
 }
@@ -1059,7 +1059,7 @@ body.dark-mode .toc-rail-line {
 .dark .toc-rail-line.active,
 body.dark-mode .toc-rail-line:hover,
 body.dark-mode .toc-rail-line.active {
-  background: #fff;
+  background: #faf9f5;
 }
 
 .toc-scroll-rail {
