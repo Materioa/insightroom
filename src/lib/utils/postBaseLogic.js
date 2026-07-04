@@ -148,7 +148,7 @@ function initializeMermaid() {
     // @ts-ignore
     mermaid.initialize({
         startOnLoad: false,
-        theme: document.body.classList.contains('dark') ? 'dark' : 'default',
+        theme: (document.body.classList.contains('dark') || document.body.classList.contains('dark-mode')) ? 'dark' : 'default',
         securityLevel: 'loose',
         fontFamily: '"PP Mori", sans-serif'
     });

@@ -560,7 +560,7 @@
       // @ts-ignore
       if (typeof mermaid !== "undefined") {
         // @ts-ignore
-        mermaid.initialize({ startOnLoad: false, theme: document.body.classList.contains('dark') ? 'dark' : 'default' });
+        mermaid.initialize({ startOnLoad: false, theme: (document.body.classList.contains('dark') || document.body.classList.contains('dark-mode')) ? 'dark' : 'default' });
         try {
           // @ts-ignore
           await mermaid.run({ querySelector: '.mermaid-diagram' });
