@@ -635,7 +635,7 @@ body.dark-mode .post-body blockquote.caution {
 }
 
 .callout-title-note {
-  color: #e7e7db;
+  color: #999986;
 }
 
 .callout-title-tip {
@@ -677,7 +677,7 @@ body.dark-mode .callout-title-caution {
 /* Callout Icon (already defined above) */
 
 .callout-icon-note {
-  color: #4b5563;
+  color: #999986;
 }
 
 .callout-icon-tip {
@@ -697,7 +697,7 @@ body.dark-mode .callout-title-caution {
 }
 
 body.dark-mode .callout-icon-note {
-  color: #9ca3af;
+  color: #e7e7db;
 }
 
 body.dark-mode .callout-icon-tip {
