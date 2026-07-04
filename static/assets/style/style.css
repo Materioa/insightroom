@@ -635,10 +635,6 @@ body.dark-mode .post-body blockquote.caution {
 }
 
 .callout-title-note {
-  color: #999986;
-}
-
-body.dark-mode .callout-title-note {
   color: #e7e7db;
 }
 
@@ -659,7 +655,7 @@ body.dark-mode .callout-title-note {
 }
 
 body.dark-mode .callout-title-note {
-  color: #9ca3af;
+  color: #e7e7db;
 }
 
 body.dark-mode .callout-title-tip {
