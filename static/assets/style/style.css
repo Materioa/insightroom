@@ -539,16 +539,16 @@ body.dark-mode .post-body blockquote {
 /* NOTE - Blue */
 .post-body .callout-note,
 .post-body blockquote.note {
-  background: rgba(9, 105, 218, 0.06);
-  border: 1px solid rgba(9, 105, 218, 0.2);
-  color: #053b82;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: inherit;
 }
 
 body.dark-mode .post-body .callout-note,
 body.dark-mode .post-body blockquote.note {
-  background: rgba(47, 129, 247, 0.1);
-  border-color: rgba(47, 129, 247, 0.3);
-  color: #a5d6ff;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: inherit;
 }
 
 /* TIP - Green */
@@ -606,9 +606,9 @@ body.dark-mode .post-body blockquote.warning {
 
 body.dark-mode .post-body .callout-caution,
 body.dark-mode .post-body blockquote.caution {
-  background: rgba(248, 81, 73, 0.1);
-  border-color: rgba(248, 81, 73, 0.3);
-  color: #ff7b72;
+  background: rgba(212, 76, 76, 0.08);
+  border-color: rgba(212, 76, 76, 0.2);
+  color: #e06666;
 }
 
 /* Callout Title Styling */
@@ -635,7 +635,7 @@ body.dark-mode .post-body blockquote.caution {
 }
 
 .callout-title-note {
-  color: #0969da;
+  color: #4b5563;
 }
 
 .callout-title-tip {
@@ -655,7 +655,7 @@ body.dark-mode .post-body blockquote.caution {
 }
 
 body.dark-mode .callout-title-note {
-  color: #2f81f7;
+  color: #9ca3af;
 }
 
 body.dark-mode .callout-title-tip {
@@ -671,13 +671,13 @@ body.dark-mode .callout-title-warning {
 }
 
 body.dark-mode .callout-title-caution {
-  color: #f85149;
+  color: #d44c4c;
 }
 
 /* Callout Icon (already defined above) */
 
 .callout-icon-note {
-  color: #0969da;
+  color: #4b5563;
 }
 
 .callout-icon-tip {
@@ -697,7 +697,7 @@ body.dark-mode .callout-title-caution {
 }
 
 body.dark-mode .callout-icon-note {
-  color: #2f81f7;
+  color: #9ca3af;
 }
 
 body.dark-mode .callout-icon-tip {
@@ -713,7 +713,7 @@ body.dark-mode .callout-icon-warning {
 }
 
 body.dark-mode .callout-icon-caution {
-  color: #f85149;
+  color: #d44c4c;
 }
 
 /* Callout Content */
@@ -753,15 +753,15 @@ body.dark-mode .post-body blockquote.success {
 }
 
 .post-body blockquote.info {
-  background: rgba(9, 105, 218, 0.06);
-  border: 1px solid rgba(9, 105, 218, 0.2);
-  color: #053b82;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: inherit;
 }
 
 body.dark-mode .post-body blockquote.info {
-  background: rgba(47, 129, 247, 0.1);
-  border-color: rgba(47, 129, 247, 0.3);
-  color: #a5d6ff;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: inherit;
 }
 
 .post-body blockquote.quote {
