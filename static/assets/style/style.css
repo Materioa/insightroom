@@ -1196,8 +1196,9 @@ table td code {
 }
 
 /* Mermaid dark theme adjustments */
-.dark .mermaid-diagram {
-  background: var(--card-bg);
+.dark .mermaid-diagram,
+body.dark-mode .mermaid-diagram {
+  background: transparent;
 }
 
 .dark .mermaid-diagram .node rect,
@@ -2173,6 +2174,10 @@ pre code ::-moz-selection {
   }
 
   /* Callout styles for print */
+  .post-body blockquote[data-callout] {
+    font-style: normal !important;
+  }
+
   .post-body .callout-note,
   .post-body blockquote.note {
     background: transparent !important;
@@ -2283,10 +2288,10 @@ pre code ::-moz-selection {
   .mermaid-diagram {
     text-align: center !important;
     margin: 0.5rem 0 !important;
-    background: #fff !important;
-    border-radius: 8px !important;
+    background: transparent !important;
+    border-radius: 0 !important;
     padding: 0.5rem !important;
-    border: 1px solid #ddd !important;
+    border: none !important;
     page-break-inside: avoid !important;
     max-width: 100% !important;
     overflow: hidden !important;
