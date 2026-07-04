@@ -2165,13 +2165,90 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
 /* Print adjustments */
 @media print {
   .mcq-card {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    border: none !important;
+    background: transparent !important;
+    margin: 1.5rem 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
-  .mcq-option {
-    border: 1px solid #666666 !important;
+  
+  .mcq-header {
+    margin-bottom: 0.5rem !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
   }
+  
   .mcq-scorecard-container,
-  .mcq-slideshow-container {
+  .mcq-slideshow-container,
+  .mcq-reset-btn {
+    display: none !important;
+  }
+  
+  .mcq-options {
+    display: block !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+  
+  .mcq-option {
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0.2rem 0 !important;
+    margin: 0 !important;
+    text-align: left !important;
+    font-weight: normal !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
+  .mcq-option-letter {
+    font-weight: bold !important;
+    margin-right: 0.5rem !important;
+    display: inline-block !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  
+  .mcq-option-text {
+    display: inline !important;
+  }
+  
+  .mcq-option-icon {
+    display: none !important;
+  }
+  
+  .print-answer-key {
+    page-break-before: always;
+    padding-top: 2rem;
+  }
+  
+  .print-answer-key h2 {
+    font-family: var(--font-primary, system-ui, sans-serif);
+    margin-bottom: 1rem;
+    font-size: 16pt;
+  }
+  
+  .print-answer-key ol {
+    column-count: 2;
+    column-gap: 2rem;
+    padding-left: 1.5rem;
+  }
+  
+  .print-answer-key li {
+    margin-bottom: 0.5rem;
+    font-family: var(--font-primary, system-ui, sans-serif);
+  }
+}
+
+@media screen {
+  .print-answer-key {
     display: none !important;
   }
 }

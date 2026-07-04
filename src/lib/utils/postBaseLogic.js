@@ -1662,6 +1662,32 @@ function initializeMCQSystem() {
             }
         });
     }
+
+    // Generate Print Answer Key
+    let printAnswerKey = visibleContent.querySelector('.print-answer-key');
+    if (!printAnswerKey) {
+        printAnswerKey = document.createElement('div');
+        printAnswerKey.className = 'print-answer-key';
+        
+        const title = document.createElement('h2');
+        title.textContent = 'Answer Key';
+        printAnswerKey.appendChild(title);
+        
+        const answerList = document.createElement('ol');
+        
+        cards.forEach((card, idx) => {
+            const correctIdx = parseInt(card.getAttribute('data-correct-index') || '0', 10);
+            const letters = ['A', 'B', 'C', 'D', 'E'];
+            const correctLetter = letters[correctIdx] || '?';
+            
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>Q${idx + 1}:</strong> ${correctLetter}`;
+            answerList.appendChild(li);
+        });
+        
+        printAnswerKey.appendChild(answerList);
+        visibleContent.appendChild(printAnswerKey);
+    }
 }
 
 export function initializeArtifacts() {

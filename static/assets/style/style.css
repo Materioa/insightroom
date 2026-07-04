@@ -2382,43 +2382,9 @@ pre code ::-moz-selection {
     display: none !important;
   }
   
-  .mcq-options {
-    display: block !important;
-    padding: 0 !important;
-  }
+
   
-  .mcq-option {
-    display: block !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 0.2rem 0 !important;
-    margin: 0 !important;
-    text-align: left !important;
-    font-weight: normal !important;
-    color: #000 !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-  
-  .mcq-option-letter {
-    font-weight: bold !important;
-    margin-right: 0.5rem !important;
-    display: inline-block !important;
-  }
-  
-  .mcq-option-text {
-    display: inline !important;
-    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
-  }
-  
-  .mcq-option-icon {
-    display: none !important;
-  }
-  
-  .mcq-card[data-correct-index="0"]::after { content: "Answer: A"; font-weight: bold; margin-top: 10px; display: block; color: #000; font-family: var(--font-primary, system-ui, sans-serif) !important; }
-  .mcq-card[data-correct-index="1"]::after { content: "Answer: B"; font-weight: bold; margin-top: 10px; display: block; color: #000; font-family: var(--font-primary, system-ui, sans-serif) !important; }
-  .mcq-card[data-correct-index="2"]::after { content: "Answer: C"; font-weight: bold; margin-top: 10px; display: block; color: #000; font-family: var(--font-primary, system-ui, sans-serif) !important; }
-  .mcq-card[data-correct-index="3"]::after { content: "Answer: D"; font-weight: bold; margin-top: 10px; display: block; color: #000; font-family: var(--font-primary, system-ui, sans-serif) !important; }
+
 
   /* Ensure proper font rendering */
   .post-body,
