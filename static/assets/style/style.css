@@ -616,6 +616,7 @@ body.dark-mode .post-body blockquote.caution {
   font-weight: 600;
   margin-bottom: 0.75rem;
   font-size: 0.95rem;
+  line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
