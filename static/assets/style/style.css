@@ -539,8 +539,8 @@ body.dark-mode .post-body blockquote {
 /* NOTE - Blue */
 .post-body .callout-note,
 .post-body blockquote.note {
-  background: #e7e7db;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(153, 153, 134, 0.12);
+  border: 1px solid rgba(153, 153, 134, 0.3);
   color: inherit;
 }
 
@@ -635,7 +635,11 @@ body.dark-mode .post-body blockquote.caution {
 }
 
 .callout-title-note {
-  color: #4b5563;
+  color: #999986;
+}
+
+body.dark-mode .callout-title-note {
+  color: #e7e7db;
 }
 
 .callout-title-tip {
