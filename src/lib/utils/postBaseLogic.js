@@ -150,7 +150,7 @@ function initializeMermaid() {
         startOnLoad: false,
         theme: (document.body.classList.contains('dark') || document.body.classList.contains('dark-mode')) ? 'dark' : 'default',
         securityLevel: 'loose',
-        fontFamily: '"PP Mori", sans-serif'
+        fontFamily: 'system-ui, -apple-system, sans-serif'
     });
 
     const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');

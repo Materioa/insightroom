@@ -1188,11 +1188,30 @@ table td code {
   border-radius: 8px;
   padding: 1.5rem;
   overflow-x: auto;
+  font-family: system-ui, -apple-system, sans-serif !important;
 }
 
 .mermaid-diagram svg {
   max-width: 100%;
   height: auto;
+}
+
+/* Mermaid light mode neutral theme */
+body:not(.dark-mode) .mermaid-diagram .node rect,
+body:not(.dark-mode) .mermaid-diagram .node circle,
+body:not(.dark-mode) .mermaid-diagram .node ellipse,
+body:not(.dark-mode) .mermaid-diagram .node polygon {
+  fill: rgba(0, 0, 0, 0.03) !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
+}
+
+body:not(.dark-mode) .mermaid-diagram .edgePath .path {
+  stroke: rgba(0, 0, 0, 0.5) !important;
+}
+
+body:not(.dark-mode) .mermaid-diagram .edgeLabel {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
 }
 
 /* Mermaid dark theme adjustments */

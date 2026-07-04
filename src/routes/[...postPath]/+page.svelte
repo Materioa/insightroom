@@ -560,7 +560,7 @@
       // @ts-ignore
       if (typeof mermaid !== "undefined") {
         // @ts-ignore
-        mermaid.initialize({ startOnLoad: false, theme: (document.body.classList.contains('dark') || document.body.classList.contains('dark-mode')) ? 'dark' : 'default' });
+        mermaid.initialize({ startOnLoad: false, theme: (document.body.classList.contains('dark') || document.body.classList.contains('dark-mode')) ? 'dark' : 'default', fontFamily: 'system-ui, -apple-system, sans-serif' });
         try {
           // @ts-ignore
           await mermaid.run({ querySelector: '.mermaid-diagram' });
@@ -692,7 +692,7 @@
     if (typeof window !== 'undefined' && window.mermaid) {
       // @ts-ignore
       const mermaid = window.mermaid;
-      mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default' });
+      mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default', fontFamily: 'system-ui, -apple-system, sans-serif' });
       const diagrams = document.querySelectorAll('.mermaid-diagram');
       diagrams.forEach(async (el, index) => {
         const src = el.getAttribute('data-mermaid-src');
