@@ -569,7 +569,8 @@ function processGitHubCallouts() {
                 blockquote.classList.add(config.class);
                 blockquote.setAttribute('data-callout', type.toLowerCase());
 
-                const remainingText = text.replace(match[0], '').trim();
+                let remainingText = text.replace(match[0], '').trim();
+                remainingText = remainingText.replace(/^<br\s*\/?>\s*/i, '');
 
                 const titleDiv = document.createElement('div');
                 titleDiv.className = `callout-title ${config.titleClass}`;
