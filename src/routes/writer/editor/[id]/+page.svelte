@@ -2274,7 +2274,7 @@
 
     .diff-view {
         flex: 1;
-        background: #faf9f5;
+        background: #fff;
         border: 1px solid #ddd;
         border-radius: 4px;
         overflow-y: auto;

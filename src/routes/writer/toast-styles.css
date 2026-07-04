@@ -16,7 +16,7 @@
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
         border: 1px solid #e7e1dc;
-        background: #faf9f5;
+        background: #fff;
         color: #2d2a27;
         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
         font-size: 14px;

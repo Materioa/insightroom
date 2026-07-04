@@ -335,7 +335,7 @@
     text-align: center;
     padding: 2rem;
     color: var(--muted-text, #666);
-    background: var(--card-bg, #faf9f5);
+    background: var(--card-bg, #ffffff);
     border: 1px solid var(--border, #e5e5e5);
     corner-shape: squircle;
     border-radius: 40px;

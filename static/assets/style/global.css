@@ -248,7 +248,7 @@ body.dark .scroll-btn:hover {
     align-items: center;
     gap: 12px;
     padding: 6px 16px;
-    background: var(--card-bg, #faf9f5);
+    background: var(--card-bg, #fff);
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
     border-radius: 40px;
     corner-shape: squircle;
@@ -338,7 +338,7 @@ body.dark .profile-avatar.login-icon {
 .appearance-card {
     position: absolute;
     bottom: calc(100% + 16px);
-    background: var(--card-bg, #faf9f5);
+    background: var(--card-bg, #fff);
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
     border-radius: 24px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -468,7 +468,7 @@ body.dark .profile-avatar.login-icon {
 }
 
 .theme-preview.light {
-    background: #faf9f5;
+    background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 .theme-preview.dark {
@@ -483,7 +483,7 @@ body.dark .profile-avatar.login-icon {
 }
 .preview-half.light {
     left: 0;
-    background: #faf9f5;
+    background: #ffffff;
 }
 .preview-half.dark {
     right: 0;
@@ -637,7 +637,7 @@ body.dark .font-option-card:hover {
     align-items: center;
     gap: 16px;
     padding: 20px;
-    background: var(--card-bg, #faf9f5);
+    background: var(--card-bg, #fff);
     border-radius: var(--squircle-outer, 40px);
     corner-shape: squircle;
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
@@ -762,7 +762,7 @@ body.dark .qr-code-container {
     top: calc(100% + 10px);
     right: 0;
     width: 320px;
-    background: var(--card-bg, #faf9f5);
+    background: var(--card-bg, #fff);
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
     border-radius: 28px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);

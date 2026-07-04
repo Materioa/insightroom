@@ -529,7 +529,7 @@
         max-width: 800px;
         margin: 20px auto 40px;
         padding: 30px 40px 40px;
-        background: var(--card-bg, #faf9f5);
+        background: var(--card-bg, #ffffff);
         border: 1px solid var(--border, #e5e5e5);
         border-radius: var(--squircle-outer, 40px);
         corner-shape: squircle;
@@ -581,7 +581,7 @@
     
     .dropzone-box:hover {
         border-color: var(--brand-orange, #ff5400);
-        background: var(--card-bg, #faf9f5);
+        background: var(--card-bg, #ffffff);
         transform: translateY(-2px);
         box-shadow: 0 8px 24px rgba(0,0,0,0.04);
     }
@@ -598,7 +598,7 @@
     .cloud-icon-container {
         width: 60px;
         height: 60px;
-        background: var(--card-bg, #faf9f5);
+        background: var(--card-bg, #ffffff);
         border-radius: var(--squircle-inner, 18px);
         corner-shape: squircle;
         display: flex;
@@ -650,7 +650,7 @@
         align-items: center;
         gap: 20px;
         padding: 16px;
-        background: var(--card-bg, #faf9f5);
+        background: var(--card-bg, #ffffff);
         border: 1px solid var(--border, #e5e5e5);
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
@@ -779,7 +779,7 @@
     
     .custom-select-trigger:hover {
         border-color: var(--brand-orange, #ff5400);
-        background: var(--card-bg, #faf9f5);
+        background: var(--card-bg, #ffffff);
         box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
     
@@ -800,7 +800,7 @@
         left: 0;
         width: 100%;
         max-height: 280px;
-        background: var(--card-bg, #faf9f5);
+        background: var(--card-bg, #ffffff);
         border: 1px solid var(--border, #e5e5e5);
         border-radius: var(--squircle-inner, 25px);
         corner-shape: squircle;
@@ -1001,7 +1001,7 @@
     
     .btn-orange:disabled {
         background: var(--border, #ccc);
-        color: var(--bg, #faf9f5);
+        color: var(--bg, #fff);
         cursor: not-allowed;
         transform: none;
         box-shadow: none;
