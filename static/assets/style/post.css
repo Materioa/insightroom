@@ -2246,7 +2246,7 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
   }
   
   .print-answer-key h2 {
-    font-family: var(--font-primary, system-ui, sans-serif);
+    font-family: var(--font-serif, "Tiempos Text VF", serif);
     margin-bottom: 1rem;
     font-size: 16pt;
   }
@@ -2260,7 +2260,7 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
   
   .print-answer-key li {
     margin-bottom: 0.5rem;
-    font-family: var(--font-primary, system-ui, sans-serif);
+    font-family: var(--font-serif, "Tiempos Text VF", serif);
   }
 }
 

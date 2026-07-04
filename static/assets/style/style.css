@@ -2371,7 +2371,7 @@ pre code ::-moz-selection {
     font-weight: bold !important;
     font-size: 11pt !important;
     margin-bottom: 0.5rem !important;
-    font-family: var(--font-primary, system-ui, sans-serif) !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
   }
   
   .mcq-reset-btn, 
