@@ -539,15 +539,15 @@ body.dark-mode .post-body blockquote {
 /* NOTE - Blue */
 .post-body .callout-note,
 .post-body blockquote.note {
-  background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #e7e7db;
+  border: 1px solid rgba(0, 0, 0, 0.05);
   color: inherit;
 }
 
 body.dark-mode .post-body .callout-note,
 body.dark-mode .post-body blockquote.note {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(231, 231, 219, 0.1);
+  border-color: rgba(231, 231, 219, 0.2);
   color: inherit;
 }
 
