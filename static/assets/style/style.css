@@ -502,16 +502,18 @@ body {
 
 /* Blockquote styling */
 .post-body blockquote {
-  background: transparent;
+  background: var(--card-bg, rgba(0, 0, 0, 0.02));
   border-left: 4px solid #d0d7de;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   margin: 1.5rem 0;
-  border-radius: 0;
+  border-radius: 12px;
   position: relative;
   font-family: var(--font-serif, "Tiempos Text VF", serif);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
 }
 
 body.dark-mode .post-body blockquote {
+  background: rgba(255, 255, 255, 0.03);
   border-left-color: #6e7681;
 }
 
@@ -533,75 +535,75 @@ body.dark-mode .post-body blockquote {
 /* NOTE - Blue */
 .post-body .callout-note,
 .post-body blockquote.note {
-  background: transparent;
-  border-radius: 0;
+  background: rgba(9, 105, 218, 0.04);
+  border-radius: 12px;
   border-left: 4px solid #0969da;
-  padding-left: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 body.dark-mode .post-body .callout-note,
 body.dark-mode .post-body blockquote.note {
-  background: transparent;
+  background: rgba(47, 129, 247, 0.08);
   border-left-color: #2f81f7;
 }
 
 /* TIP - Green */
 .post-body .callout-tip,
 .post-body blockquote.tip {
-  background: transparent;
-  border-radius: 0;
+  background: rgba(26, 127, 55, 0.04);
+  border-radius: 12px;
   border-left: 4px solid #1a7f37;
-  padding-left: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 body.dark-mode .post-body .callout-tip,
 body.dark-mode .post-body blockquote.tip {
-  background: transparent;
+  background: rgba(63, 185, 80, 0.08);
   border-left-color: #3fb950;
 }
 
 /* IMPORTANT - Purple */
 .post-body .callout-important,
 .post-body blockquote.important {
-  background: transparent;
-  border-radius: 0;
+  background: rgba(130, 80, 223, 0.04);
+  border-radius: 12px;
   border-left: 4px solid #8250df;
-  padding-left: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 body.dark-mode .post-body .callout-important,
 body.dark-mode .post-body blockquote.important {
-  background: transparent;
+  background: rgba(163, 113, 247, 0.08);
   border-left-color: #a371f7;
 }
 
 /* WARNING - Amber/Orange */
 .post-body .callout-warning,
 .post-body blockquote.warning {
-  background: transparent;
-  border-radius: 0;
+  background: rgba(154, 103, 0, 0.04);
+  border-radius: 12px;
   border-left: 4px solid #9a6700;
-  padding-left: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 body.dark-mode .post-body .callout-warning,
 body.dark-mode .post-body blockquote.warning {
-  background: transparent;
+  background: rgba(210, 153, 34, 0.08);
   border-left-color: #d29922;
 }
 
 /* CAUTION - Red */
 .post-body .callout-caution,
 .post-body blockquote.caution {
-  background: transparent;
-  border-radius: 0;
+  background: rgba(209, 36, 47, 0.04);
+  border-radius: 12px;
   border-left: 4px solid #d1242f;
-  padding-left: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 body.dark-mode .post-body .callout-caution,
 body.dark-mode .post-body blockquote.caution {
-  background: transparent;
+  background: rgba(248, 81, 73, 0.08);
   border-left-color: #f85149;
 }
 
@@ -610,8 +612,9 @@ body.dark-mode .post-body blockquote.caution {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: var(--font-primary, system-ui, sans-serif);
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -709,39 +712,42 @@ body.dark-mode .callout-icon-caution {
 
 /* Callout Content */
 .callout-content {
+  font-family: var(--font-serif, "Tiempos Text VF", serif);
   color: var(--text);
   line-height: 1.6;
 }
 
 /* Additional styled quote variants */
 .post-body blockquote.success {
-  background: transparent;
-  border-radius: 0;
+  background: rgba(26, 127, 55, 0.04);
+  border-radius: 12px;
   border-left: 4px solid #1a7f37;
-  padding-left: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 body.dark-mode .post-body blockquote.success {
-  background: transparent;
+  background: rgba(63, 185, 80, 0.08);
   border-left-color: #3fb950;
 }
 
 .post-body blockquote.info {
-  background: transparent;
-  border-radius: 0;
+  background: rgba(9, 105, 218, 0.04);
+  border-radius: 12px;
   border-left: 4px solid #0969da;
-  padding-left: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 body.dark-mode .post-body blockquote.info {
-  background: transparent;
+  background: rgba(47, 129, 247, 0.08);
   border-left-color: #2f81f7;
 }
 
 .post-body blockquote.quote {
-  background: transparent;
+  background: var(--card-bg, rgba(0, 0, 0, 0.02));
+  border-radius: 12px;
   border-left-color: #9ca3af;
   font-style: italic;
+  padding: 1.5rem 2rem;
 }
 
 .post-body blockquote.quote::before {
