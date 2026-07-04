@@ -502,19 +502,22 @@ body {
 
 /* Blockquote styling */
 .post-body blockquote {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
   background: var(--card-bg, rgba(0, 0, 0, 0.02));
-  border-left: 4px solid #d0d7de;
-  padding: 1.25rem 1.5rem;
+  border: 1px solid rgba(208, 215, 222, 0.5);
+  padding: 12px 16px;
   margin: 1.5rem 0;
-  border-radius: 4px 12px 12px 4px;
-  position: relative;
-  font-family: var(--font-serif, "Tiempos Text VF", serif);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+  border-radius: 8px;
+  font-family: var(--font-primary, system-ui, sans-serif);
+  font-size: 0.95rem;
+  color: inherit;
 }
 
 body.dark-mode .post-body blockquote {
   background: rgba(255, 255, 255, 0.03);
-  border-left-color: #6e7681;
+  border-color: rgba(110, 118, 129, 0.4);
 }
 
 /* Prevent ads inside blockquotes */
@@ -535,102 +538,99 @@ body.dark-mode .post-body blockquote {
 /* NOTE - Blue */
 .post-body .callout-note,
 .post-body blockquote.note {
-  background: rgba(9, 105, 218, 0.04);
-  border-radius: 4px 12px 12px 4px;
-  border-left: 4px solid #0969da;
-  padding: 1.25rem 1.5rem;
+  background: rgba(9, 105, 218, 0.06);
+  border: 1px solid rgba(9, 105, 218, 0.2);
+  color: #053b82;
 }
 
 body.dark-mode .post-body .callout-note,
 body.dark-mode .post-body blockquote.note {
-  background: rgba(47, 129, 247, 0.08);
-  border-left-color: #2f81f7;
+  background: rgba(47, 129, 247, 0.1);
+  border-color: rgba(47, 129, 247, 0.3);
+  color: #a5d6ff;
 }
 
 /* TIP - Green */
 .post-body .callout-tip,
 .post-body blockquote.tip {
-  background: rgba(26, 127, 55, 0.04);
-  border-radius: 4px 12px 12px 4px;
-  border-left: 4px solid #1a7f37;
-  padding: 1.25rem 1.5rem;
+  background: rgba(26, 127, 55, 0.06);
+  border: 1px solid rgba(26, 127, 55, 0.2);
+  color: #0d4a20;
 }
 
 body.dark-mode .post-body .callout-tip,
 body.dark-mode .post-body blockquote.tip {
-  background: rgba(63, 185, 80, 0.08);
-  border-left-color: #3fb950;
+  background: rgba(63, 185, 80, 0.1);
+  border-color: rgba(63, 185, 80, 0.3);
+  color: #7ee787;
 }
 
 /* IMPORTANT - Purple */
 .post-body .callout-important,
 .post-body blockquote.important {
-  background: rgba(130, 80, 223, 0.04);
-  border-radius: 4px 12px 12px 4px;
-  border-left: 4px solid #8250df;
-  padding: 1.25rem 1.5rem;
+  background: rgba(130, 80, 223, 0.06);
+  border: 1px solid rgba(130, 80, 223, 0.2);
+  color: #512a97;
 }
 
 body.dark-mode .post-body .callout-important,
 body.dark-mode .post-body blockquote.important {
-  background: rgba(163, 113, 247, 0.08);
-  border-left-color: #a371f7;
+  background: rgba(163, 113, 247, 0.1);
+  border-color: rgba(163, 113, 247, 0.3);
+  color: #d2a8ff;
 }
 
 /* WARNING - Amber/Orange */
 .post-body .callout-warning,
 .post-body blockquote.warning {
-  background: rgba(154, 103, 0, 0.04);
-  border-radius: 4px 12px 12px 4px;
-  border-left: 4px solid #9a6700;
-  padding: 1.25rem 1.5rem;
+  background: rgba(154, 103, 0, 0.06);
+  border: 1px solid rgba(154, 103, 0, 0.2);
+  color: #634300;
 }
 
 body.dark-mode .post-body .callout-warning,
 body.dark-mode .post-body blockquote.warning {
-  background: rgba(210, 153, 34, 0.08);
-  border-left-color: #d29922;
+  background: rgba(210, 153, 34, 0.1);
+  border-color: rgba(210, 153, 34, 0.3);
+  color: #f0c862;
 }
 
 /* CAUTION - Red */
 .post-body .callout-caution,
 .post-body blockquote.caution {
-  background: rgba(209, 36, 47, 0.04);
-  border-radius: 4px 12px 12px 4px;
-  border-left: 4px solid #d1242f;
-  padding: 1.25rem 1.5rem;
+  background: rgba(209, 36, 47, 0.06);
+  border: 1px solid rgba(209, 36, 47, 0.2);
+  color: #9c1c24;
 }
 
 body.dark-mode .post-body .callout-caution,
 body.dark-mode .post-body blockquote.caution {
-  background: rgba(248, 81, 73, 0.08);
-  border-left-color: #f85149;
+  background: rgba(248, 81, 73, 0.1);
+  border-color: rgba(248, 81, 73, 0.3);
+  color: #ff7b72;
 }
 
 /* Callout Title Styling */
 .callout-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-primary, system-ui, sans-serif);
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  margin-top: 1px;
 }
 
 .callout-title > span:not(.callout-icon) {
-  transform: translateY(-2px);
+  display: none;
 }
 
 .callout-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.25rem;
   width: 24px;
   height: 24px;
-  font-size: 1.1rem;
 }
 
 .callout-title-note {
@@ -717,42 +717,44 @@ body.dark-mode .callout-icon-caution {
 
 /* Callout Content */
 .callout-content {
-  font-family: var(--font-serif, "Tiempos Text VF", serif);
-  color: var(--text);
-  line-height: 1.6;
+  font-family: var(--font-primary, system-ui, sans-serif);
+  flex-grow: 1;
+  line-height: 1.5;
+  color: inherit;
 }
 
 /* Additional styled quote variants */
 .post-body blockquote.success {
-  background: rgba(26, 127, 55, 0.04);
-  border-radius: 4px 12px 12px 4px;
-  border-left: 4px solid #1a7f37;
-  padding: 1.25rem 1.5rem;
+  background: rgba(26, 127, 55, 0.06);
+  border: 1px solid rgba(26, 127, 55, 0.2);
+  color: #0d4a20;
 }
 
 body.dark-mode .post-body blockquote.success {
-  background: rgba(63, 185, 80, 0.08);
-  border-left-color: #3fb950;
+  background: rgba(63, 185, 80, 0.1);
+  border-color: rgba(63, 185, 80, 0.3);
+  color: #7ee787;
 }
 
 .post-body blockquote.info {
-  background: rgba(9, 105, 218, 0.04);
-  border-radius: 4px 12px 12px 4px;
-  border-left: 4px solid #0969da;
-  padding: 1.25rem 1.5rem;
+  background: rgba(9, 105, 218, 0.06);
+  border: 1px solid rgba(9, 105, 218, 0.2);
+  color: #053b82;
 }
 
 body.dark-mode .post-body blockquote.info {
-  background: rgba(47, 129, 247, 0.08);
-  border-left-color: #2f81f7;
+  background: rgba(47, 129, 247, 0.1);
+  border-color: rgba(47, 129, 247, 0.3);
+  color: #a5d6ff;
 }
 
 .post-body blockquote.quote {
   background: var(--card-bg, rgba(0, 0, 0, 0.02));
-  border-radius: 4px 12px 12px 4px;
-  border-left-color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.5);
+  border-radius: 8px;
   font-style: italic;
-  padding: 1.5rem 2rem;
+  color: var(--text-color, inherit);
+  padding: 1.25rem 1.5rem;
 }
 
 .post-body blockquote.quote::before {
