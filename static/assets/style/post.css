@@ -2164,13 +2164,23 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
 
 /* Print adjustments */
 @media print {
+
+  .post-body {
+    counter-reset: mcq-print-counter;
+  }
+
   .mcq-card {
+    counter-increment: mcq-print-counter;
     page-break-inside: avoid !important;
     border: none !important;
     background: transparent !important;
     margin: 1.5rem 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
+  }
+
+  .mcq-question::before {
+    content: "Q" counter(mcq-print-counter) ". ";
   }
   
   .mcq-header {
@@ -2214,6 +2224,12 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
     background: transparent !important;
     width: auto !important;
     height: auto !important;
+    color: #000 !important;
+    text-transform: lowercase !important;
+  }
+  
+  .mcq-option-letter::after {
+    content: ".)";
   }
   
   .mcq-option-text {
@@ -2235,10 +2251,11 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
     font-size: 16pt;
   }
   
-  .print-answer-key ol {
+  .print-answer-key ul {
     column-count: 2;
     column-gap: 2rem;
-    padding-left: 1.5rem;
+    padding-left: 0;
+    list-style: none;
   }
   
   .print-answer-key li {

@@ -1673,15 +1673,15 @@ function initializeMCQSystem() {
         title.textContent = 'Answer Key';
         printAnswerKey.appendChild(title);
         
-        const answerList = document.createElement('ol');
+        const answerList = document.createElement('ul');
         
         cards.forEach((card, idx) => {
             const correctIdx = parseInt(card.getAttribute('data-correct-index') || '0', 10);
-            const letters = ['A', 'B', 'C', 'D', 'E'];
+            const letters = ['a', 'b', 'c', 'd', 'e'];
             const correctLetter = letters[correctIdx] || '?';
             
             const li = document.createElement('li');
-            li.innerHTML = `<strong>Q${idx + 1}:</strong> ${correctLetter}`;
+            li.innerHTML = `<strong>Q${idx + 1}.</strong> ${correctLetter}.)`;
             answerList.appendChild(li);
         });
         
