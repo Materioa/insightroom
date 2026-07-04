@@ -2226,6 +2226,7 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
     height: auto !important;
     color: #000 !important;
     text-transform: lowercase !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
   }
   
   .mcq-option-letter::after {
@@ -2234,6 +2235,7 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
   
   .mcq-option-text {
     display: inline !important;
+    font-family: var(--font-serif, "Tiempos Text VF", serif) !important;
   }
   
   .mcq-option-icon {
