@@ -2331,8 +2331,6 @@ pre code ::-moz-selection {
     max-width: 100% !important;
     height: auto !important;
     max-height: 4in !important;
-    transform: scale(0.7) !important;
-    transform-origin: center center !important;
   }
 
   /* Page breaks */
