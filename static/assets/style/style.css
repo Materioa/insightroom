@@ -1209,8 +1209,8 @@ body.dark-mode .mermaid-diagram .node circle,
 body.dark-mode .mermaid-diagram .node ellipse,
 .dark .mermaid-diagram .node polygon,
 body.dark-mode .mermaid-diagram .node polygon {
-  fill: var(--card-bg) !important;
-  stroke: var(--border) !important;
+  fill: rgba(255, 255, 255, 0.08) !important;
+  stroke: rgba(255, 255, 255, 0.3) !important;
 }
 
 .dark .mermaid-diagram .edgePath .path,
@@ -1220,7 +1220,7 @@ body.dark-mode .mermaid-diagram .edgePath .path {
 
 .dark .mermaid-diagram .edgeLabel,
 body.dark-mode .mermaid-diagram .edgeLabel {
-  background-color: var(--card-bg) !important;
+  background-color: #2a2a2a !important;
   color: var(--text) !important;
 }
 
