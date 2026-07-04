@@ -2185,7 +2185,7 @@ pre code ::-moz-selection {
   .post-body .callout-note,
   .post-body blockquote.note {
     background: transparent !important;
-    border-left: 4px solid #4b5563 !important;
+    border-left: 4px solid #999986 !important;
     border-radius: 0 !important;
   }
 
@@ -2226,7 +2226,7 @@ pre code ::-moz-selection {
 
   .post-body blockquote.info {
     background: transparent !important;
-    border-left: 4px solid #4b5563 !important;
+    border-left: 4px solid #999986 !important;
     border-radius: 0 !important;
   }
 
