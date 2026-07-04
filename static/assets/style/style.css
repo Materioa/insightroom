@@ -616,9 +616,21 @@ body.dark-mode .post-body blockquote.caution {
   font-weight: 600;
   margin-bottom: 0.75rem;
   font-size: 0.95rem;
-  line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.callout-title > span:not(.callout-icon) {
+  transform: translateY(-2px);
+}
+
+.callout-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 1.1rem;
 }
 
 .callout-title-note {
@@ -661,15 +673,7 @@ body.dark-mode .callout-title-caution {
   color: #f85149;
 }
 
-/* Callout Icon */
-.callout-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  font-size: 1rem;
-}
+/* Callout Icon (already defined above) */
 
 .callout-icon-note {
   color: #0969da;
