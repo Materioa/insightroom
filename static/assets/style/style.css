@@ -506,7 +506,7 @@ body {
   border-left: 4px solid #d0d7de;
   padding: 1.25rem 1.5rem;
   margin: 1.5rem 0;
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   position: relative;
   font-family: var(--font-serif, "Tiempos Text VF", serif);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
@@ -536,7 +536,7 @@ body.dark-mode .post-body blockquote {
 .post-body .callout-note,
 .post-body blockquote.note {
   background: rgba(9, 105, 218, 0.04);
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left: 4px solid #0969da;
   padding: 1.25rem 1.5rem;
 }
@@ -551,7 +551,7 @@ body.dark-mode .post-body blockquote.note {
 .post-body .callout-tip,
 .post-body blockquote.tip {
   background: rgba(26, 127, 55, 0.04);
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left: 4px solid #1a7f37;
   padding: 1.25rem 1.5rem;
 }
@@ -566,7 +566,7 @@ body.dark-mode .post-body blockquote.tip {
 .post-body .callout-important,
 .post-body blockquote.important {
   background: rgba(130, 80, 223, 0.04);
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left: 4px solid #8250df;
   padding: 1.25rem 1.5rem;
 }
@@ -581,7 +581,7 @@ body.dark-mode .post-body blockquote.important {
 .post-body .callout-warning,
 .post-body blockquote.warning {
   background: rgba(154, 103, 0, 0.04);
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left: 4px solid #9a6700;
   padding: 1.25rem 1.5rem;
 }
@@ -596,7 +596,7 @@ body.dark-mode .post-body blockquote.warning {
 .post-body .callout-caution,
 .post-body blockquote.caution {
   background: rgba(209, 36, 47, 0.04);
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left: 4px solid #d1242f;
   padding: 1.25rem 1.5rem;
 }
@@ -720,7 +720,7 @@ body.dark-mode .callout-icon-caution {
 /* Additional styled quote variants */
 .post-body blockquote.success {
   background: rgba(26, 127, 55, 0.04);
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left: 4px solid #1a7f37;
   padding: 1.25rem 1.5rem;
 }
@@ -732,7 +732,7 @@ body.dark-mode .post-body blockquote.success {
 
 .post-body blockquote.info {
   background: rgba(9, 105, 218, 0.04);
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left: 4px solid #0969da;
   padding: 1.25rem 1.5rem;
 }
@@ -744,7 +744,7 @@ body.dark-mode .post-body blockquote.info {
 
 .post-body blockquote.quote {
   background: var(--card-bg, rgba(0, 0, 0, 0.02));
-  border-radius: 12px;
+  border-radius: 4px 12px 12px 4px;
   border-left-color: #9ca3af;
   font-style: italic;
   padding: 1.5rem 2rem;
