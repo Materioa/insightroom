@@ -394,7 +394,7 @@
     }
 
     .cms-table th {
-        background: #fafafa;
+        background: #faf9f5;
         color: #888;
         font-size: 11px;
         font-weight: 800;
@@ -620,7 +620,7 @@
     }
 
     .toast-btn.secondary {
-        background: #f1eee9;
+        background: #faf9f5;
         color: #4f4a45;
     }
 

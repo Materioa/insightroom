@@ -1990,7 +1990,7 @@
         display: flex;
         padding: 8px 12px;
         border-bottom: 1px solid #ddd;
-        background: #fafafa;
+        background: #faf9f5;
         align-items: center;
         gap: 2px;
         flex-wrap: wrap;
@@ -2151,7 +2151,7 @@
     .history-sidebar {
         width: 250px;
         border-right: 1px solid #eee;
-        background: #fafafa;
+        background: #faf9f5;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -2236,7 +2236,7 @@
     .history-authors {
         padding: 14px 15px 16px;
         border-top: 1px solid #eee;
-        background: #fafafa;
+        background: #faf9f5;
     }
 
     .history-authors-label {
@@ -2597,7 +2597,7 @@
     }
 
     .toast-btn.secondary {
-        background: #f1eee9;
+        background: #faf9f5;
         color: #4f4a45;
     }
 

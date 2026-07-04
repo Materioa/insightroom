@@ -86,7 +86,7 @@ body.dark-mode .post-image-frame {
   transform: translateY(-50%) rotate(8deg);
   transform-origin: center;
   border: 1px solid #ccc;
-  background: #fffbea;
+  background: #faf9f5;
   width: 100px;
   height: 130px;
   overflow: hidden;

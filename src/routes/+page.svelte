@@ -345,7 +345,7 @@
   .uncategorized-posts {
     width: 300px;
     flex-shrink: 0;
-    background: var(--card-bg, #f9f8f7);
+    background: var(--card-bg, #faf9f5);
     corner-shape: squircle;
     border-radius: 40px;
     padding: 1.5rem;
@@ -416,7 +416,7 @@
 
   .category-pill {
     font-family: var(--font-primary);
-    background: var(--pill-bg, #f9f8f7);
+    background: var(--pill-bg, #faf9f5);
     border: 1px solid var(--border, #e0e0e0);
     color: var(--text, #666);
     padding: 0.5rem 1rem;

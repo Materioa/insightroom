@@ -395,7 +395,7 @@
   }
 
   .views-badge {
-    background: var(--card-bg, #f1eee9); border: 1px solid var(--border, #ddd);
+    background: var(--card-bg, #faf9f5); border: 1px solid var(--border, #ddd);
     color: #555;
     font-size: 11px;
     padding: 2px 8px;
@@ -417,7 +417,7 @@
   }
 
   .cms-table th {
-    background: var(--card-bg, #fafafa);
+    background: var(--card-bg, #faf9f5);
     color: #888;
     font-size: 11px;
     font-weight: 800;
