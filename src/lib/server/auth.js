@@ -1,3 +1,5 @@
+import { env } from '$env/dynamic/private';
+
 // Shared server-side authentication cache to reduce external API overhead and speed up TTFB (Time to First Byte)
 /** @type {Map<string, { data: { user: any, accessTier: string }, expires: number }>} */
 const tokenCache = new Map();
@@ -32,9 +34,15 @@ export async function validateToken(token, fetchFn, url) {
     }
 
     const isDevHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-    const authBaseUrls = isDevHost
-        ? ['http://localhost:1000', 'https://getmaterio.app', 'https://materioa.vercel.app']
-        : ['https://getmaterio.app', 'https://materioa.vercel.app'];
+    const authBaseUrls = [];
+    if (env.AUTH_URL) {
+        authBaseUrls.push(env.AUTH_URL);
+    }
+    if (isDevHost) {
+        authBaseUrls.push('http://localhost:1000', 'https://getmaterio.app', 'https://materioa.vercel.app');
+    } else {
+        authBaseUrls.push('https://getmaterio.app', 'https://materioa.vercel.app');
+    }
 
     // Filter out endpoints that are currently in connection cooldown
     const activeUrls = authBaseUrls.filter(baseUrl => {

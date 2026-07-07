@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -35,7 +36,8 @@ export async function POST({ request, fetch }) {
             headers.set('Authorization', authHeader);
         }
 
-        const res = await fetch('https://getmaterio.app/api/v2/auth?action=oauth_token', {
+        const authBaseUrl = env.AUTH_URL || 'https://getmaterio.app';
+        const res = await fetch(`${authBaseUrl}/api/v2/auth?action=oauth_token`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body)
