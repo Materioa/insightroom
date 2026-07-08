@@ -71,6 +71,7 @@ export async function POST({ request }) {
         await clientsCol.insertOne(clientRecord);
 
         // Return registration response per RFC 7591
+        /** @type {Record<string, any>} */
         const response = {
             client_id,
             client_name: clientRecord.client_name,
