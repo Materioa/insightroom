@@ -42,7 +42,7 @@ export async function handle({ event, resolve }) {
         return new Response(null, { headers: corsHeaders });
     }
 
-    if (url.pathname === '/.well-known/oauth-protected-resource') {
+    if (url.pathname === '/.well-known/oauth-protected-resource' || url.pathname === '/.well-known/oauth-protected-resource/mcp') {
         return json({
             resource: `${url.origin}/mcp`,
             authorization_servers: [
