@@ -50,20 +50,41 @@ export async function POST({ request, fetch }) {
             headers.set('Authorization', authHeader);
         }
 
-        const authBaseUrl = env.AUTH_URL || 'https://materioa.vercel.app';
-        const res = await fetch(`${authBaseUrl}/api/v2/auth?action=oauth_token`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body)
-        });
+        const authBaseUrls = [
+            env.AUTH_URL || 'https://getmaterio.app',
+            'https://getmaterio.app',
+            'https://materioa.vercel.app'
+        ].filter((value, index, all) => value && all.indexOf(value) === index);
 
-        let responseBodyText = '';
+        let authBaseUrl = authBaseUrls[0];
+        /** @type {Response | null} */
+        let res = null;
+        /** @type {Record<string, any>} */
         let data = {};
-        try {
-            responseBodyText = await res.text();
-            data = JSON.parse(responseBodyText);
-        } catch (e) {
-            data = { error: responseBodyText || 'Failed to parse response as JSON' };
+
+        for (const baseUrl of authBaseUrls) {
+            authBaseUrl = baseUrl;
+            res = await fetch(`${authBaseUrl}/api/v2/auth?action=oauth_token`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body)
+            });
+
+            let responseBodyText = '';
+            try {
+                responseBodyText = await res.text();
+                data = JSON.parse(responseBodyText);
+            } catch (e) {
+                data = { error: responseBodyText || 'Failed to parse response as JSON' };
+            }
+
+            if (!(res.status === 400 && data?.error === 'Invalid action')) {
+                break;
+            }
+        }
+
+        if (!res) {
+            throw new Error('No OAuth token endpoint configured');
         }
 
         // Log token exchange to MongoDB for debugging
