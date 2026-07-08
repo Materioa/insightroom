@@ -50,7 +50,7 @@ export async function POST({ request, fetch }) {
             headers.set('Authorization', authHeader);
         }
 
-        const authBaseUrl = env.AUTH_URL || 'https://getmaterio.app';
+        const authBaseUrl = env.AUTH_URL || 'https://materioa.vercel.app';
         const res = await fetch(`${authBaseUrl}/api/v2/auth?action=oauth_token`, {
             method: 'POST',
             headers,

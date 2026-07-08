@@ -41,7 +41,7 @@ export async function validateToken(token, fetchFn, url) {
     if (isDevHost) {
         authBaseUrls.push('http://localhost:1000', 'https://getmaterio.app', 'https://materioa.vercel.app');
     } else {
-        authBaseUrls.push('https://getmaterio.app', 'https://materioa.vercel.app');
+        authBaseUrls.push('https://materioa.vercel.app', 'https://getmaterio.app');
     }
 
     // Filter out endpoints that are currently in connection cooldown
