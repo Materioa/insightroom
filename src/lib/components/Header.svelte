@@ -23,9 +23,22 @@
     showSettingsMenu = !showSettingsMenu;
   }
 
+  /** @param {string} name */
+  function expireCookie(name) {
+    const expiry = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    const domains = ["", "; domain=.getmaterio.app", "; domain=getmaterio.app"];
+
+    for (const domain of domains) {
+      document.cookie = `${name}=; path=/; ${expiry}; samesite=lax${domain}${secure}`;
+    }
+  }
+
   function handleLogout() {
-    document.cookie =
-      "materio_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    expireCookie("materio_auth_token");
+    expireCookie("materio_user_id");
+    localStorage.removeItem("materio_user_id");
+    localStorage.removeItem("has_ask_privileges");
     window.location.reload();
   }
 
