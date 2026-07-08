@@ -18,6 +18,7 @@ export async function POST({ request, fetch }) {
     // Claude and other AI clients sometimes force the Token URL to be on the same domain as the API.
     // This proxy forwards the token exchange request to the actual Materio token endpoint.
     let rpcBody = null;
+    /** @type {Record<string, string>} */
     let headersLog = {};
     try {
         for (const [k, v] of request.headers.entries()) {
@@ -92,6 +93,7 @@ export async function POST({ request, fetch }) {
         });
     } catch (err) {
         console.error('[Token Proxy Error]', err);
+        const errObj = /** @type {any} */ (err);
         
         try {
             const db = await getDb();
@@ -99,12 +101,12 @@ export async function POST({ request, fetch }) {
             await debugCol.insertOne({
                 timestamp: new Date(),
                 method: 'POST-TOKEN-PROXY-ERROR',
-                error: err.message || err.toString(),
+                error: errObj.message || errObj.toString(),
                 requestBody: rpcBody,
                 headers: headersLog
             });
         } catch (dbErr) {}
 
-        return json({ error: 'Token proxy failed', details: err.message }, { status: 500, headers: corsHeaders });
+        return json({ error: 'Token proxy failed', details: errObj.message }, { status: 500, headers: corsHeaders });
     }
 }

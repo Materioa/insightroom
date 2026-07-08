@@ -53,7 +53,8 @@ export async function handle({ event, resolve }) {
             ],
             bearer_methods_supported: [
                 'header'
-            ]
+            ],
+            resource_documentation: 'https://getmaterio.app/docs/mcp'
         }, {
             headers: corsHeaders
         });
@@ -64,19 +65,26 @@ export async function handle({ event, resolve }) {
             issuer: url.origin,
             authorization_endpoint: `${url.origin}/authorize`,
             token_endpoint: `${url.origin}/token`,
+            registration_endpoint: `${url.origin}/register`,
             response_types_supported: [
                 'code'
             ],
             grant_types_supported: [
-                'authorization_code'
+                'authorization_code',
+                'refresh_token'
+            ],
+            code_challenge_methods_supported: [
+                'S256'
             ],
             token_endpoint_auth_methods_supported: [
+                'none',
                 'client_secret_post',
                 'client_secret_basic'
             ],
             scopes_supported: [
                 'admin'
-            ]
+            ],
+            client_id_metadata_document_supported: true
         }, {
             headers: corsHeaders
         });

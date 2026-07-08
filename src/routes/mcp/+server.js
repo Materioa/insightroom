@@ -101,7 +101,7 @@ export async function GET({ request, url, fetch }) {
         return new Response('Unauthorized: Missing Token', {
             status: 401,
             headers: {
-                'WWW-Authenticate': `Bearer error="invalid_token", metadata="${url.origin}/.well-known/oauth-protected-resource"`,
+                'WWW-Authenticate': `Bearer resource_metadata="${url.origin}/.well-known/oauth-protected-resource"`,
                 'Access-Control-Allow-Origin': '*'
             }
         });
@@ -120,7 +120,7 @@ export async function GET({ request, url, fetch }) {
         return new Response('Unauthorized: Admin access required', {
             status: 403,
             headers: {
-                'WWW-Authenticate': `Bearer error="insufficient_scope", metadata="${url.origin}/.well-known/oauth-protected-resource"`,
+                'WWW-Authenticate': `Bearer error="insufficient_scope", scope="admin", resource_metadata="${url.origin}/.well-known/oauth-protected-resource"`,
                 'Access-Control-Allow-Origin': '*'
             }
         });
