@@ -35,7 +35,10 @@ const config = {
     extensions: ['.svelte', '.md'],
     preprocess: [mdsvex(mdsvexOptions)],
     kit: {
-        adapter: adapter()
+        adapter: adapter(),
+        csrf: {
+            checkOrigin: false
+        }
     }
 };
 
