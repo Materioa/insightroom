@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
   import { onMount } from "svelte";
   import { searchTerm } from "$lib/stores/search";
 
@@ -206,7 +207,7 @@
       {/if}
 
       <!-- Quick Reads -->
-      <div class="uncategorized-posts">
+      <div class="uncategorized-posts" data-highlight-exclude>
         <h3 class="uncategorized-title">Quick Reads</h3>
         <div class="uncategorized-list">
           {#each quickReads as post}
@@ -337,8 +338,7 @@
     color: var(--muted-text, #666);
     background: var(--card-bg, #ffffff);
     border: 1px solid var(--border, #e5e5e5);
-    corner-shape: squircle;
-    border-radius: 40px;
+    border-radius: 25px;
   }
 
   /* Quick Reads Container */
@@ -346,8 +346,7 @@
     width: 300px;
     flex-shrink: 0;
     background: var(--card-bg, #faf9f5);
-    corner-shape: squircle;
-    border-radius: 40px;
+    border-radius: 25px;
     padding: 1.5rem;
     height: 400px;
     display: flex;
@@ -446,7 +445,7 @@
     width: 100%;
     height: 180px;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 25px;
   }
 
   .video-thumbnail video {
@@ -461,7 +460,7 @@
     width: 100%;
     height: 250px;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 25px;
   }
 
   .hero-video video {

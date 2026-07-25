@@ -87,7 +87,7 @@
   </button>
 </div>
 
-<footer class="site-footer">
+<footer class="site-footer" data-highlight-exclude>
   <div class="footer-img">
     <img src="/assets/img/banner.svg" alt="Banner" width="279" height="47" />
   </div>

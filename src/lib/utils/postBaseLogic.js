@@ -2,6 +2,11 @@
 // @ts-nocheck
 
 export function initializePostBase() {
+    import('@highlighters/svelte').then(({ highlight }) => {
+        window.__svelte_highlighter_action = highlight;
+        initializeHighlighters();
+    }).catch(e => console.error('Highlighter failed to load:', e));
+
     if (typeof window === 'undefined') return;
 
     initializeBlankCharFix();
@@ -18,6 +23,31 @@ export function initializePostBase() {
     initializeFlashcards();
     initializeMCQSystem();
     initializeArtifacts();
+    if (window.__svelte_highlighter_action) {
+        initializeHighlighters();
+    }
+}
+
+function initializeHighlighters() {
+    document.querySelectorAll('mark.custom-highlight').forEach(mark => {
+        if (mark.dataset.highlighterInitialized) return;
+        mark.dataset.highlighterInitialized = 'true';
+        
+        const highlight = window.__svelte_highlighter_action;
+        if (!highlight) return;
+        
+        const opts = {
+            color: { swatch: '#ff9800' } // Default orange highlighter
+        };
+        
+        if (mark.dataset.swatch || mark.dataset.palette) {
+            if (mark.dataset.swatch) opts.color.swatch = mark.dataset.swatch;
+            if (mark.dataset.palette) opts.color.palette = mark.dataset.palette;
+        }
+        
+        // Apply the Svelte action manually
+        highlight(mark, opts);
+    });
 }
 
 function initializeBlankCharFix() {

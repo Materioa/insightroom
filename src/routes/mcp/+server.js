@@ -247,9 +247,12 @@ export async function POST({ request, url, fetch }) {
 
     try {
         switch (method) {
-            case 'initialize':
+            case 'initialize': {
+                const clientVersion = params?.protocolVersion;
+                const supportedVersions = ['2024-11-05', '2025-11-25'];
+                const negotiatedVersion = supportedVersions.includes(clientVersion) ? clientVersion : '2024-11-05';
                 result = {
-                    protocolVersion: '2024-11-05',
+                    protocolVersion: negotiatedVersion,
                     capabilities: {
                         tools: {}
                     },
@@ -266,236 +269,244 @@ export async function POST({ request, url, fetch }) {
 Always remember the active post ID returned from "create_post" or "list_posts" to perform subsequent operations like publish or delete.`
                 };
                 break;
+            }
 
-            case 'tools/list':
-                result = {
-                    tools: [
-                        {
-                            name: 'list_posts',
-                            title: 'List Posts',
-                            description: 'Retrieve a list of all posts in the insightroom database with their metadata.',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {}
-                            },
-                            outputSchema: {
-                                type: 'array',
-                                items: { type: 'object' }
-                            },
-                            readOnlyHint: true,
-                            destructiveHint: false,
-                            idempotentHint: true,
-                            openWorldHint: false
+            case 'tools/list': {
+                const toolsList = [
+                    {
+                        name: 'list_posts',
+                        title: 'List Posts',
+                        description: 'Retrieve a list of all posts in the insightroom database with their metadata.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {}
                         },
-                        {
-                            name: 'get_post',
-                            title: 'Get Post Details',
-                            description: 'Fetch the full details of a specific post by its ID, slug, or permalink.',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'string', description: 'The unique MongoDB ObjectId of the post.' },
-                                    slug: { type: 'string', description: 'The post slug.' },
-                                    categorySlug: { type: 'string', description: 'The slug of the post category.' },
-                                    permalink: { type: 'string', description: 'The custom permalink URL.' }
+                        outputSchema: {
+                            type: 'array',
+                            items: { type: 'object' }
+                        },
+                        readOnlyHint: true,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'get_post',
+                        title: 'Get Post Details',
+                        description: 'Fetch the full details of a specific post by its ID, slug, or permalink.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string', description: 'The unique MongoDB ObjectId of the post.' },
+                                slug: { type: 'string', description: 'The post slug.' },
+                                categorySlug: { type: 'string', description: 'The slug of the post category.' },
+                                permalink: { type: 'string', description: 'The custom permalink URL.' }
+                            }
+                        },
+                        outputSchema: {
+                            type: 'object'
+                        },
+                        readOnlyHint: true,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'create_post',
+                        title: 'Create Post',
+                        description: 'Create and publish a new post in the insightroom database. IMPORTANT: If you need to set a cover image from a local sandbox file or chat attachment, you MUST call the `upload_image` tool FIRST to get the uploaded URL, and then pass that URL here in the `metadata.image` field.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                title: { type: 'string', description: 'The title of the post.' },
+                                slug: { type: 'string', description: 'Custom slug. If not provided, it will be automatically generated from the title.' },
+                                content: { type: 'string', description: 'The content/body of the post (Markdown format).' },
+                                metadata: {
+                                    type: 'object',
+                                    description: 'Key-value metadata such as categories, tags, excerpt, date, author details, image, or custom fields.',
+                                    properties: {
+                                        excerpt: { type: 'string' },
+                                        date: { type: 'string', description: 'Format YYYY-MM-DD' },
+                                        category: { type: 'string' },
+                                        visibility: { type: 'string', enum: ['public', 'private'] },
+                                        draft: { type: 'boolean' },
+                                        hidden: { type: 'boolean' },
+                                        image: { type: 'string', description: 'Cover image URL.' },
+                                        author_name: { type: 'string', description: "The name of the author. E.g. 'claude.ai'." },
+                                        author_avatar: { type: 'string', description: "The avatar URL of the author. If representing an AI, you can use the Google S2 favicon service: 'https://www.google.com/s2/favicons?sz=128&domain=claude.ai'." }
+                                    }
                                 }
                             },
-                            outputSchema: {
-                                type: 'object'
-                            },
-                            readOnlyHint: true,
-                            destructiveHint: false,
-                            idempotentHint: true,
-                            openWorldHint: false
+                            required: ['title']
                         },
-                        {
-                            name: 'create_post',
-                            title: 'Create Post',
-                            description: 'Create and publish a new post in the insightroom database. IMPORTANT: If you need to set a cover image from a local sandbox file or chat attachment, you MUST call the `upload_image` tool FIRST to get the uploaded URL, and then pass that URL here in the `metadata.image` field.',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    title: { type: 'string', description: 'The title of the post.' },
-                                    slug: { type: 'string', description: 'Custom slug. If not provided, it will be automatically generated from the title.' },
-                                    content: { type: 'string', description: 'The content/body of the post (Markdown format).' },
-                                    metadata: {
-                                        type: 'object',
-                                        description: 'Key-value metadata such as categories, tags, excerpt, date, author details, image, or custom fields.',
-                                        properties: {
-                                            excerpt: { type: 'string' },
-                                            date: { type: 'string', description: 'Format YYYY-MM-DD' },
-                                            category: { type: 'string' },
-                                            visibility: { type: 'string', enum: ['public', 'private'] },
-                                            draft: { type: 'boolean' },
-                                            hidden: { type: 'boolean' },
-                                            image: { type: 'string', description: 'Cover image URL.' },
-                                            author_name: { type: 'string', description: "The name of the author. E.g. 'claude.ai'." },
-                                            author_avatar: { type: 'string', description: "The avatar URL of the author. If representing an AI, you can use the Google S2 favicon service: 'https://www.google.com/s2/favicons?sz=128&domain=claude.ai'." }
-                                        }
+                        outputSchema: {
+                            type: 'object',
+                            properties: {
+                                success: { type: 'boolean' },
+                                message: { type: 'string' },
+                                id: { type: 'string' }
+                            },
+                            required: ['success', 'message', 'id']
+                        },
+                        readOnlyHint: false,
+                        destructiveHint: false,
+                        idempotentHint: false,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'update_post',
+                        title: 'Update Post',
+                        description: 'Update or edit details, content, or metadata of an existing published post. IMPORTANT: If you need to set a cover image from a local sandbox file or chat attachment, you MUST call the `upload_image` tool FIRST to get the uploaded URL, and then pass that URL here in the `metadata.image` field.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string', description: 'The unique MongoDB ObjectId of the post to update.' },
+                                title: { type: 'string' },
+                                slug: { type: 'string' },
+                                content: { type: 'string' },
+                                metadata: {
+                                    type: 'object',
+                                    description: 'Updated metadata properties including optional author_name or author_avatar.',
+                                    properties: {
+                                        excerpt: { type: 'string' },
+                                        date: { type: 'string' },
+                                        category: { type: 'string' },
+                                        visibility: { type: 'string' },
+                                        draft: { type: 'boolean' },
+                                        hidden: { type: 'boolean' },
+                                        image: { type: 'string' },
+                                        author_name: { type: 'string' },
+                                        author_avatar: { type: 'string' }
                                     }
                                 },
-                                required: ['title']
+                                saved_by_name: { type: 'string', description: "The identifier of the editor performing this update (e.g. 'claude.ai'). If a domain is provided, the avatar is auto-generated via Google S2 favicon service." },
+                                saved_by_display_name: { type: 'string', description: "The display name of the editor (e.g. 'Claude')." },
+                                saved_by_avatar: { type: 'string', description: "Explicit avatar URL of the editor." }
                             },
-                            outputSchema: {
-                                type: 'object',
-                                properties: {
-                                    success: { type: 'boolean' },
-                                    message: { type: 'string' },
-                                    id: { type: 'string' }
-                                },
-                                required: ['success', 'message', 'id']
-                            },
-                            readOnlyHint: false,
-                            destructiveHint: false,
-                            idempotentHint: false,
-                            openWorldHint: false
+                            required: ['id']
                         },
-                        {
-                            name: 'update_post',
-                            title: 'Update Post',
-                            description: 'Update or edit details, content, or metadata of an existing published post. IMPORTANT: If you need to set a cover image from a local sandbox file or chat attachment, you MUST call the `upload_image` tool FIRST to get the uploaded URL, and then pass that URL here in the `metadata.image` field.',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'string', description: 'The unique MongoDB ObjectId of the post to update.' },
-                                    title: { type: 'string' },
-                                    slug: { type: 'string' },
-                                    content: { type: 'string' },
-                                    metadata: {
-                                        type: 'object',
-                                        description: 'Updated metadata properties including optional author_name or author_avatar.',
-                                        properties: {
-                                            excerpt: { type: 'string' },
-                                            date: { type: 'string' },
-                                            category: { type: 'string' },
-                                            visibility: { type: 'string' },
-                                            draft: { type: 'boolean' },
-                                            hidden: { type: 'boolean' },
-                                            image: { type: 'string' },
-                                            author_name: { type: 'string' },
-                                            author_avatar: { type: 'string' }
-                                        }
-                                    },
-                                    saved_by_name: { type: 'string', description: "The identifier of the editor performing this update (e.g. 'claude.ai'). If a domain is provided, the avatar is auto-generated via Google S2 favicon service." },
-                                    saved_by_display_name: { type: 'string', description: "The display name of the editor (e.g. 'Claude')." },
-                                    saved_by_avatar: { type: 'string', description: "Explicit avatar URL of the editor." }
-                                },
-                                required: ['id']
+                        outputSchema: {
+                            type: 'object',
+                            properties: {
+                                success: { type: 'boolean' },
+                                message: { type: 'string' }
                             },
-                            outputSchema: {
-                                type: 'object',
-                                properties: {
-                                    success: { type: 'boolean' },
-                                    message: { type: 'string' }
-                                },
-                                required: ['success', 'message']
-                            },
-                            readOnlyHint: false,
-                            destructiveHint: false,
-                            idempotentHint: true,
-                            openWorldHint: false
+                            required: ['success', 'message']
                         },
-                        {
-                            name: 'delete_post',
-                            title: 'Delete Post',
-                            description: 'Permanently delete a post and its revision/version history.',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'string', description: 'The unique MongoDB ObjectId of the post to delete.' }
-                                },
-                                required: ['id']
+                        readOnlyHint: false,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'delete_post',
+                        title: 'Delete Post',
+                        description: 'Permanently delete a post and its revision/version history.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string', description: 'The unique MongoDB ObjectId of the post to delete.' }
                             },
-                            outputSchema: {
-                                type: 'object',
-                                properties: {
-                                    success: { type: 'boolean' },
-                                    message: { type: 'string' }
-                                },
-                                required: ['success', 'message']
-                            },
-                            readOnlyHint: false,
-                            destructiveHint: true,
-                            idempotentHint: true,
-                            openWorldHint: false
+                            required: ['id']
                         },
-                        {
-                            name: 'upload_image',
-                            title: 'Upload Image Asset',
-                            description: 'Use this tool to render an interactive UI widget in the chat where the user can manually select or drag-and-drop images to upload. Call this tool when the user asks to upload images manually, or if you need to upload an image for a post.',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    post_id: { type: 'string', description: 'The MongoDB ObjectId of the post being edited (optional).' }
-                                }
+                        outputSchema: {
+                            type: 'object',
+                            properties: {
+                                success: { type: 'boolean' },
+                                message: { type: 'string' }
                             },
-                            outputSchema: {
-                                type: 'object'
-                            },
-                            readOnlyHint: true,
-                            destructiveHint: false,
-                            idempotentHint: true,
-                            openWorldHint: false
+                            required: ['success', 'message']
                         },
-                        {
-                            name: 'get_post_analytics',
-                            title: 'Get Post Analytics',
-                            description: 'Retrieve detailed engagement and interaction analytics for a specific post by its ID or slug (views, reading time, scroll depth, claps, location stats, button clicks, settings changes).',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'string', description: 'The MongoDB ObjectId of the post.' },
-                                    slug: { type: 'string', description: 'The post slug.' }
-                                }
-                            },
-                            outputSchema: {
-                                type: 'object'
-                            },
-                            readOnlyHint: true,
-                            destructiveHint: false,
-                            idempotentHint: true,
-                            openWorldHint: false
+                        readOnlyHint: false,
+                        destructiveHint: true,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'upload_image',
+                        title: 'Upload Image Asset',
+                        description: 'Use this tool to render an interactive UI widget in the chat where the user can manually select or drag-and-drop images to upload. Call this tool when the user asks to upload images manually, or if you need to upload an image for a post.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                post_id: { type: 'string', description: 'The MongoDB ObjectId of the post being edited (optional).' }
+                            }
                         },
-                        {
-                            name: 'get_general_analytics',
-                            title: 'Get Site-Wide Analytics',
-                            description: 'Retrieve collective site-wide analytics dashboard metrics (overall views, total reading time, average scroll depth, retention rate, geographic top countries, and traffic timeline).',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    days: { type: 'integer', description: 'Number of days of timeline data to return (default is 30).' }
-                                }
-                            },
-                            outputSchema: {
-                                type: 'object'
-                            },
-                            readOnlyHint: true,
-                            destructiveHint: false,
-                            idempotentHint: true,
-                            openWorldHint: false
+                        outputSchema: {
+                            type: 'object'
                         },
-                        {
-                            name: 'outline',
-                            title: 'Generate Outline and Writing Guidelines',
-                            description: 'Retrieve the proprietary style guidelines and instructions to write or outline content for a specific topic.',
-                            inputSchema: {
-                                type: 'object',
-                                properties: {
-                                    topic: { type: 'string', description: 'The topic or post details to write an outline for.' }
-                                },
-                                required: ['topic']
+                        readOnlyHint: true,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'get_post_analytics',
+                        title: 'Get Post Analytics',
+                        description: 'Retrieve detailed engagement and interaction analytics for a specific post by its ID or slug (views, reading time, scroll depth, claps, location stats, button clicks, settings changes).',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string', description: 'The MongoDB ObjectId of the post.' },
+                                slug: { type: 'string', description: 'The post slug.' }
+                            }
+                        },
+                        outputSchema: {
+                            type: 'object'
+                        },
+                        readOnlyHint: true,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'get_general_analytics',
+                        title: 'Get Site-Wide Analytics',
+                        description: 'Retrieve collective site-wide analytics dashboard metrics (overall views, total reading time, average scroll depth, retention rate, geographic top countries, and traffic timeline).',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                days: { type: 'integer', description: 'Number of days of timeline data to return (default is 30).' }
+                            }
+                        },
+                        outputSchema: {
+                            type: 'object'
+                        },
+                        readOnlyHint: true,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    },
+                    {
+                        name: 'outline',
+                        title: 'Generate Outline and Writing Guidelines',
+                        description: 'Retrieve the proprietary style guidelines and instructions to write or outline content for a specific topic.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                topic: { type: 'string', description: 'The topic or post details to write an outline for.' }
                             },
-                            outputSchema: {
-                                type: 'string'
-                            },
-                            readOnlyHint: true,
-                            destructiveHint: false,
-                            idempotentHint: true,
-                            openWorldHint: false
-                        }
-                    ]
+                            required: ['topic']
+                        },
+                        outputSchema: {
+                            type: 'string'
+                        },
+                        readOnlyHint: true,
+                        destructiveHint: false,
+                        idempotentHint: true,
+                        openWorldHint: false
+                    }
+                ];
+
+                result = {
+                    tools: toolsList.map(t => ({
+                        name: t.name,
+                        description: t.description,
+                        inputSchema: t.inputSchema
+                    }))
                 };
                 break;
+            }
 
             case 'tools/call': {
                 const { name, arguments: args } = params;

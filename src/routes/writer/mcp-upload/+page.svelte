@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     
@@ -479,7 +480,7 @@
                         {/if}
                         
                         <div class="image-actions">
-                            <button 
+                            <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} 
                                 type="button" 
                                 class="btn-remove" 
                                 onclick={() => removeWidgetImage(img.id)}
@@ -500,7 +501,7 @@
                 <strong>Cover image set:</strong> <span class="cover-url">{image}</span>
             </div>
         {/if}
-        <button 
+        <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} 
             type="button" 
             class="btn btn-orange btn-large" 
             disabled={isSaving}
@@ -532,7 +533,6 @@
         background: var(--card-bg, #ffffff);
         border: 1px solid var(--border, #e5e5e5);
         border-radius: var(--squircle-outer, 40px);
-        corner-shape: squircle;
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
         font-family: var(--font-primary, "PP Mori", sans-serif);
     }
@@ -567,7 +567,6 @@
     .dropzone-box {
         border: 2px dashed var(--border, #ccc);
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         padding: 50px 20px;
         text-align: center;
         cursor: pointer;
@@ -600,7 +599,6 @@
         height: 60px;
         background: var(--card-bg, #ffffff);
         border-radius: var(--squircle-inner, 18px);
-        corner-shape: squircle;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -653,7 +651,6 @@
         background: var(--card-bg, #ffffff);
         border: 1px solid var(--border, #e5e5e5);
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         transition: box-shadow 0.2s ease, transform 0.2s ease;
     }
     
@@ -667,7 +664,6 @@
         height: 70px;
         object-fit: cover;
         border-radius: var(--squircle-inner, 18px);
-        corner-shape: squircle;
         border: 1px solid var(--border, #eee);
     }
     
@@ -675,7 +671,6 @@
         width: 70px;
         height: 70px;
         border-radius: var(--squircle-inner, 18px);
-        corner-shape: squircle;
         background: var(--bg, #f5f5f5);
         border: 1px solid var(--border, #eee);
         display: flex;
@@ -768,7 +763,6 @@
         background: var(--bg, #fbfbfb);
         border: 1px solid var(--border, #e5e5e5);
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 13px;
         font-weight: 700;
@@ -803,7 +797,6 @@
         background: var(--card-bg, #ffffff);
         border: 1px solid var(--border, #e5e5e5);
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         box-shadow: 0 16px 40px rgba(0,0,0,0.1);
         z-index: 100;
         display: flex;
@@ -866,7 +859,6 @@
         text-align: left;
         cursor: pointer;
         border-radius: var(--squircle-inner, 18px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 13px;
         color: var(--text, #555);
@@ -892,7 +884,6 @@
         padding: 4px 8px;
         background: var(--bg, #f0f0f0);
         border-radius: var(--squircle-inner, 12px);
-        corner-shape: squircle;
         font-size: 11px;
         font-weight: 700;
         color: var(--text, #666);
@@ -915,7 +906,6 @@
         background: var(--bg, #f9f9f9);
         border: 1px solid var(--border, #eee);
         border-radius: var(--squircle-inner, 18px);
-        corner-shape: squircle;
         color: #dc3545;
         cursor: pointer;
         padding: 12px;
@@ -956,7 +946,6 @@
         padding: 10px 20px;
         border: 1px solid var(--border, #eee);
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         max-width: 60%;
         white-space: nowrap;
         overflow: hidden;
@@ -975,7 +964,6 @@
         gap: 8px;
         padding: 14px 28px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         font-size: 14px;
@@ -1026,7 +1014,6 @@
     .toast-item {
         padding: 14px 24px;
         border-radius: var(--squircle-inner, 20px);
-        corner-shape: squircle;
         color: white;
         font-size: 14px;
         font-weight: 700;

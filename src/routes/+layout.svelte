@@ -1,7 +1,9 @@
 <script>
   import { onMount } from "svelte";
+  import { initGlobalSquircles } from "$lib/utils/globalSquircles";
   import { page } from "$app/stores";
   import { browser } from "$app/environment";
+  import { highlightSelection } from "@highlighters/core";
   import Header from "$lib/components/Header.svelte";
   import Footer from "$lib/components/Footer.svelte";
   import githubDark from "highlight.js/styles/github-dark.css?raw";
@@ -113,6 +115,35 @@
   }
 
   onMount(() => {
+    const cleanupSquircles = initGlobalSquircles();
+
+    // Setup selection highlighters using @highlighters/core
+    let selectionHandle;
+    try {
+      selectionHandle = highlightSelection({
+        color: { palette: "fluorescent", swatch: "orange" }
+      });
+    } catch (err) {
+      console.error("Failed to initialize selection highlighter:", err);
+    }
+
+    // Toggle body class on selection size change to prevent system highlight mixing on normal selections
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        document.body.classList.remove("has-large-selection");
+        return;
+      }
+      const text = selection.toString();
+      if (text.length > 300) {
+        document.body.classList.add("has-large-selection");
+      } else {
+        document.body.classList.remove("has-large-selection");
+      }
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+
     // Setup prefers-color-scheme listener
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     systemPrefersDark = mediaQuery.matches;
@@ -187,6 +218,9 @@
     });
 
     return () => {
+      if (cleanupSquircles) cleanupSquircles();
+      if (selectionHandle) selectionHandle.remove();
+      document.removeEventListener("selectionchange", handleSelectionChange);
       clearTimeout(adsenseTimer);
       triggerEvents.forEach(e => window.removeEventListener(e, handleInteraction));
       if (mediaQuery.removeEventListener) {

@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
   import { onMount, tick, onDestroy } from "svelte";
   import { fade } from 'svelte/transition';
   import {
@@ -832,14 +833,14 @@
           {matchCount > 0 ? currentMatchIndex : 0} / {matchCount}
         {/if}
       </span>
-      <button class="icon-btn" onclick={prevMatch} disabled={matchCount === 0} title="Previous match (Shift+Enter)">
+      <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="icon-btn" onclick={prevMatch} disabled={matchCount === 0} title="Previous match (Shift+Enter)">
         <i class="fa-solid fa-chevron-up"></i>
       </button>
-      <button class="icon-btn" onclick={nextMatch} disabled={matchCount === 0} title="Next match (Enter)">
+      <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="icon-btn" onclick={nextMatch} disabled={matchCount === 0} title="Next match (Enter)">
         <i class="fa-solid fa-chevron-down"></i>
       </button>
       <div class="divider"></div>
-      <button class="icon-btn close-btn" onclick={closeSearch} title="Close (Esc)">
+      <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="icon-btn close-btn" onclick={closeSearch} title="Close (Esc)">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
@@ -848,7 +849,7 @@
 
 <!-- Desktop Fixed Back Button -->
 <button
-  class="post-back-btn-desktop"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}  class="post-back-btn-desktop"
   title="Back"
   onclick={() => {
     if (document.referrer) history.back();
@@ -954,7 +955,7 @@
       {#if !hasCoverArtifact}
         {#if isLoading}
           <div style="display: block; position: relative; margin: 1.5rem auto; max-width: 700px;">
-            <div class="skeleton" style="width: 100%; height: 400px; border-radius: 17px;"></div>
+            <div class="skeleton" style="width: 100%; height: 400px; border-radius: 25px;"></div>
           </div>
         {:else if data.image}
           <div
@@ -962,12 +963,12 @@
           >
             <div
               class="post-image-frame"
-              style="padding: 5px; border-radius: 17px;"
+              style="padding: 5px; border-radius: 25px;"
             >
               {#if isVideo(data.image)}
                 <!-- Video cover -->
                 <div class="video-cover" style="margin: 0;">
-                  <video id="cover-video" muted loop style="border-radius: 12px;">
+                  <video id="cover-video" muted loop style="border-radius: 20px;">
                     <source
                       src={data.image || ""}
                       type={getVideoType(data.image)}
@@ -989,7 +990,7 @@
                   src={optimizeCloudinaryUrl(data.image || "", 800)}
                   alt={data.title || "Cover image"}
                   class="post-cover"
-                  style="border-radius: 12px; display: block; width: 100%; height: auto; object-fit: cover;"
+                  style="border-radius: 20px; display: block; width: 100%; height: auto; object-fit: cover;"
                   fetchpriority="high"
                   width="700"
                   height="420"
@@ -1131,7 +1132,7 @@
               onclick={(e) => e.stopPropagation()}
             >
               <button
-                onclick={seekBackward}
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                onclick={seekBackward}
                 class="seek-btn"
                 title="Go back 5 seconds"
                 style="background: none; border: none; color: #666; cursor: pointer; padding: 0.2rem; border-radius: 50%; transition: all 0.2s ease;"
@@ -1139,7 +1140,7 @@
                 <i class="fa-solid fa-backward" style="font-size: 10px;"></i>
               </button>
               <button
-                onclick={seekForward}
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                onclick={seekForward}
                 class="seek-btn"
                 title="Skip forward 5 seconds"
                 style="background: none; border: none; color: #666; cursor: pointer; padding: 0.2rem; border-radius: 50%; transition: all 0.2s ease;"
@@ -1147,7 +1148,7 @@
                 <i class="fa-solid fa-forward" style="font-size: 10px;"></i>
               </button>
               <button
-                onclick={stopAudio}
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                onclick={stopAudio}
                 class="seek-btn stop-btn"
                 title="Stop"
                 style="background: none; border: none; color: #d32f2f; cursor: pointer; padding: 0.2rem; border-radius: 50%; transition: all 0.2s ease;"
@@ -1338,7 +1339,7 @@
               <!-- Action buttons -->
               <div class="locked-actions">
                 <a
-                  href={dev
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                  href={dev
                     ? `http://localhost:1000/account?callback=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
                     : `https://materioa.vercel.app/account?callback=${encodeURIComponent("https://room.getmaterio.app" + $page.url.pathname)}`}
                   class="locked-btn locked-btn-login no-pill"
@@ -1347,7 +1348,7 @@
                   Log In
                 </a>
                 <a
-                  href={dev
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                  href={dev
                     ? "http://localhost:1000/account/upgrade"
                     : "https://materioa.vercel.app/account/upgrade"}
                   class="locked-btn locked-btn-upgrade no-pill"
@@ -1429,12 +1430,13 @@
 </main>
 
 <!-- Site-level TOC sidebar - starts with no-transition to prevent flash on load -->
-<div id="toc-scroll-rail" class="toc-scroll-rail" aria-hidden="true">
+<div id="toc-scroll-rail" class="toc-scroll-rail" data-highlight-exclude aria-hidden="true">
   <!-- TOC section markers are injected by toc.js -->
 </div>
 <div
   id="site-toc-sidebar"
   class="site-toc-sidebar no-transition"
+  data-highlight-exclude
   aria-hidden="true"
 >
   <button
@@ -1730,7 +1732,6 @@
     left: calc(50% * (1 - var(--progress)));
     
     /* Morph to squircle frame matching .post-image-frame */
-    corner-shape: squircle !important;
     border-radius: calc(40px * var(--progress)) !important;
     padding: calc(5px * var(--progress));
     

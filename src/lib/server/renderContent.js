@@ -74,6 +74,27 @@ export async function renderPostContent(rawContent) {
 
     // ── MCQ shortcodes ──
     const mcqRegex = /\[mcq:([\s\S]+?)\]/g;
+
+    // ── Highlighter shortcodes ──
+    const highlightRegex = /==([\s\S]+?)==(?:\{([^}]+)\})?/g;
+    content = content.replace(highlightRegex, (match, text, optionsStr) => {
+        let attrs = 'class="custom-highlight"';
+        if (optionsStr) {
+            // parse key="value" or key='value' pairs
+            const attrRegex = /([a-zA-Z0-9_-]+)=["']([^"']+)["']/g;
+            let attrMatch;
+            while ((attrMatch = attrRegex.exec(optionsStr)) !== null) {
+                const key = attrMatch[1];
+                const value = attrMatch[2];
+                // Only allow specific safe data attributes to be passed
+                if (['swatch', 'palette', 'style'].includes(key)) {
+                    attrs += ` data-${key}="${value.replace(/"/g, '&quot;')}"`;
+                }
+            }
+        }
+        return `<mark ${attrs}>${text}</mark>`;
+    });
+
     content = content.replace(mcqRegex, (/** @type {string} */ match, /** @type {string} */ mcqContent) => {
         const trimmed = mcqContent.trim();
         let question = '';

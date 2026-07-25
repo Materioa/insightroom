@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
   import { onMount } from 'svelte';
 
   let { 
@@ -77,11 +78,11 @@
   <div bind:this={containerRef} class="qr-code-wrapper"></div>
   {#if !hideActions}
     <div class="qr-code-actions">
-      <button onclick={downloadQRCode} class="btn-action" title="Download QR Code">
+      <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} onclick={downloadQRCode} class="btn-action" title="Download QR Code">
         <i class="fa-solid fa-download"></i>
         Download
       </button>
-      <button onclick={copyToClipboard} class="btn-action" title="Copy to Clipboard">
+      <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} onclick={copyToClipboard} class="btn-action" title="Copy to Clipboard">
         <i class="fa-solid fa-copy"></i>
         Copy
       </button>

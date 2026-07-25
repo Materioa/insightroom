@@ -9,7 +9,6 @@
    gap: 0.5rem;
    padding: 0.5rem;
    background: var(--card-bg, rgba(0, 0, 0, 0.03));
-   corner-shape: squircle;
    border-radius: 40px;
    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
  }
@@ -22,7 +21,6 @@
    gap: 1.5rem;
    padding: 0.6rem 1rem;
    border: none;
-   corner-shape: squircle;
    border-radius: 32px;
    background: transparent;
    color: var(--text, #333);
@@ -50,7 +48,6 @@
    margin-top: 0.5rem;
    padding: 1rem;
    background: var(--card-bg, rgba(0, 0, 0, 0.02));
-   corner-shape: squircle;
    border-radius: 40px;
    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
    animation: expandDown 0.25s ease-out;

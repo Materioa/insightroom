@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
   import D3AreaChart from '$lib/components/D3AreaChart.svelte';
   import PostAnalyticsModal from '$lib/components/PostAnalyticsModal.svelte';
   import { onMount } from 'svelte';
@@ -44,7 +45,7 @@
   <link rel="icon" type="image/x-icon" href="/assets/img/room-icon-x.svg" />
 </svelte:head>
 
-<div class="cms-wrapper">
+<div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="cms-wrapper">
   <div class="cms-header">
     <div class="header-left">
       <h1>Collective Analytics</h1>
@@ -133,7 +134,7 @@
 
   <!-- Posts Table -->
   <h2>Post Engagement</h2>
-  <div class="table-container">
+  <div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="table-container">
     <table class="cms-table">
       <thead>
         <tr>

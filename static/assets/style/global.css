@@ -1,7 +1,7 @@
 :root {
     --font-primary: "PP Mori", sans-serif;
-    --squircle-outer: 40px;
-    --squircle-inner: 25px;
+    --squircle-outer: 16px;
+    --squircle-inner: 8px;
     --brand-orange: #ff5400;
     --pastel-blue: #e3f2fd;
     --pastel-green: #e8f5e9;
@@ -22,18 +22,42 @@ body.dark * {
     scrollbar-color: #444 transparent;
 }
 
+::selection,
+::-webkit-selection,
+::-moz-selection {
+    background-color: transparent !important;
+}
+
+body.dark ::selection,
+body.dark ::-webkit-selection,
+body.dark ::-moz-selection {
+    background-color: transparent !important;
+}
+
+.has-large-selection ::selection,
+.has-large-selection ::-webkit-selection,
+.has-large-selection ::-moz-selection,
+.has-large-selection.dark ::selection,
+.has-large-selection .dark ::selection {
+    background-color: rgba(255, 84, 0, 0.2) !important;
+}
+
 [style*="corner-shape: squircle"] {
     border-radius: var(--squircle-inner) !important;
-    corner-shape: squircle;
 }
 
 /* Global Squircle application for Admin components */
 .btn, .action-icon-btn, .search-input, .meta-card, .toast-region *, .tool-btn, input, textarea, select, .post-preview-img, .attachment-card {
-    border-radius: var(--squircle-inner) !important;
+    border-radius: var(--squircle-inner);
 }
 
 .table-container, .editor-container, .modal-content, .cms-wrapper {
-    border-radius: var(--squircle-outer) !important;
+    border-radius: var(--squircle-outer);
+}
+
+/* Disable native border-radius only when Lisse SVG overlays are active, otherwise let browser draw rounded inset shadows/borders */
+[data-slot="smooth-corners"][data-lisse-overlay="true"] {
+    border-radius: 0 !important;
 }
 
 body {
@@ -251,7 +275,6 @@ body.dark .scroll-btn:hover {
     background: var(--card-bg, #fff);
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
     border-radius: 40px;
-    corner-shape: squircle;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: var(--font-primary);
@@ -639,7 +662,6 @@ body.dark .font-option-card:hover {
     padding: 20px;
     background: var(--card-bg, #fff);
     border-radius: var(--squircle-outer, 40px);
-    corner-shape: squircle;
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
 }
 
@@ -652,7 +674,6 @@ body.dark .font-option-card:hover {
 .qr-code-wrapper canvas {
     display: block;
     border-radius: var(--squircle-inner, 25px);
-    corner-shape: squircle;
 }
 
 .qr-code-actions {
@@ -671,7 +692,6 @@ body.dark .font-option-card:hover {
     color: white;
     border: none;
     border-radius: var(--squircle-inner, 25px);
-    corner-shape: squircle;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
@@ -821,7 +841,6 @@ body.dark .qr-code-container {
         max-height: min(74dvh, 560px) !important;
         max-height: min(74vh, 560px) !important;
         border-radius: 40px !important;
-        corner-shape: squircle;
         transform: translateY(calc(100% + 12px)) !important;
         padding: 8px 5px 5px 5px !important;
         background: #e7e7db !important;

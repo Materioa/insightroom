@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import D3AreaChart from './D3AreaChart.svelte';
@@ -176,7 +177,6 @@
     background: var(--card-bg, #fff);
     border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
     border-radius: 36px;
-    corner-shape: squircle;
     width: 100%;
     max-width: 680px;
     max-height: 90vh;

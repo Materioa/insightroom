@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
     import { onMount, tick } from "svelte";
     import { page } from "$app/stores";
     import { Marked } from "marked";
@@ -840,7 +841,7 @@
                         cleanUrl.split(".").pop()?.toUpperCase() || "FILE";
                     const rndId =
                         "attachment-" + Math.random().toString(36).substr(2, 5);
-                    return `<div class="attachment-card" data-file-path="${cleanUrl}" data-attachment-id="${rndId}">
+                    return `<div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="attachment-card" data-file-path="${cleanUrl}" data-attachment-id="${rndId}">
                     <div class="attachment-details">
                         <div class="attachment-title">${cleanTitle}</div>
                         <div class="attachment-meta"><span class="file-type">${fileExt}</span></div>
@@ -863,6 +864,24 @@
                     return `<div class="video-embed"><video muted loop autoplay playsinline src="${videoUrl}"></video></div>`;
                 },
             );
+
+            // Highlighter replacement
+            const highlightRegex = /==([\s\S]+?)==(?:\{([^}]+)\})?/g;
+            rawContent = rawContent.replace(highlightRegex, (/** @type {string} */ match, /** @type {string} */ text, /** @type {string} */ optionsStr) => {
+                let attrs = 'class="custom-highlight"';
+                if (optionsStr) {
+                    const attrRegex = /([a-zA-Z0-9_-]+)=["']([^"']+)["']/g;
+                    let attrMatch;
+                    while ((attrMatch = attrRegex.exec(optionsStr)) !== null) {
+                        const key = attrMatch[1];
+                        const value = attrMatch[2];
+                        if (['swatch', 'palette', 'style'].includes(key)) {
+                            attrs += ` data-${key}="${value.replace(/"/g, '&quot;')}"`;
+                        }
+                    }
+                }
+                return `<mark ${attrs}>${text}</mark>`;
+            });
 
             // MCQ replacement
             const mcqRegex = /\[mcq:([\s\S]+?)\]/g;
@@ -933,7 +952,7 @@
                     return `<div class="mcq-card" data-correct-index="${correctIndex}">` +
                         `<div class="mcq-header">` +
                             `<div class="mcq-question">${escapedQuestion}</div>` +
-                            `<button class="mcq-reset-btn" onclick="${resetHandler}" title="Reset Question"><i class="fa-solid fa-rotate-left"></i></button>` +
+                            `<button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="mcq-reset-btn" onclick="${resetHandler}" title="Reset Question"><i class="fa-solid fa-rotate-left"></i></button>` +
                         `</div>` +
                         `<div class="mcq-options">${optionsHtml}</div>` +
                     `</div>`;
@@ -1019,7 +1038,7 @@
     }}
 />
 
-<div class="cms-wrapper" class:fullscreen={isFullscreen}>
+<div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="cms-wrapper" class:fullscreen={isFullscreen}>
     <div class="cms-layout">
         <!-- Main Form Column -->
         <div class="cms-main">
@@ -1061,21 +1080,21 @@
             </div>
 
             <!-- Editor Toolbar & Textarea -->
-            <div class="editor-container">
+            <div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="editor-container">
                 <div class="toolbar">
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("bold")}
                         title="Bold"><i class="fa-solid fa-bold"></i></button
                     >
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("italic")}
                         title="Italic"
                         ><i class="fa-solid fa-italic"></i></button
                     >
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("heading")}
                         title="Heading"
                         ><i class="fa-solid fa-heading"></i></button
@@ -1084,24 +1103,24 @@
                     <span class="divider"></span>
 
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("code")}
                         title="Code"><i class="fa-solid fa-code"></i></button
                     >
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("quote")}
                         title="Quote"
                         ><i class="fa-solid fa-quote-left"></i></button
                     >
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("list-ul")}
                         title="Bulleted List"
                         ><i class="fa-solid fa-list-ul"></i></button
                     >
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("list-ol")}
                         title="Numbered List"
                         ><i class="fa-solid fa-list-ol"></i></button
@@ -1110,13 +1129,13 @@
                     <span class="divider"></span>
 
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("link")}
                         title="Link"
                         ><i class="fa-regular fa-link-simple"></i></button
                     >
                     <label
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         title="Image / Media"
                         style="cursor: pointer;"
                     >
@@ -1129,7 +1148,7 @@
                         <i class="fa-regular fa-image"></i>
                     </label>
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => insertFormatting("table")}
                         title="Table"><i class="fa-solid fa-table"></i></button
                     >
@@ -1137,18 +1156,18 @@
                     <span class="divider"></span>
 
                     <button
-                        class="tool-btn {isPreviewMode ? 'active' : ''}"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn {isPreviewMode ? 'active' : ''}"
                         onclick={togglePreview}
                         title="Preview"
                         ><i class="fa-regular fa-eye"></i></button
                     >
                     <button
-                        class="tool-btn"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
                         onclick={() => (isFullscreen = !isFullscreen)}
                         title="Fullscreen"
                         ><i class="fa-solid fa-expand"></i></button
                     >
-                    <button class="tool-btn" onclick={savePost} title="Save"
+                    <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="tool-btn" onclick={savePost} title="Save"
                         ><i class="fa-regular fa-floppy-disk"></i></button
                     >
 
@@ -1180,7 +1199,7 @@
 
             <!-- Metadata Section Below Editor -->
             <div class="metadata-section">
-                <div class="meta-card">
+                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">category</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1195,7 +1214,7 @@
                     </div>
                 </div>
 
-                <div class="meta-card">
+                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">date</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1207,7 +1226,7 @@
                             class="meta-input"
                         />
                         <button
-                            type="button"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                            type="button"
                             class="btn btn-gray-sm"
                             style="margin: 0;"
                             onclick={setDateToNow}
@@ -1218,7 +1237,7 @@
                     </div>
                 </div>
 
-                <div class="meta-card">
+                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">visibility</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1231,7 +1250,7 @@
                     </div>
                 </div>
 
-                <div class="meta-card">
+                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">status</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1246,7 +1265,7 @@
                     </div>
                 </div>
 
-                <div class="meta-card">
+                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">excerpt</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1261,7 +1280,7 @@
                     </div>
                 </div>
 
-                <div class="meta-card">
+                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">cover_image</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1275,7 +1294,7 @@
                         />
                         <div style="margin-top: 10px;">
                             <label
-                                class="btn-new-meta"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                                class="btn-new-meta"
                                 style="cursor: pointer; display: inline-block;"
                             >
                                 <input
@@ -1300,11 +1319,11 @@
                 <div class="draggable-container">
                     {#each metadataArray as item, i}
                         <div
-                            class="meta-card"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                            class="meta-card"
                             draggable="true"
-                            ondragstart={(e) => handleDragStart(e, i)}
-                            ondragover={(e) => handleDragOver(e, i)}
-                            ondrop={(e) => handleDrop(e, i)}
+                            ondragstart={(/** @type {DragEvent} */ e) => handleDragStart(e, i)}
+                            ondragover={(/** @type {DragEvent} */ e) => handleDragOver(e, i)}
+                            ondrop={(/** @type {DragEvent} */ e) => handleDrop(e, i)}
                             aria-label="Draggable metadata field"
                             role="listitem"
                         >
@@ -1322,7 +1341,7 @@
                                         aria-label="Field key"
                                     />
                                     <button
-                                        class="btn-icon"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                                        class="btn-icon"
                                         onclick={() => removeMetadataField(i)}
                                         aria-label="Remove field"
                                         ><i class="fa-solid fa-xmark"
@@ -1367,7 +1386,7 @@
                                                         )}
                                                 />
                                                 <button
-                                                    class="btn-icon"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                                                    class="btn-icon"
                                                     onclick={() =>
                                                         removeAuthorMetadataRow(
                                                             i,
@@ -1385,7 +1404,7 @@
                                             style="display: flex; gap: 8px; margin-top: 10px;"
                                         >
                                             <button
-                                                class="btn-new-meta"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                                                class="btn-new-meta"
                                                 onclick={() =>
                                                     addAuthorMetadataRow(i)}
                                             >
@@ -1398,8 +1417,8 @@
                                                 style="position: relative;"
                                             >
                                                 <button
-                                                    class="btn-new-meta"
-                                                    onclick={(e) => {
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                                                    class="btn-new-meta"
+                                                    onclick={(/** @type {MouseEvent} */ e) => {
                                                         e.stopPropagation();
                                                         activePresetMenu =
                                                             activePresetMenu ===
@@ -1416,7 +1435,7 @@
                                                     class="popup-menu profile-menu"
                                                     class:show={activePresetMenu ===
                                                         i}
-                                                    style="bottom: auto; top: calc(100% + 8px); left: 0; corner-shape: squircle;"
+                                                    style="bottom: auto; top: calc(100% + 8px); left: 0; "
                                                 >
                                                     <button
                                                         class="menu-item"
@@ -1483,7 +1502,7 @@
                 </div>
 
                 <div class="new-meta-row">
-                    <button class="btn-new-meta" onclick={addMetadataField}>
+                    <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="btn-new-meta" onclick={addMetadataField}>
                         <i class="fa-solid fa-circle-plus"></i> New metadata field
                     </button>
                     <div class="special-keys">
@@ -1496,10 +1515,10 @@
         <!-- Sidebar Actions Column -->
         <div class="cms-sidebar">
             <div class="header-actions">
-                <button class="btn btn-green" onclick={savePost}
+                <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="btn btn-green" onclick={savePost}
                     ><i class="fa-regular fa-floppy-disk"></i> Save</button
                 >
-                <button class="btn btn-gray" onclick={togglePreview}
+                <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="btn btn-gray" onclick={togglePreview}
                     ><i
                         class="fa-regular {isPreviewMode
                             ? 'fa-pen-to-square'
@@ -1508,14 +1527,14 @@
                     {isPreviewMode ? "Edit" : "Preview"}</button
                 >
                 <button
-                    class="btn btn-gray"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                    class="btn btn-gray"
                     onclick={() => window.open(liveUrl, "_blank")}
                     ><i class="fa-solid fa-arrow-up-right-from-square"></i> Live</button
                 >
-                <button class="btn btn-gray" onclick={viewHistory}
+                <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="btn btn-gray" onclick={viewHistory}
                     ><i class="fa-solid fa-clock-rotate-left"></i> History</button
                 >
-                <button class="btn btn-gray" onclick={deletePost}
+                <button use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="btn btn-gray" onclick={deletePost}
                     ><i class="fa-regular fa-trash-can"></i> Delete</button
                 >
             </div>
@@ -1535,8 +1554,8 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div
-            class="modal-content history-modal"
-            onclick={(e) => e.stopPropagation()}
+ use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }}            class="modal-content history-modal"
+            onclick={(/** @type {MouseEvent} */ e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             tabindex="-1"
@@ -1545,7 +1564,7 @@
             <div class="modal-header">
                 <h3>Page History</h3>
                 <button
-                    class="btn-icon"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                    class="btn-icon"
                     onclick={() => (showHistory = false)}
                     aria-label="Close history modal"
                     ><i class="fa-solid fa-xmark"></i></button
@@ -1698,7 +1717,7 @@
                         </div>
                         <div style="margin-top: 15px;">
                             <button
-                                class="btn btn-gray"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                                class="btn btn-gray"
                                 onclick={() => {
                                     content = selectedVersion.content;
                                     showHistory = false;
@@ -1725,13 +1744,13 @@
             <div class="toast-message">{confirmToast.message}</div>
             <div class="toast-actions">
                 <button
-                    class="toast-btn secondary"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                    class="toast-btn secondary"
                     onclick={() => resolveConfirmation(false)}
                 >
                     {confirmToast.cancelText}
                 </button>
                 <button
-                    class="toast-btn primary"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                    class="toast-btn primary"
                     onclick={() => resolveConfirmation(true)}
                 >
                     {confirmToast.confirmText}
@@ -1875,7 +1894,6 @@
         justify-content: center;
         gap: 8px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         font-size: 14px;
@@ -1979,7 +1997,6 @@
         background: white;
         border: 1px solid #ddd;
         border-radius: var(--squircle-outer, 40px);
-        corner-shape: squircle;
         margin-top: 30px;
         margin-bottom: 40px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
@@ -2006,7 +2023,6 @@
         align-items: center;
         justify-content: center;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         cursor: pointer;
         font-size: 14px;
         transition: all 0.2s;
@@ -2119,7 +2135,6 @@
     .modal-content {
         background: white;
         border-radius: var(--squircle-outer, 40px);
-        corner-shape: squircle;
         width: 900px;
         max-width: 95vw;
         height: 80vh;
@@ -2180,7 +2195,6 @@
         border: none;
         padding: 15px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         cursor: pointer;
         display: block;
         font-family: var(--font-primary, "PP Mori", sans-serif);
@@ -2339,7 +2353,6 @@
     .meta-card {
         border: 1px solid #e5e5e5;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         background: #fbfbfb;
         margin-bottom: 15px;
         padding: 15px;
@@ -2357,7 +2370,6 @@
         border: 1px solid #e5e5e5;
         padding: 6px 12px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-weight: 700;
         font-size: 14px;
         color: #333;
@@ -2377,7 +2389,6 @@
         background: white;
         border: 1px solid #e5e5e5;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         padding: 10px 12px;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 14px;
@@ -2416,7 +2427,6 @@
         border: 1px solid #e5e5e5;
         padding: 6px 12px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-weight: 600;
         font-size: 14px;
         font-family: var(--font-primary, "PP Mori", sans-serif);
@@ -2544,7 +2554,6 @@
         position: relative;
         padding: 14px 42px 14px 16px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         border: 1px solid var(--toast-border, #eee);
         background: var(--toast-bg, #fff);
         color: var(--toast-color, #2d2a27);
@@ -2587,7 +2596,6 @@
     .toast-btn {
         border: 0;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         cursor: pointer;
@@ -2837,7 +2845,6 @@
         margin-left: 0 !important;
         margin-right: 0 !important;
         left: 0 !important;
-        corner-shape: squircle !important;
         border-radius: 40px !important;
         padding: 5px !important;
         margin-top: 1rem !important;

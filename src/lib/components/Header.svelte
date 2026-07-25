@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
   import { page } from "$app/stores";
   import { searchTerm, showSearchBoxStore } from "$lib/stores/search";
   import { dev, browser } from "$app/environment";
@@ -81,7 +82,7 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<header class="site-header">
+<header class="site-header" data-highlight-exclude>
   <a href="/" class="header-logo" role="button" aria-label="Go to homepage"></a>
 
   <!-- Settings container with toggle button and unified modal -->
@@ -187,7 +188,7 @@
     <div
       class="settings-modal"
       class:show={showSettingsMenu}
-      style="corner-shape: squircle;"
+      
     >
       <div class="site-toc-sheet-handle" aria-hidden="true">
         <div class="sheet-handle-chevrons">

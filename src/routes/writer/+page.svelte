@@ -1,4 +1,5 @@
 <script>
+  import { smoothCorners } from "@lisse/svelte";
     export let data;
     let posts = data.posts;
     let searchQuery = "";
@@ -75,7 +76,7 @@
     <link rel="icon" type="image/x-icon" href="/assets/img/room-icon-x.svg" />
 </svelte:head>
 
-<div class="cms-wrapper">
+<div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="cms-wrapper">
     <div class="cms-header">
         <div class="header-left">
             <h1>Writer's Desk</h1>
@@ -127,7 +128,7 @@
         </div>
     </div>
 
-    <div class="table-container">
+    <div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="table-container">
         <table class="cms-table">
             <thead>
                 <tr>
@@ -140,7 +141,7 @@
                     <tr>
                         <td class="col-post">
                             <div class="post-info">
-                                <div class="post-preview-img">
+                                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="post-preview-img">
                                     {#if post.image}
                                         <img src={post.image} alt="" />
                                     {:else}
@@ -237,13 +238,13 @@
             <div class="toast-message">{confirmToast.message}</div>
             <div class="toast-actions">
                 <button
-                    class="toast-btn secondary"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                    class="toast-btn secondary"
                     onclick={() => resolveConfirmation(false)}
                 >
                     {confirmToast.cancelText}
                 </button>
                 <button
-                    class="toast-btn primary"
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                    class="toast-btn primary"
                     onclick={() => resolveConfirmation(true)}
                 >
                     {confirmToast.confirmText}
@@ -321,7 +322,6 @@
         background: #ff5400 !important;
         color: white;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -343,7 +343,6 @@
         background: #20808d;
         color: white;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -366,7 +365,6 @@
         padding: 8px 16px;
         border: 1px solid #e5e5e5;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 14px;
         width: 200px;
@@ -384,7 +382,6 @@
         background: white;
         border: 1px solid #e5e5e5;
         border-radius: var(--squircle-outer, 40px);
-        corner-shape: squircle;
         overflow: hidden;
     }
 
@@ -429,7 +426,6 @@
         height: 48px;
         background: #f5f5f5;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -568,7 +564,6 @@
         position: relative;
         padding: 14px 42px 14px 16px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         border: 1px solid var(--toast-border, #eee);
         background: var(--toast-bg, #fff);
         color: var(--toast-color, #2d2a27);
@@ -610,7 +605,6 @@
     .toast-btn {
         border: 0;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         cursor: pointer;

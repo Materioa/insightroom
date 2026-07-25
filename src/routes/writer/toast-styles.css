@@ -14,7 +14,6 @@
         position: relative;
         padding: 14px 42px 14px 16px;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         border: 1px solid #e7e1dc;
         background: #fff;
         color: #2d2a27;
@@ -50,7 +49,6 @@
     .toast-btn {
         border: 0;
         border-radius: var(--squircle-inner, 25px);
-        corner-shape: squircle;
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-weight: 700;
         cursor: pointer;
