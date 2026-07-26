@@ -75,6 +75,8 @@
 
     /** @type {number} */
     let draggedIndex = -1;
+    /** @type {number} */
+    let activeDragIndex = -1;
 
     /**
      * @param {DragEvent} e
@@ -1038,7 +1040,7 @@
     }}
 />
 
-<div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="cms-wrapper" class:fullscreen={isFullscreen}>
+<div class="cms-wrapper" class:fullscreen={isFullscreen}>
     <div class="cms-layout">
         <!-- Main Form Column -->
         <div class="cms-main">
@@ -1080,7 +1082,7 @@
             </div>
 
             <!-- Editor Toolbar & Textarea -->
-            <div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="editor-container">
+            <div class="editor-container">
                 <div class="toolbar">
                     <button
  use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                        class="tool-btn"
@@ -1199,7 +1201,7 @@
 
             <!-- Metadata Section Below Editor -->
             <div class="metadata-section">
-                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
+                <div class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">category</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1214,7 +1216,7 @@
                     </div>
                 </div>
 
-                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
+                <div class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">date</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1237,7 +1239,7 @@
                     </div>
                 </div>
 
-                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
+                <div class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">visibility</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1250,7 +1252,7 @@
                     </div>
                 </div>
 
-                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
+                <div class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">status</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1265,7 +1267,7 @@
                     </div>
                 </div>
 
-                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
+                <div class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">excerpt</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1280,7 +1282,7 @@
                     </div>
                 </div>
 
-                <div use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }} class="meta-card">
+                <div class="meta-card">
                     <div class="meta-header">
                         <div class="meta-key">cover_image</div>
                         <i class="fa-solid fa-chevron-down chevron"></i>
@@ -1319,11 +1321,15 @@
                 <div class="draggable-container">
                     {#each metadataArray as item, i}
                         <div
- use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                            class="meta-card"
-                            draggable="true"
+                            class="meta-card"
+                            draggable={activeDragIndex === i}
                             ondragstart={(/** @type {DragEvent} */ e) => handleDragStart(e, i)}
                             ondragover={(/** @type {DragEvent} */ e) => handleDragOver(e, i)}
                             ondrop={(/** @type {DragEvent} */ e) => handleDrop(e, i)}
+                            ondragend={() => {
+                                activeDragIndex = -1;
+                                draggedIndex = -1;
+                            }}
                             aria-label="Draggable metadata field"
                             role="listitem"
                         >
@@ -1332,6 +1338,9 @@
                                     <span class="index">{i + 1}.</span>
                                     <i
                                         class="fa-solid fa-arrows-up-down-left-right drag-icon"
+                                        onmousedown={() => activeDragIndex = i}
+                                        onmouseenter={() => activeDragIndex = i}
+                                        onmouseleave={() => { if (draggedIndex === -1) activeDragIndex = -1; }}
                                     ></i>
                                     <input
                                         type="text"
@@ -1789,7 +1798,8 @@
     }
 
     :global(body) {
-        background-color: #f5f5f5;
+        background-color: var(--bg);
+        color: var(--text);
         margin: 0;
     }
 
@@ -1812,7 +1822,7 @@
         padding: 0;
         margin: 0;
         z-index: 9999;
-        background: #f5f5f5;
+        background: var(--bg);
         overflow-y: auto;
     }
 
@@ -1994,8 +2004,8 @@
 
     /* Editor Box */
     .editor-container {
-        background: white;
-        border: 1px solid #ddd;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
         border-radius: var(--squircle-outer, 40px);
         margin-top: 30px;
         margin-bottom: 40px;
@@ -2006,8 +2016,8 @@
     .toolbar {
         display: flex;
         padding: 8px 12px;
-        border-bottom: 1px solid #ddd;
-        background: #faf9f5;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
         align-items: center;
         gap: 2px;
         flex-wrap: wrap;
@@ -2351,9 +2361,9 @@
     }
 
     .meta-card {
-        border: 1px solid #e5e5e5;
+        border: 1px solid var(--border);
         border-radius: var(--squircle-inner, 25px);
-        background: #fbfbfb;
+        background: var(--card-bg);
         margin-bottom: 15px;
         padding: 15px;
     }
@@ -2366,13 +2376,13 @@
     }
 
     .meta-key {
-        background: white;
-        border: 1px solid #e5e5e5;
+        background: var(--bg);
+        border: 1px solid var(--border);
         padding: 6px 12px;
         border-radius: var(--squircle-inner, 25px);
         font-weight: 700;
         font-size: 14px;
-        color: #333;
+        color: var(--text);
     }
 
     .chevron {
@@ -2386,8 +2396,8 @@
 
     .meta-input {
         width: 100%;
-        background: white;
-        border: 1px solid #e5e5e5;
+        background: var(--bg);
+        border: 1px solid var(--border);
         border-radius: var(--squircle-inner, 25px);
         padding: 10px 12px;
         font-family: var(--font-primary, "PP Mori", sans-serif);
@@ -2395,6 +2405,7 @@
         box-sizing: border-box;
         outline: none;
         resize: vertical;
+        color: var(--text);
     }
 
     .meta-input:focus {
@@ -2423,8 +2434,8 @@
     }
 
     .meta-input-inline {
-        background: white;
-        border: 1px solid #e5e5e5;
+        background: var(--bg);
+        border: 1px solid var(--border);
         padding: 6px 12px;
         border-radius: var(--squircle-inner, 25px);
         font-weight: 600;
@@ -2432,6 +2443,7 @@
         font-family: var(--font-primary, "PP Mori", sans-serif);
         outline: none;
         box-sizing: border-box;
+        color: var(--text);
     }
 
     .btn-icon {
@@ -2493,13 +2505,13 @@
 
     /* Dark Mode Support */
     :global(body.dark) {
-        background-color: #121212 !important;
+        background-color: var(--bg) !important;
     }
     :global(body.dark) .cms-wrapper {
-        color: #eee;
+        color: var(--text);
     }
     :global(body.dark) .cms-wrapper.fullscreen {
-        background: #121212;
+        background: var(--bg);
     }
     :global(body.dark) .breadcrumbs h2 {
         color: #eee;
@@ -2516,12 +2528,12 @@
         border-color: var(--brand-orange);
     }
     :global(body.dark) .editor-container {
-        background: #1e1e1e;
-        border-color: #333;
+        background: var(--card-bg);
+        border-color: var(--border);
     }
     :global(body.dark) .toolbar {
-        background: #252525;
-        border-color: #333;
+        background: var(--bg);
+        border-color: var(--border);
     }
     :global(body.dark) .tool-btn {
         color: #aaa;
@@ -2637,20 +2649,20 @@
     }
 
     :global(body.dark) {
-        background-color: #121212;
-        --toast-bg: #1f1f1f;
-        --toast-border: #333;
-        --toast-color: #eee;
+        background-color: var(--bg);
+        --toast-bg: var(--card-bg);
+        --toast-border: var(--border);
+        --toast-color: var(--text);
     }
     :global(body.dark) .cms-wrapper {
-        background-color: #121212;
-        color: #eee;
+        background-color: var(--bg);
+        color: var(--text);
     }
     :global(body.dark) .cms-wrapper.fullscreen {
-        background: #121212;
+        background: var(--bg);
     }
     :global(body.dark) .history-avatar {
-        border-color: #1a1a1a;
+        border-color: var(--bg);
     }
     :global(body.dark) .toast-card {
         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
@@ -2667,19 +2679,19 @@
     }
 
     :global(body.dark) .meta-card {
-        background: #1a1a1a;
-        border-color: #333;
+        background: var(--card-bg);
+        border-color: var(--border);
     }
     :global(body.dark) .meta-key {
-        background: #252525;
-        border-color: #333;
-        color: #eee;
+        background: var(--bg);
+        border-color: var(--border);
+        color: var(--text);
     }
     :global(body.dark) .meta-input,
     :global(body.dark) .meta-input-inline {
-        background: #252525;
-        border-color: #333;
-        color: #eee;
+        background: var(--bg);
+        border-color: var(--border);
+        color: var(--text);
     }
     :global(body.dark) .meta-input:focus,
     :global(body.dark) .meta-input-inline:focus {
@@ -2703,13 +2715,13 @@
         background-color: #444;
     }
     :global(body.dark) .cms-sidebar {
-        background: #1a1a1a;
+        background: var(--card-bg);
     }
 
     /* Modal Dark Mode */
     :global(body.dark) .modal-content {
-        background: #1a1a1a;
-        color: #eee;
+        background: var(--card-bg);
+        color: var(--text);
     }
     :global(body.dark) .modal-header {
         border-bottom-color: #333;
@@ -2738,8 +2750,8 @@
         color: #ccc;
     }
     :global(body.dark) .diff-view {
-        background: #121212;
-        border-color: #333;
+        background: var(--bg);
+        border-color: var(--border);
     }
     :global(body.dark) .diff-line-num {
         color: #6e7781;
@@ -2767,8 +2779,8 @@
     }
 
     :global(body.dark) .preview-box {
-        background: #121212;
-        color: #eee;
+        background: var(--bg);
+        color: var(--text);
     }
 
     /* Mobile Responsive */

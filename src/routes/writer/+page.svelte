@@ -76,7 +76,7 @@
     <link rel="icon" type="image/x-icon" href="/assets/img/room-icon-x.svg" />
 </svelte:head>
 
-<div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="cms-wrapper">
+<div class="cms-wrapper">
     <div class="cms-header">
         <div class="header-left">
             <h1>Writer's Desk</h1>
@@ -128,7 +128,7 @@
         </div>
     </div>
 
-    <div use:smoothCorners={{ corners: { radius: 40, smoothing: 0.6 } }} class="table-container">
+    <div class="table-container">
         <table class="cms-table">
             <thead>
                 <tr>
@@ -363,14 +363,14 @@
 
     .search-input {
         padding: 8px 16px;
-        border: 1px solid #e5e5e5;
+        border: 1px solid var(--border);
         border-radius: var(--squircle-inner, 25px);
         font-family: var(--font-primary, "PP Mori", sans-serif);
         font-size: 14px;
         width: 200px;
         outline: none;
-        color: #333;
-        background: white;
+        color: var(--text);
+        background: var(--card-bg);
         transition: border-color 0.2s;
     }
 
@@ -379,8 +379,8 @@
     }
 
     .table-container {
-        background: white;
-        border: 1px solid #e5e5e5;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
         border-radius: var(--squircle-outer, 40px);
         overflow: hidden;
     }
@@ -391,24 +391,24 @@
     }
 
     .cms-table th {
-        background: #faf9f5;
+        background: var(--bg);
         color: #888;
         font-size: 11px;
         font-weight: 800;
         text-align: left;
         padding: 14px 24px;
         letter-spacing: 1px;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid var(--border);
     }
 
     .cms-table td {
         padding: 16px 24px;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid var(--border);
         vertical-align: middle;
     }
 
     .cms-table tbody tr:hover {
-        background: #f9f9f9;
+        background: var(--bg);
     }
 
     .col-post {
@@ -424,7 +424,7 @@
     .post-preview-img {
         width: 80px;
         height: 48px;
-        background: #f5f5f5;
+        background: var(--bg);
         border-radius: var(--squircle-inner, 25px);
         display: flex;
         align-items: center;
@@ -647,48 +647,48 @@
 
     /* Dark Mode */
     :global(body.dark) {
-        background-color: #121212;
-        --toast-bg: #1f1f1f;
-        --toast-border: #333;
-        --toast-color: #eee;
+        background-color: var(--bg);
+        --toast-bg: var(--card-bg);
+        --toast-border: var(--border);
+        --toast-color: var(--text);
     }
     :global(body.dark) .cms-wrapper {
-        color: #eee;
+        color: var(--text);
     }
     :global(body.dark) .header-left h1 {
-        color: #eee;
+        color: var(--text);
     }
     :global(body.dark) .search-input {
-        background: #1e1e1e;
-        border-color: #333;
-        color: #eee;
+        background: var(--bg);
+        border-color: var(--border);
+        color: var(--text);
     }
     :global(body.dark) .search-input:focus {
         border-color: var(--brand-orange);
     }
     :global(body.dark) .table-container {
-        background: #1a1a1a;
-        border-color: #333;
+        background: var(--card-bg);
+        border-color: var(--border);
     }
     :global(body.dark) .cms-table th {
-        background: #1e1e1e;
-        border-color: #333;
-        color: #666;
+        background: var(--bg);
+        border-color: var(--border);
+        color: #888;
     }
     :global(body.dark) .cms-table td {
-        border-bottom-color: #222;
+        border-bottom-color: var(--border);
     }
     :global(body.dark) .cms-table tbody tr:hover {
-        background: #222;
+        background: var(--bg);
     }
     :global(body.dark) .file-link {
-        color: #eee;
+        color: var(--text);
     }
     :global(body.dark) .file-link:hover {
         color: var(--brand-orange);
     }
     :global(body.dark) .post-preview-img {
-        background: #252525;
+        background: var(--bg);
     }
     :global(body.dark) .toast-card {
         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
