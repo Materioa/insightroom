@@ -117,6 +117,14 @@
                 </svg>
                 <span>Space</span>
             </a>
+            <a
+                href="/writer/artifacts-guide"
+                class="guide-btn"
+                title="Artifacts Style Guide"
+            >
+                <i class="fa-solid fa-book"></i>
+                <span>Style Guide</span>
+            </a>
         </div>
         <div class="header-right">
             <input
@@ -359,6 +367,31 @@
     .space-btn:hover {
         transform: scale(1.05);
         background: #1a6872;
+    }
+
+    .guide-btn {
+        width: auto;
+        height: 38px;
+        padding: 0 16px;
+        background: #7c3aed;
+        color: white;
+        border-radius: var(--squircle-inner, 25px);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 500;
+        transition:
+            transform 0.2s,
+            background 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .guide-btn:hover {
+        transform: scale(1.05);
+        background: #6d28d9;
     }
 
     .search-input {

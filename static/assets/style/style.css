@@ -1464,20 +1464,62 @@ body.dark-mode .mermaid-diagram .label {
   user-select: none;
 }
 
-/* Custom text selection styling: transparent system selection so only custom highlight shows */
-::selection {
+/* Custom text selection styling: transparent system selection so only custom highlight shows, but exclude inputs and textareas so normal cursor selection is visible there */
+:not(input):not(textarea)::selection {
   background-color: transparent !important;
   color: inherit;
 }
 
-::-webkit-selection {
+:not(input):not(textarea)::-webkit-selection {
   background-color: transparent !important;
   color: inherit;
 }
 
-::-moz-selection {
+:not(input):not(textarea)::-moz-selection {
   background-color: transparent !important;
   color: inherit;
+}
+
+/* Ensure inputs and textareas have a visible selection highlight matching the theme */
+input::selection,
+textarea::selection,
+input::-webkit-selection,
+textarea::-webkit-selection,
+input::-moz-selection,
+textarea::-moz-selection {
+  background-color: rgba(255, 84, 0, 0.3) !important;
+  color: inherit !important;
+}
+
+/* Force normal/visible selection highlights for all elements in the writer interface */
+.writer-layout ::selection,
+.writer-layout *::selection,
+.cms-wrapper ::selection,
+.cms-wrapper *::selection,
+.mcp-widget-container ::selection,
+.mcp-widget-container *::selection {
+  background-color: rgba(255, 84, 0, 0.3) !important;
+  color: inherit !important;
+}
+
+.writer-layout ::-webkit-selection,
+.writer-layout *::-webkit-selection,
+.cms-wrapper ::-webkit-selection,
+.cms-wrapper *::-webkit-selection,
+.mcp-widget-container ::-webkit-selection,
+.mcp-widget-container *::-webkit-selection {
+  background-color: rgba(255, 84, 0, 0.3) !important;
+  color: inherit !important;
+}
+
+.writer-layout ::-moz-selection,
+.writer-layout *::-moz-selection,
+.cms-wrapper ::-moz-selection,
+.cms-wrapper *::-moz-selection,
+.mcp-widget-container ::-moz-selection,
+.mcp-widget-container *::-moz-selection {
+  background-color: rgba(255, 84, 0, 0.3) !important;
+  color: inherit !important;
 }
 
 /* Selection in code blocks */

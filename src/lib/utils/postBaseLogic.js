@@ -1809,7 +1809,7 @@ export function initializeArtifacts() {
                     });
 
                     // Set body class to match parent body for theme-specific CSS selectors
-                    doc.body.className = document.body.className;
+                    doc.body.className = document.body.className + " artifact-viewport";
 
                     // Apply default styles to the iframe's body to match layout/font/theme while keeping background transparent
                     const style = doc.createElement('style');
@@ -1854,7 +1854,7 @@ export function initializeArtifacts() {
                         }
                         try {
                             // Sync parent body classes (handles fonts and themes)
-                            doc.body.className = document.body.className;
+                            doc.body.className = document.body.className + " artifact-viewport";
                         } catch (err) {
                             console.error("Failed to update iframe theme:", err);
                         }

@@ -22,16 +22,58 @@ body.dark * {
     scrollbar-color: #444 transparent;
 }
 
-::selection,
-::-webkit-selection,
-::-moz-selection {
+:not(input):not(textarea)::selection,
+:not(input):not(textarea)::-webkit-selection,
+:not(input):not(textarea)::-moz-selection {
     background-color: transparent !important;
 }
 
-body.dark ::selection,
-body.dark ::-webkit-selection,
-body.dark ::-moz-selection {
+body.dark :not(input):not(textarea)::selection,
+body.dark :not(input):not(textarea)::-webkit-selection,
+body.dark :not(input):not(textarea)::-moz-selection {
     background-color: transparent !important;
+}
+
+/* Ensure inputs and textareas have a visible selection highlight matching the theme */
+input::selection,
+textarea::selection,
+input::-webkit-selection,
+textarea::-webkit-selection,
+input::-moz-selection,
+textarea::-moz-selection {
+    background-color: rgba(255, 84, 0, 0.3) !important;
+    color: inherit !important;
+}
+
+/* Force normal/visible selection highlights for all elements in the writer interface */
+.writer-layout ::selection,
+.writer-layout *::selection,
+.cms-wrapper ::selection,
+.cms-wrapper *::selection,
+.mcp-widget-container ::selection,
+.mcp-widget-container *::selection {
+    background-color: rgba(255, 84, 0, 0.3) !important;
+    color: inherit !important;
+}
+
+.writer-layout ::-webkit-selection,
+.writer-layout *::-webkit-selection,
+.cms-wrapper ::-webkit-selection,
+.cms-wrapper *::-webkit-selection,
+.mcp-widget-container ::-webkit-selection,
+.mcp-widget-container *::-webkit-selection {
+    background-color: rgba(255, 84, 0, 0.3) !important;
+    color: inherit !important;
+}
+
+.writer-layout ::-moz-selection,
+.writer-layout *::-moz-selection,
+.cms-wrapper ::-moz-selection,
+.cms-wrapper *::-moz-selection,
+.mcp-widget-container ::-moz-selection,
+.mcp-widget-container *::-moz-selection {
+    background-color: rgba(255, 84, 0, 0.3) !important;
+    color: inherit !important;
 }
 
 .has-large-selection ::selection,

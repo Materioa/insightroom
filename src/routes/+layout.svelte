@@ -14,6 +14,7 @@
   let isPost = $derived(!!$page.params.postPath);
   let isHome = $derived($page.url.pathname === "/");
   let isMcpUpload = $derived($page.url.pathname.includes("/mcp-upload"));
+  let isWriter = $derived($page.url.pathname.startsWith("/writer"));
   let bodyClass = $derived(isPost ? "body-post" : isHome ? "blog-layout" : "");
   
   // Reactive Svelte 5 Runes for Theme and Font
@@ -52,6 +53,7 @@
       // Manage layout classes
       document.body.classList.toggle("body-post", isPost);
       document.body.classList.toggle("blog-layout", isHome);
+      document.body.classList.toggle("writer-layout", isWriter);
 
       // Dispatch event for components like Mermaid
       // @ts-ignore
@@ -118,6 +120,7 @@
     const cleanupSquircles = initGlobalSquircles();
 
     // Setup selection highlighters using @highlighters/core
+    /** @type {any} */
     let selectionHandle;
     try {
       selectionHandle = highlightSelection({
@@ -255,12 +258,14 @@
   <link rel="preload" href="/assets/style/global.css" as="style" />
   <link rel="preload" href="/assets/style/style.css" as="style" />
   <link rel="preload" href="/assets/style/post.css" as="style" />
+  <link rel="preload" href="/assets/style/artifacts-components.css" as="style" />
   <link rel="preload" href="/assets/fonts/PPMori_Regular.otf" as="font" type="font/otf" crossorigin="anonymous" />
 
   <!-- Stylesheets -->
   <link rel="stylesheet" href="/assets/style/global.css" />
   <link rel="stylesheet" href="/assets/style/style.css" />
   <link rel="stylesheet" href="/assets/style/post.css" />
+  <link rel="stylesheet" href="/assets/style/artifacts-components.css" />
   {@html `<style>${isDark ? githubDark : a11yLight}</style>`}
 
   <!-- Fonts (Non-blocking Asynchronous Loading) -->
