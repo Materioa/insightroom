@@ -829,6 +829,30 @@
             const customMarked = new Marked({ gfm: true, breaks: true });
             let rawContent = content || "";
 
+            // Cover replacement - extract cover BEFORE markdown parsing/shortcode parsing
+            const coverRegex = /```(?:cover|artifact:cover)\s*\n([\s\S]*?)\n```/g;
+            let coverHtml = '';
+            rawContent = rawContent.replace(coverRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
+                coverHtml = innerContent;
+                return ''; // remove from body
+            });
+
+            // Artifact replacement - extract artifacts BEFORE markdown parsing/shortcode parsing to preserve HTML
+            const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
+            /** @type {Record<string, string>} */
+            const artifacts = {};
+            rawContent = rawContent.replace(
+                artifactRegex,
+                (
+                    /** @type {string} */ match,
+                    /** @type {string} */ contentArtifact,
+                ) => {
+                    const id = Math.random().toString(36).substr(2, 9);
+                    artifacts[id] = contentArtifact;
+                    return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
+                },
+            );
+
             const attachmentRegex = /\[attachment:([^\]]+):([^\]:]+)\]/g;
             rawContent = rawContent.replace(
                 attachmentRegex,
@@ -959,30 +983,6 @@
                         `<div class="mcq-options">${optionsHtml}</div>` +
                     `</div>`;
                 }
-            );
-
-            // Cover replacement - extract cover BEFORE markdown parsing
-            const coverRegex = /```(?:cover|artifact:cover)\s*\n([\s\S]*?)\n```/g;
-            let coverHtml = '';
-            rawContent = rawContent.replace(coverRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
-                coverHtml = innerContent;
-                return ''; // remove from body
-            });
-
-            // Artifact replacement - extract artifacts BEFORE markdown parsing to preserve HTML
-            const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
-            /** @type {Record<string, string>} */
-            const artifacts = {};
-            rawContent = rawContent.replace(
-                artifactRegex,
-                (
-                    /** @type {string} */ match,
-                    /** @type {string} */ contentArtifact,
-                ) => {
-                    const id = Math.random().toString(36).substr(2, 9);
-                    artifacts[id] = contentArtifact;
-                    return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
-                },
             );
 
             previewHtml = await customMarked.parse(rawContent);

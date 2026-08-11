@@ -18,6 +18,24 @@ export async function renderPostContent(rawContent) {
 
     let content = rawContent;
 
+    // ── Cover artifact code blocks (extract before markdown parsing/shortcode parsing) ──
+    const coverRegex = /```(?:cover|artifact:cover)\s*\n([\s\S]*?)\n```/g;
+    let coverHtml = '';
+    content = content.replace(coverRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
+        coverHtml = innerContent;
+        return ''; // remove it from the main body content
+    });
+
+    // ── Artifact code blocks (extract before markdown parsing/shortcode parsing) ──
+    const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
+    /** @type {Record<string, string>} */
+    const artifacts = {};
+    content = content.replace(artifactRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
+        const id = Math.random().toString(36).substr(2, 9);
+        artifacts[id] = innerContent;
+        return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
+    });
+
     // ── Extract LaTeX display math blocks ──
     /** @type {Record<string, string>} */
     const mathBlocks = {};
@@ -164,24 +182,6 @@ export async function renderPostContent(rawContent) {
             `</div>` +
             `<div class="mcq-options">${optionsHtml}</div>` +
         `</div>`;
-    });
-
-    // ── Cover artifact code blocks (extract before markdown parsing) ──
-    const coverRegex = /```(?:cover|artifact:cover)\s*\n([\s\S]*?)\n```/g;
-    let coverHtml = '';
-    content = content.replace(coverRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
-        coverHtml = innerContent;
-        return ''; // remove it from the main body content
-    });
-
-    // ── Artifact code blocks (extract before markdown parsing) ──
-    const artifactRegex = /```artifact\s*\n([\s\S]*?)\n```/g;
-    /** @type {Record<string, string>} */
-    const artifacts = {};
-    content = content.replace(artifactRegex, (/** @type {string} */ match, /** @type {string} */ innerContent) => {
-        const id = Math.random().toString(36).substr(2, 9);
-        artifacts[id] = innerContent;
-        return `\n\n<div data-artifact-placeholder="${id}"></div>\n\n`;
     });
 
     // ── Markdown parsing ──

@@ -49,11 +49,95 @@ export function initGlobalSquircles() {
         ".uncategorized-posts",
         ".toast-region *",
         ".mcq-card",
-        ".mcq-option"
+        ".mcq-option",
+        // All elements inside any iframe's sandboxed document viewports
+        ".artifact-viewport *",
+        "[class*='scm-']"
     ].join(", ");
 
+    /** @type {MutationObserver[]} */
+    const iframeObservers = [];
+
+    /**
+     * @param {HTMLIFrameElement} iframe
+     * @param {Document} doc
+     */
+    function observeIframe(iframe, doc) {
+        const obs = new MutationObserver((mutations) => {
+            let shouldRun = false;
+            for (const mutation of mutations) {
+                // Clean up destroyed elements inside the iframe to prevent SVG overlay leaks
+                mutation.removedNodes.forEach((node) => {
+                    if (node instanceof HTMLElement) {
+                        const elementsWithLisse = node.querySelectorAll("[data-global-squircle='true']");
+                        elementsWithLisse.forEach((child) => {
+                            // @ts-ignore
+                            if (child instanceof HTMLElement && typeof child.__lisse_destroy === "function") {
+                                // @ts-ignore
+                                child.__lisse_destroy();
+                            }
+                        });
+                        
+                        // @ts-ignore
+                        if (node.dataset.globalSquircle === "true" && typeof node.__lisse_destroy === "function") {
+                            // @ts-ignore
+                            node.__lisse_destroy();
+                        }
+                    }
+                });
+
+                if (mutation.addedNodes.length > 0) {
+                    shouldRun = true;
+                }
+            }
+            
+            if (shouldRun) {
+                requestAnimationFrame(applySquircles);
+            }
+        });
+        obs.observe(doc.body, {
+            childList: true,
+            subtree: true
+        });
+        iframeObservers.push(obs);
+    }
+
     function applySquircles() {
-        const elements = document.querySelectorAll(targetSelectors);
+        const elements = Array.from(document.querySelectorAll(targetSelectors));
+
+        // Gather elements from same-origin artifact iframes
+        const iframes = document.querySelectorAll('iframe.artifact-iframe');
+        iframes.forEach(el => {
+            if (!(el instanceof HTMLIFrameElement)) return;
+            const iframe = el;
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (doc && doc.body) {
+                    elements.push(...doc.querySelectorAll(targetSelectors));
+
+                    // Add observer to iframe document if not already done
+                    // @ts-ignore
+                    if (!iframe.__observed) {
+                        // @ts-ignore
+                        iframe.__observed = true;
+                        observeIframe(iframe, doc);
+                    }
+
+                    // Add load listener in case the content is still rendering
+                    // @ts-ignore
+                    if (!iframe.__loadListenerAdded) {
+                        // @ts-ignore
+                        iframe.__loadListenerAdded = true;
+                        iframe.addEventListener('load', () => {
+                            requestAnimationFrame(applySquircles);
+                        });
+                    }
+                }
+            } catch (e) {
+                // Cross-origin fallback
+            }
+        });
+
         /** @type {{ el: HTMLElement, radius: number, needsOverlay: boolean }[]} */
         const toApply = [];
 
@@ -77,7 +161,8 @@ export function initGlobalSquircles() {
                 return;
             }
 
-            const computedStyle = window.getComputedStyle(el);
+            const elWin = el.ownerDocument?.defaultView || window;
+            const computedStyle = elWin.getComputedStyle(el);
             
             // Skip fixed position elements (they detach from relative overlays)
             if (computedStyle.position === "fixed") return;
@@ -178,5 +263,6 @@ export function initGlobalSquircles() {
     // Return destroy function for cleanup
     return () => {
         observer.disconnect();
+        iframeObservers.forEach(obs => obs.disconnect());
     };
 }

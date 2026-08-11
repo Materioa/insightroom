@@ -1770,7 +1770,30 @@ export function initializeArtifacts() {
         let srcdocHtml = rawHtml.trim().toLowerCase().startsWith('<!doctype html') ? rawHtml : doctype + rawHtml;
         
         // Auto-inject local D3, TopoJSON, and Map Data if used, avoiding external network requests
-        let injectedScripts = '';
+        let injectedScripts = `
+        <script>
+        (function() {
+            try {
+                var desc = Object.getOwnPropertyDescriptor(Document.prototype, 'currentScript') || 
+                           Object.getOwnPropertyDescriptor(HTMLDocument.prototype, 'currentScript');
+                var originalGetter = desc && desc.get;
+                Object.defineProperty(document, 'currentScript', {
+                    get: function() {
+                        if (originalGetter) {
+                            var res = originalGetter.call(document);
+                            if (res) return res;
+                        }
+                        var scripts = document.getElementsByTagName('script');
+                        return scripts[scripts.length - 1] || null;
+                    },
+                    configurable: true
+                });
+            } catch (e) {
+                console.warn('Failed to define document.currentScript polyfill:', e);
+            }
+        })();
+        </script>
+        `;
         if (srcdocHtml.includes('d3.') && !srcdocHtml.includes('d3.v7.min.js') && !srcdocHtml.includes('npm/d3')) {
             injectedScripts += '<script src="/assets/lib/d3.v7.min.js"></script>\n';
         }
