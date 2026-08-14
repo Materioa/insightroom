@@ -42,9 +42,6 @@ export async function POST({ request, cookies, fetch, url }) {
             author_avatar: metadata.author_avatar
         }, request.headers);
 
-        metadata.author_name = metadata.author_name || attribution.displayName;
-        metadata.author_avatar = metadata.author_avatar || attribution.avatar;
-
         const draft = metadata.draft ? true : false;
         const category = draft ? 'draft' : (metadata.category || '').trim();
         const categorySlug = draft ? 'draft' : slugify(category);

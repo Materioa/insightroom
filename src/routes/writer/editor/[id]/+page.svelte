@@ -228,13 +228,6 @@
             ...parseAuthorList(metadata.collaborator),
         ];
 
-        if (metadata.author_name || metadata.author_avatar) {
-            candidates.unshift({
-                name: metadata.author_name,
-                avatar: metadata.author_avatar,
-            });
-        }
-
         if (source?.saved_by_name || source?.saved_by_avatar) {
             candidates.unshift({
                 name: source.saved_by_display_name || source.saved_by_name,

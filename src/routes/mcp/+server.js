@@ -635,15 +635,6 @@ async function handleToolCall(name, args, currentUser, request) {
             if (!slug) slug = slugify(title);
             metadata = metadata || {};
 
-            // Automatically resolve author avatar and display name
-            const attribution = resolveAttribution({
-                author_name: metadata.author_name,
-                author_avatar: metadata.author_avatar
-            }, request.headers);
-
-            metadata.author_name = metadata.author_name || attribution.displayName;
-            metadata.author_avatar = metadata.author_avatar || attribution.avatar;
-
             const draft = metadata.draft ? true : false;
             const category = draft ? 'draft' : (metadata.category || '').trim();
             const categorySlug = draft ? 'draft' : slugify(category);
@@ -722,15 +713,6 @@ async function handleToolCall(name, args, currentUser, request) {
 
             // Merge metadata properties if metadata is provided
             if (metadata !== undefined) {
-                // Automatically resolve author avatar and details
-                const authorAttribution = resolveAttribution({
-                    author_name: metadata.author_name,
-                    author_avatar: metadata.author_avatar
-                }, request.headers);
-                
-                metadata.author_name = metadata.author_name || authorAttribution.displayName;
-                metadata.author_avatar = metadata.author_avatar || authorAttribution.avatar;
-
                 const newMetadata = { ...(oldPost.metadata || {}), ...metadata };
                 updateDoc.metadata = newMetadata;
                 if (newMetadata.excerpt !== undefined) updateDoc.excerpt = newMetadata.excerpt;

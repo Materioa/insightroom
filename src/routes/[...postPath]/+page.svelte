@@ -207,13 +207,6 @@
       ...parseAuthorList(data.collaborator),
     ];
 
-    if (data.author_name || data.author_avatar) {
-      candidates.unshift({
-        name: data.author_name,
-        avatar: data.author_avatar,
-      });
-    }
-
     const seen = new Set();
     const authors = candidates
       .map(normalizeAuthor)
