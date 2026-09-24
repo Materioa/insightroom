@@ -118,6 +118,7 @@ export async function renderPostContent(rawContent) {
         let question = '';
         /** @type {{text: string, isCorrect: boolean}[]} */
         let options = [];
+        let explanation = '';
 
         if (trimmed.includes('|')) {
             const parts = trimmed.split('|').map((/** @type {string} */ p) => p.trim());
@@ -132,8 +133,11 @@ export async function renderPostContent(rawContent) {
         } else {
             const lines = trimmed.split('\n').map((/** @type {string} */ l) => l.trim()).filter(Boolean);
             if (lines.length > 0) {
-                const optionLines = lines.filter((/** @type {string} */ l) => l.startsWith('-') || l.startsWith('*') || /^\d+\./.test(l));
-                const questionLines = lines.filter((/** @type {string} */ l) => !optionLines.includes(l));
+                const explanationLine = lines.find((/** @type {string} */ l) => l.startsWith('~'));
+                explanation = explanationLine ? explanationLine.substring(1).trim() : '';
+                
+                const optionLines = lines.filter((/** @type {string} */ l) => (l.startsWith('-') || l.startsWith('*') || /^\d+\./.test(l)) && l !== explanationLine);
+                const questionLines = lines.filter((/** @type {string} */ l) => !optionLines.includes(l) && l !== explanationLine);
                 
                 question = questionLines.join(' ');
                 options = optionLines.map((/** @type {string} */ opt) => {
@@ -164,7 +168,7 @@ export async function renderPostContent(rawContent) {
         const optionsHtml = options.map((/** @type {any} */ opt, /** @type {number} */ idx) => {
             const letter = String.fromCharCode(65 + idx);
             const escapedText = escapeHtml(opt.text);
-            const clickHandler = "(function(btn){var card=btn.closest('.mcq-card');if(card.classList.contains('answered'))return;card.classList.add('answered');var correctIdx=parseInt(card.getAttribute('data-correct-index'),10);var selectedIdx=parseInt(btn.getAttribute('data-index'),10);var isCorrect=correctIdx===selectedIdx;var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b,idx){var icon=b.querySelector('.mcq-option-icon i');if(idx===correctIdx){b.classList.add('correct');if(icon)icon.className='fa-solid fa-circle-check';}else if(idx===selectedIdx){b.classList.add('incorrect');if(icon)icon.className='fa-solid fa-circle-xmark';}});card.dispatchEvent(new CustomEvent('mcq-answer',{detail:{correct:isCorrect},bubbles:true}));})(this)";
+            const clickHandler = "(function(btn){var card=btn.closest('.mcq-card');if(card.classList.contains('answered'))return;card.classList.add('answered');var correctIdx=parseInt(card.getAttribute('data-correct-index'),10);var selectedIdx=parseInt(btn.getAttribute('data-index'),10);var isCorrect=correctIdx===selectedIdx;var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b,idx){var icon=b.querySelector('.mcq-option-icon i');if(idx===correctIdx){b.classList.add('correct');if(icon)icon.className='fa-solid fa-circle-check';}else if(idx===selectedIdx){b.classList.add('incorrect');if(icon)icon.className='fa-solid fa-circle-xmark';}});var exp=card.querySelector('.mcq-explanation');if(exp)exp.style.display='block';card.dispatchEvent(new CustomEvent('mcq-answer',{detail:{correct:isCorrect},bubbles:true}));})(this)";
             
             return `<button class="mcq-option" data-index="${idx}" onclick="${clickHandler}">` +
                 `<span class="mcq-option-letter">${letter}</span>` +
@@ -173,7 +177,12 @@ export async function renderPostContent(rawContent) {
             `</button>`;
         }).join('');
 
-        const resetHandler = "(function(btn){var card=btn.closest('.mcq-card');card.classList.remove('answered');var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b){b.classList.remove('correct','incorrect');var icon=b.querySelector('.mcq-option-icon i');if(icon)icon.className='fa-regular';});card.dispatchEvent(new CustomEvent('mcq-reset',{bubbles:true}));})(this)";
+        const resetHandler = "(function(btn){var card=btn.closest('.mcq-card');card.classList.remove('answered');var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b){b.classList.remove('correct','incorrect');var icon=b.querySelector('.mcq-option-icon i');if(icon)icon.className='fa-regular';});var exp=card.querySelector('.mcq-explanation');if(exp)exp.style.display='none';card.dispatchEvent(new CustomEvent('mcq-reset',{bubbles:true}));})(this)";
+
+        // Build explanation HTML if present
+        const explanationHtml = explanation 
+            ? `<div class="mcq-explanation" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(46, 125, 50, 0.1); border-left: 4px solid #2e7d32; border-radius: 4px; color: #1b5e20; font-size: 0.95em;"><strong>Explanation:</strong> ${escapeHtml(explanation)}</div>`
+            : '';
 
         return `<div class="mcq-card" data-correct-index="${correctIndex}">` +
             `<div class="mcq-header">` +
@@ -181,7 +190,36 @@ export async function renderPostContent(rawContent) {
                 `<button class="mcq-reset-btn" onclick="${resetHandler}" title="Reset Question"><i class="fa-solid fa-rotate-left"></i></button>` +
             `</div>` +
             `<div class="mcq-options">${optionsHtml}</div>` +
+            explanationHtml +
         `</div>`;
+    });
+
+    // ── Footnotes ──
+    /** @type {{id: string, text: string}[]} */
+    const footnotes = [];
+    const footnoteDefRegex = /^\[\^([^\]]+)\]:\s*(.+)$/gm;
+    content = content.replace(footnoteDefRegex, (match, id, text) => {
+        footnotes.push({ id, text });
+        return '';
+    });
+
+    const footnoteRefRegex = /\[\^([^\]]+)\]/g;
+    content = content.replace(footnoteRefRegex, (match, id) => {
+        const fn = footnotes.find(f => f.id === id);
+        const fnText = fn ? fn.text : '';
+        const escapeHtml = (/** @type {string} */ str) => {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+        const escapedText = escapeHtml(fnText);
+        return `<sup class="footnote-ref" id="fnref-${id}">
+            <a href="#fn-${id}">${id}</a>
+            <span class="footnote-hover-card">${escapedText}</span>
+        </sup>`;
     });
 
     // ── Markdown parsing ──
@@ -217,6 +255,16 @@ export async function renderPostContent(rawContent) {
     // ── Append cover artifact source if present ──
     if (coverHtml) {
         html += `<div data-cover-artifact-source style="display:none;"><div class="artifact-container"><template>${coverHtml}</template></div></div>`;
+    }
+
+    // ── Append footnotes if any ──
+    if (footnotes.length > 0) {
+        let footnotesHtml = '<div class="footnotes-section"><hr/><ol>';
+        footnotes.forEach(fn => {
+            footnotesHtml += `<li id="fn-${fn.id}" class="footnote-item">${fn.text} <a href="#fnref-${fn.id}" class="footnote-backref" title="Jump back to reference">↩</a></li>`;
+        });
+        footnotesHtml += '</ol></div>';
+        html += footnotesHtml;
     }
 
     return html;

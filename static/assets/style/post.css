@@ -2266,3 +2266,113 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
     display: none !important;
   }
 }
+
+/* Footnotes Styles */
+.footnote-ref {
+    position: relative;
+    display: inline-block;
+}
+
+.footnote-ref a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    color: inherit;
+}
+
+.footnote-ref a:hover {
+    color: #ff8200;
+}
+
+/* Hover Card Styles */
+.footnote-hover-card {
+    position: absolute;
+    bottom: 150%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    width: 250px;
+    background: #e7e7db;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    font-family: var(--font-sans, sans-serif);
+    color: #333;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+    pointer-events: none;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.footnote-hover-card::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px;
+    border-style: solid;
+    border-color: #e7e7db transparent transparent transparent;
+}
+
+.footnote-ref:hover .footnote-hover-card {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.footnotes-section {
+    margin-top: 3rem;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.footnotes-section hr {
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin-bottom: 1rem;
+    width: 30%;
+}
+
+.footnote-item {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.footnote-backref {
+    text-decoration: none;
+    font-family: sans-serif;
+    color: #888;
+    margin-left: 0.25rem;
+}
+
+.footnote-backref:hover {
+    color: #ff8200;
+}
+
+body.dark-mode .footnote-hover-card {
+    background: #2c2c2a;
+    border-color: #444;
+    color: #eee;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .footnote-hover-card::after {
+    border-color: #2c2c2a transparent transparent transparent;
+}
+
+body.dark-mode .footnotes-section {
+    color: #aaa;
+}
+
+body.dark-mode .footnotes-section hr {
+    border-top-color: #444;
+}
+
+body.dark-mode .footnote-backref {
+    color: #666;
+}
