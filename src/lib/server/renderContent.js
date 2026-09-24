@@ -90,8 +90,8 @@ export async function renderPostContent(rawContent) {
         return `<div class="video-embed"><video id="${id}" muted loop autoplay playsinline src="${videoUrl}"></video><div class="video-controls playing" onclick="window.toggleVideo('${id}')"><i class="fa-solid fa-pause"></i></div></div>`;
     });
 
-    // ── MCQ shortcodes ──
-    const mcqRegex = /\[mcq:([\s\S]+?)\]/g;
+    // ── MCQ & MSQ shortcodes ──
+    const mcqRegex = /\[(mcq|msq):([\s\S]+?)\]/gi;
 
     // ── Highlighter shortcodes ──
     const highlightRegex = /==([\s\S]+?)==(?:\{([^}]+)\})?/g;
@@ -113,7 +113,7 @@ export async function renderPostContent(rawContent) {
         return `<mark ${attrs}>${text}</mark>`;
     });
 
-    content = content.replace(mcqRegex, (/** @type {string} */ match, /** @type {string} */ mcqContent) => {
+    content = content.replace(mcqRegex, (/** @type {string} */ match, /** @type {string} */ tag, /** @type {string} */ mcqContent) => {
         const trimmed = mcqContent.trim();
         let question = '';
         /** @type {{text: string, isCorrect: boolean}[]} */
@@ -185,6 +185,52 @@ export async function renderPostContent(rawContent) {
         };
 
         const escapedQuestion = escapeHtml(question);
+        const isExplicitMsq = tag.toLowerCase() === 'msq';
+        const correctIndices = options
+            .map((opt, idx) => opt.isCorrect ? idx : -1)
+            .filter(idx => idx !== -1);
+        const isMultiSelect = isExplicitMsq || correctIndices.length > 1;
+
+        if (isMultiSelect) {
+            const jsonCorrect = JSON.stringify(correctIndices);
+            const lastCorrectIdx = correctIndices.length > 0 ? correctIndices[correctIndices.length - 1] : -1;
+
+            const optionsHtml = options.map((opt, idx) => {
+                const letter = String.fromCharCode(65 + idx);
+                const escapedText = escapeHtml(opt.text);
+                const clickHandler = "(function(btn){var card=btn.closest('.mcq-card');if(card.classList.contains('answered'))return;btn.classList.toggle('selected');var icon=btn.querySelector('.mcq-option-icon i');var isSel=btn.classList.contains('selected');if(icon)icon.className=isSel?'fa-solid fa-square-check':'fa-regular fa-square';var submitBtn=card.querySelector('.msq-submit-btn');var anySelected=card.querySelectorAll('.mcq-option.selected').length>0;if(submitBtn)submitBtn.disabled=!anySelected;})(this)";
+                
+                const explanationBlock = (idx === lastCorrectIdx && explanation)
+                    ? `<div class="mcq-option-explanation" style="display: none;"><strong>Explanation:</strong> ${escapeHtml(explanation)}</div>`
+                    : '';
+
+                return `<button class="mcq-option" data-index="${idx}" onclick="${clickHandler}">` +
+                    `<div class="mcq-option-main">` +
+                        `<span class="mcq-option-letter">${letter}</span>` +
+                        `<span class="mcq-option-text">${escapedText}</span>` +
+                        `<span class="mcq-option-icon"><i class="fa-regular fa-square"></i></span>` +
+                    `</div>` +
+                    explanationBlock +
+                `</button>`;
+            }).join('');
+
+            const submitHandler = "(function(btn){var card=btn.closest('.mcq-card');if(card.classList.contains('answered'))return;card.classList.add('answered');var correctIndices=JSON.parse(card.getAttribute('data-correct-indices')||'[]');var btns=card.querySelectorAll('.mcq-option');var allCorrect=true;btns.forEach(function(b,idx){var isSelected=b.classList.contains('selected');var isShouldBe=correctIndices.indexOf(idx)!==-1;var icon=b.querySelector('.mcq-option-icon i');if(isShouldBe){b.classList.add('correct');if(icon)icon.className='fa-solid fa-square-check';}else if(isSelected){b.classList.add('incorrect');if(icon)icon.className='fa-solid fa-square-xmark';}if(isSelected!==isShouldBe){allCorrect=false;}});card.setAttribute('data-all-correct',allCorrect?'true':'false');var exps=card.querySelectorAll('.mcq-option-explanation');exps.forEach(function(exp){exp.style.display='block';});btn.style.display='none';card.dispatchEvent(new CustomEvent('mcq-answer',{detail:{correct:allCorrect},bubbles:true}));})(this)";
+
+            const resetHandler = "(function(btn){var card=btn.closest('.mcq-card');card.classList.remove('answered');card.removeAttribute('data-all-correct');var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b){b.classList.remove('selected','correct','incorrect');var icon=b.querySelector('.mcq-option-icon i');if(icon)icon.className='fa-regular fa-square';});var exps=card.querySelectorAll('.mcq-option-explanation');exps.forEach(function(exp){exp.style.display='none';});var submitBtn=card.querySelector('.msq-submit-btn');if(submitBtn){submitBtn.style.display='';submitBtn.disabled=true;}card.dispatchEvent(new CustomEvent('mcq-reset',{bubbles:true}));})(this)";
+
+            return `<div class="mcq-card msq-card" data-correct-indices='${jsonCorrect}' data-type="msq">` +
+                `<div class="mcq-header">` +
+                    `<div class="mcq-question">${escapedQuestion}</div>` +
+                    `<button class="mcq-reset-btn" onclick="${resetHandler}" title="Reset Question"><i class="fa-solid fa-rotate-left"></i></button>` +
+                `</div>` +
+                `<div class="mcq-options">${optionsHtml}</div>` +
+                `<div class="msq-footer">` +
+                    `<button class="msq-submit-btn" disabled onclick="${submitHandler}">Submit Answer</button>` +
+                `</div>` +
+            `</div>`;
+        }
+
+        // Single-choice MCQ
         const correctIndex = options.findIndex((/** @type {any} */ opt) => opt.isCorrect);
 
         const optionsHtml = options.map((/** @type {any} */ opt, /** @type {number} */ idx) => {

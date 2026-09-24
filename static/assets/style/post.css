@@ -1935,6 +1935,86 @@ body.dark-mode .mcq-option.incorrect .mcq-option-icon {
   opacity: 0.55;
 }
 
+/* ===== MSQ (MULTI-SELECT) SPECIFIC ===== */
+.msq-card .mcq-option-letter {
+  border-radius: 6px;
+}
+
+body.dark-mode .msq-card .mcq-option-letter {
+  border-radius: 6px;
+}
+
+.msq-card .mcq-option.selected {
+  box-shadow: inset 0 0 0 1.5px #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+body.dark-mode .msq-card .mcq-option.selected {
+  box-shadow: inset 0 0 0 1.5px #60a5fa !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+.msq-card .mcq-option.selected .mcq-option-letter {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .msq-card .mcq-option.selected .mcq-option-letter {
+  background: #60a5fa !important;
+  border-color: #60a5fa !important;
+  color: #111827 !important;
+}
+
+.msq-card .mcq-option.selected .mcq-option-icon {
+  color: #3b82f6 !important;
+}
+
+body.dark-mode .msq-card .mcq-option.selected .mcq-option-icon {
+  color: #60a5fa !important;
+}
+
+/* MSQ answered state overrides selected styles */
+.msq-card.answered .mcq-option.selected:not(.correct):not(.incorrect) {
+  box-shadow: inset 0 0 0 1.5px var(--border, #e0e0e0) !important;
+  background: transparent !important;
+  opacity: 0.55;
+}
+
+.msq-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.msq-submit-btn {
+  padding: 0.6rem 1.5rem;
+  background: var(--mcq-off-black, #3d3d3a);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+body.dark-mode .msq-submit-btn {
+  background: var(--mcq-off-white, #faf9f5);
+  color: #1a1a1a;
+}
+
+.msq-submit-btn:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.msq-submit-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* ===== MCQ SCORECARD & GAUGE ===== */
 .mcq-scorecard-container {
   display: flex;

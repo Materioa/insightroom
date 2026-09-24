@@ -1511,7 +1511,9 @@ function initializeMCQSystem() {
             const isAnswered = card.classList.contains('answered');
             if (isAnswered) {
                 answeredCount++;
-                const isCorrect = !card.querySelector('.mcq-option.incorrect');
+                const isCorrect = card.hasAttribute('data-all-correct')
+                    ? card.getAttribute('data-all-correct') === 'true'
+                    : !card.querySelector('.mcq-option.incorrect');
                 if (isCorrect) {
                     correctCount++;
                     segments[idx].setAttribute('class', 'mcq-gauge-segment correct');

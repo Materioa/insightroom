@@ -2434,7 +2434,9 @@ pre code ::-moz-selection {
   .mcq-scorecard-container, 
   .mcq-take-again-btn,
   .mcq-slideshow-nav,
-  .mcq-slideshow-progress {
+  .mcq-slideshow-progress,
+  .msq-submit-btn,
+  .msq-footer {
     display: none !important;
   }
   
