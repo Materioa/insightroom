@@ -120,28 +120,50 @@ export async function renderPostContent(rawContent) {
         let options = [];
         let explanation = '';
 
-        if (trimmed.includes('|')) {
-            const parts = trimmed.split('|').map((/** @type {string} */ p) => p.trim());
-            question = parts[0];
-            options = parts.slice(1).map((/** @type {string} */ opt) => {
-                const isCorrect = (opt.startsWith('**') && opt.endsWith('**')) ||
-                                  (opt.startsWith('*') && opt.endsWith('*')) ||
-                                  (opt.startsWith('_') && opt.endsWith('_'));
-                const text = opt.replace(/^(\*\*|\*|_)+|(\*\*|\*|_)+$/g, '').trim();
-                return { text, isCorrect };
-            });
+        const isExplanationLine = (/** @type {string} */ str) => {
+            const s = str.trim();
+            return s.startsWith('~') || /^[-*]\s*~/.test(s);
+        };
+
+        const extractExplanationText = (/** @type {string} */ str) => {
+            return str.trim().replace(/^([-*]\s*)?~/, '').trim();
+        };
+
+        if (trimmed.includes('|') && !trimmed.includes('\n')) {
+            const parts = trimmed.split('|').map((/** @type {string} */ p) => p.trim()).filter(Boolean);
+            question = parts[0] || '';
+            const rawOptions = parts.slice(1);
+            for (const opt of rawOptions) {
+                if (isExplanationLine(opt)) {
+                    explanation = extractExplanationText(opt);
+                } else {
+                    const isCorrect = (opt.startsWith('**') && opt.endsWith('**')) ||
+                                      (opt.startsWith('*') && opt.endsWith('*')) ||
+                                      (opt.startsWith('_') && opt.endsWith('_'));
+                    const text = opt.replace(/^(\*\*|\*|_)+|(\*\*|\*|_)+$/g, '').trim();
+                    options.push({ text, isCorrect });
+                }
+            }
         } else {
             const lines = trimmed.split('\n').map((/** @type {string} */ l) => l.trim()).filter(Boolean);
             if (lines.length > 0) {
-                const explanationLine = lines.find((/** @type {string} */ l) => l.startsWith('~'));
-                explanation = explanationLine ? explanationLine.substring(1).trim() : '';
-                
-                const optionLines = lines.filter((/** @type {string} */ l) => (l.startsWith('-') || l.startsWith('*') || /^\d+\./.test(l)) && l !== explanationLine);
-                const questionLines = lines.filter((/** @type {string} */ l) => !optionLines.includes(l) && l !== explanationLine);
+                const expIdx = lines.findIndex(isExplanationLine);
+                let nonExpLines = lines;
+                if (expIdx !== -1) {
+                    const firstExp = extractExplanationText(lines[expIdx]);
+                    const remainingExp = lines.slice(expIdx + 1);
+                    explanation = [firstExp, ...remainingExp].join(' ').trim();
+                    nonExpLines = lines.slice(0, expIdx);
+                }
+
+                const optionLines = nonExpLines.filter((/** @type {string} */ l) => 
+                    l.startsWith('-') || l.startsWith('*') || /^\d+\./.test(l) || /^[A-Ea-e]\.\s+/.test(l)
+                );
+                const questionLines = nonExpLines.filter((/** @type {string} */ l) => !optionLines.includes(l));
                 
                 question = questionLines.join(' ');
                 options = optionLines.map((/** @type {string} */ opt) => {
-                    const cleanOpt = opt.replace(/^([-\*]|\d+\.)\s*/, '').trim();
+                    const cleanOpt = opt.replace(/^([-\*]|\d+\.|[A-Ea-e]\.)\s*/, '').trim();
                     const isCorrect = (cleanOpt.startsWith('**') && cleanOpt.endsWith('**')) ||
                                       (cleanOpt.startsWith('*') && cleanOpt.endsWith('*')) ||
                                       (cleanOpt.startsWith('_') && cleanOpt.endsWith('_'));
@@ -168,21 +190,23 @@ export async function renderPostContent(rawContent) {
         const optionsHtml = options.map((/** @type {any} */ opt, /** @type {number} */ idx) => {
             const letter = String.fromCharCode(65 + idx);
             const escapedText = escapeHtml(opt.text);
-            const clickHandler = "(function(btn){var card=btn.closest('.mcq-card');if(card.classList.contains('answered'))return;card.classList.add('answered');var correctIdx=parseInt(card.getAttribute('data-correct-index'),10);var selectedIdx=parseInt(btn.getAttribute('data-index'),10);var isCorrect=correctIdx===selectedIdx;var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b,idx){var icon=b.querySelector('.mcq-option-icon i');if(idx===correctIdx){b.classList.add('correct');if(icon)icon.className='fa-solid fa-circle-check';}else if(idx===selectedIdx){b.classList.add('incorrect');if(icon)icon.className='fa-solid fa-circle-xmark';}});var exp=card.querySelector('.mcq-explanation');if(exp)exp.style.display='block';card.dispatchEvent(new CustomEvent('mcq-answer',{detail:{correct:isCorrect},bubbles:true}));})(this)";
+            const clickHandler = "(function(btn){var card=btn.closest('.mcq-card');if(card.classList.contains('answered'))return;card.classList.add('answered');var correctIdx=parseInt(card.getAttribute('data-correct-index'),10);var selectedIdx=parseInt(btn.getAttribute('data-index'),10);var isCorrect=correctIdx===selectedIdx;var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b,idx){var icon=b.querySelector('.mcq-option-icon i');if(idx===correctIdx){b.classList.add('correct');if(icon)icon.className='fa-solid fa-circle-check';}else if(idx===selectedIdx){b.classList.add('incorrect');if(icon)icon.className='fa-solid fa-circle-xmark';}});var exp=card.querySelector('.mcq-option-explanation');if(exp)exp.style.display='block';card.dispatchEvent(new CustomEvent('mcq-answer',{detail:{correct:isCorrect},bubbles:true}));})(this)";
             
+            const explanationBlock = (opt.isCorrect && explanation)
+                ? `<div class="mcq-option-explanation" style="display: none;"><strong>Explanation:</strong> ${escapeHtml(explanation)}</div>`
+                : '';
+
             return `<button class="mcq-option" data-index="${idx}" onclick="${clickHandler}">` +
-                `<span class="mcq-option-letter">${letter}</span>` +
-                `<span class="mcq-option-text">${escapedText}</span>` +
-                `<span class="mcq-option-icon"><i class="fa-regular"></i></span>` +
+                `<div class="mcq-option-main">` +
+                    `<span class="mcq-option-letter">${letter}</span>` +
+                    `<span class="mcq-option-text">${escapedText}</span>` +
+                    `<span class="mcq-option-icon"><i class="fa-regular"></i></span>` +
+                `</div>` +
+                explanationBlock +
             `</button>`;
         }).join('');
 
-        const resetHandler = "(function(btn){var card=btn.closest('.mcq-card');card.classList.remove('answered');var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b){b.classList.remove('correct','incorrect');var icon=b.querySelector('.mcq-option-icon i');if(icon)icon.className='fa-regular';});var exp=card.querySelector('.mcq-explanation');if(exp)exp.style.display='none';card.dispatchEvent(new CustomEvent('mcq-reset',{bubbles:true}));})(this)";
-
-        // Build explanation HTML if present
-        const explanationHtml = explanation 
-            ? `<div class="mcq-explanation" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(46, 125, 50, 0.1); border-left: 4px solid #2e7d32; border-radius: 4px; color: #1b5e20; font-size: 0.95em;"><strong>Explanation:</strong> ${escapeHtml(explanation)}</div>`
-            : '';
+        const resetHandler = "(function(btn){var card=btn.closest('.mcq-card');card.classList.remove('answered');var btns=card.querySelectorAll('.mcq-option');btns.forEach(function(b){b.classList.remove('correct','incorrect');var icon=b.querySelector('.mcq-option-icon i');if(icon)icon.className='fa-regular';});var exp=card.querySelector('.mcq-option-explanation');if(exp)exp.style.display='none';card.dispatchEvent(new CustomEvent('mcq-reset',{bubbles:true}));})(this)";
 
         return `<div class="mcq-card" data-correct-index="${correctIndex}">` +
             `<div class="mcq-header">` +
@@ -190,23 +214,34 @@ export async function renderPostContent(rawContent) {
                 `<button class="mcq-reset-btn" onclick="${resetHandler}" title="Reset Question"><i class="fa-solid fa-rotate-left"></i></button>` +
             `</div>` +
             `<div class="mcq-options">${optionsHtml}</div>` +
-            explanationHtml +
         `</div>`;
     });
 
-    // ── Footnotes ──
-    /** @type {{id: string, text: string}[]} */
-    const footnotes = [];
-    const footnoteDefRegex = /^\[\^([^\]]+)\]:\s*(.+)$/gm;
+    // ── Footnotes extraction ──
+    /** @type {Map<string, string>} */
+    const footnoteDefs = new Map();
+    const footnoteDefRegex = /^[ \t]*\[\^([^\]]+)\]:[ \t]*([\s\S]*?)(?=(?:^[ \t]*\[\^)|(?:\r?\n[ \t]*\r?\n(?![ \t]))|$)/gm;
     content = content.replace(footnoteDefRegex, (match, id, text) => {
-        footnotes.push({ id, text });
+        const cleanText = text.trim().replace(/\r?\n[ \t]*/g, ' ');
+        footnoteDefs.set(id, cleanText);
         return '';
     });
 
+    /** @type {string[]} */
+    const footnoteOrder = [];
+    /** @type {Map<string, number>} */
+    const footnoteNumMap = new Map();
+
     const footnoteRefRegex = /\[\^([^\]]+)\]/g;
     content = content.replace(footnoteRefRegex, (match, id) => {
-        const fn = footnotes.find(f => f.id === id);
-        const fnText = fn ? fn.text : '';
+        let num = footnoteNumMap.get(id);
+        if (!num) {
+            num = footnoteOrder.length + 1;
+            footnoteOrder.push(id);
+            footnoteNumMap.set(id, num);
+        }
+
+        const rawText = footnoteDefs.get(id) || id;
         const escapeHtml = (/** @type {string} */ str) => {
             return str
                 .replace(/&/g, '&amp;')
@@ -215,11 +250,13 @@ export async function renderPostContent(rawContent) {
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         };
-        const escapedText = escapeHtml(fnText);
-        return `<sup class="footnote-ref" id="fnref-${id}">
-            <a href="#fn-${id}">${id}</a>
-            <span class="footnote-hover-card">${escapedText}</span>
-        </sup>`;
+
+        const formattedText = escapeHtml(rawText)
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        return `<sup class="footnote-ref" id="fnref-${id}"><a href="#fn-${id}" class="footnote-link no-pill">${num}</a><span class="footnote-hover-card">${formattedText}</span></sup>`;
     });
 
     // ── Markdown parsing ──
@@ -258,10 +295,25 @@ export async function renderPostContent(rawContent) {
     }
 
     // ── Append footnotes if any ──
-    if (footnotes.length > 0) {
-        let footnotesHtml = '<div class="footnotes-section"><hr/><ol>';
-        footnotes.forEach(fn => {
-            footnotesHtml += `<li id="fn-${fn.id}" class="footnote-item">${fn.text} <a href="#fnref-${fn.id}" class="footnote-backref" title="Jump back to reference">↩</a></li>`;
+    if (footnoteOrder.length > 0) {
+        let footnotesHtml = '<div class="footnotes-section"><ol class="footnotes-list">';
+        footnoteOrder.forEach(id => {
+            const num = footnoteNumMap.get(id);
+            const rawText = footnoteDefs.get(id) || id;
+            const escapeHtml = (/** @type {string} */ str) => {
+                return str
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            };
+            const formattedText = escapeHtml(rawText)
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            footnotesHtml += `<li id="fn-${id}" value="${num}" class="footnote-item"><span class="footnote-text">${formattedText}</span> <a href="#fnref-${id}" class="footnote-backref no-pill" title="Jump back to reference">↩</a></li>`;
         });
         footnotesHtml += '</ol></div>';
         html += footnotesHtml;

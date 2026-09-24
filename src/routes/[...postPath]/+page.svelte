@@ -347,11 +347,11 @@
     const roots = document.querySelectorAll(rootSelector);
     if (!roots.length) return;
     roots.forEach(function (root) {
-      const anchors = root.querySelectorAll("a[href]:not(.no-pill)");
+      const anchors = root.querySelectorAll("a[href]:not(.no-pill):not(.footnote-link):not(.footnote-backref)");
       // @ts-ignore
       anchors.forEach(function (/** @type {HTMLAnchorElement} */ a) {
         if (a.querySelector("img")) return;
-        if (a.closest("code, pre")) return;
+        if (a.closest("code, pre, .footnote-ref, .footnotes-section")) return;
         if (!a.classList.contains("link-pill")) a.classList.add("link-pill");
 
         const lastChild = a.lastElementChild;

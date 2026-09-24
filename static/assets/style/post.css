@@ -1740,7 +1740,8 @@ body.dark-mode .mcq-reset-btn:hover {
 
 .mcq-option {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   padding: 0.85rem 1rem;
   background: transparent;
@@ -1757,6 +1758,40 @@ body.dark-mode .mcq-reset-btn:hover {
   position: relative;
   outline: none;
   box-sizing: border-box;
+}
+
+.mcq-option-main {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.mcq-option-explanation {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed rgba(16, 185, 129, 0.35);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #065f46;
+  font-weight: normal;
+  text-align: left;
+  width: 100%;
+}
+
+body.dark-mode .mcq-option-explanation,
+body.dark .mcq-option-explanation {
+  border-top-color: rgba(52, 211, 153, 0.3);
+  color: #a7f3d0;
+}
+
+.mcq-option-explanation strong {
+  color: #047857;
+  margin-right: 0.35rem;
+}
+
+body.dark-mode .mcq-option-explanation strong,
+body.dark .mcq-option-explanation strong {
+  color: #34d399;
 }
 
 body.dark-mode .mcq-option {
@@ -2269,43 +2304,62 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
 
 /* Footnotes Styles */
 .footnote-ref {
+    display: inline;
     position: relative;
-    display: inline-block;
+    font-size: 0.72em;
+    line-height: 0;
+    vertical-align: super;
+    margin-left: 1px;
 }
 
+.footnote-ref a.footnote-link,
 .footnote-ref a {
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    text-decoration-thickness: 1px;
     color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 1.5px;
+    text-decoration-thickness: 1px;
+    font-weight: 500;
+    cursor: pointer;
+    background: none !important;
+    border: none !important;
+    padding: 0 1px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
 }
 
+.footnote-ref a.footnote-link:hover,
 .footnote-ref a:hover {
-    color: #ff8200;
+    color: var(--theme-color, #ff8200);
 }
 
 /* Hover Card Styles */
 .footnote-hover-card {
     position: absolute;
-    bottom: 150%;
+    bottom: calc(100% + 8px);
     left: 50%;
-    transform: translateX(-50%) translateY(10px);
-    width: 250px;
-    background: #e7e7db;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    padding: 12px 16px;
-    font-size: 0.9rem;
-    font-family: var(--font-sans, sans-serif);
-    color: #333;
+    transform: translateX(-50%) translateY(4px);
+    width: max-content;
+    max-width: 320px;
+    min-width: 140px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-family: var(--font-primary, sans-serif);
+    font-weight: normal;
+    font-style: normal;
+    color: #222;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s ease;
-    z-index: 100;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 9999;
     pointer-events: none;
-    line-height: 1.4;
+    line-height: 1.45;
     text-align: left;
+    white-space: normal;
 }
 
 .footnote-hover-card::after {
@@ -2314,9 +2368,9 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
-    border-width: 8px;
+    border-width: 6px;
     border-style: solid;
-    border-color: #e7e7db transparent transparent transparent;
+    border-color: #ffffff transparent transparent transparent;
 }
 
 .footnote-ref:hover .footnote-hover-card {
@@ -2326,20 +2380,24 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
 }
 
 .footnotes-section {
-    margin-top: 3rem;
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
     font-size: 0.9em;
     color: #555;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .footnotes-section hr {
-    border: 0;
-    border-top: 1px solid #ccc;
-    margin-bottom: 1rem;
-    width: 30%;
+    display: none;
+}
+
+.footnotes-list {
+    padding-left: 1.5rem;
+    margin: 0;
 }
 
 .footnote-item {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
     line-height: 1.5;
 }
 
@@ -2347,32 +2405,66 @@ body.dark-mode .mcq-slideshow-nav-btn:hover:not(:disabled) {
     text-decoration: none;
     font-family: sans-serif;
     color: #888;
-    margin-left: 0.25rem;
+    margin-left: 0.35rem;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer;
 }
 
 .footnote-backref:hover {
-    color: #ff8200;
+    color: var(--theme-color, #ff8200);
 }
 
+body.dark .footnote-hover-card,
 body.dark-mode .footnote-hover-card {
-    background: #2c2c2a;
-    border-color: #444;
+    background: #242424;
+    border-color: rgba(255, 255, 255, 0.15);
     color: #eee;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+body.dark .footnote-hover-card::after,
 body.dark-mode .footnote-hover-card::after {
-    border-color: #2c2c2a transparent transparent transparent;
+    border-color: #242424 transparent transparent transparent;
 }
 
+body.dark .footnotes-section,
 body.dark-mode .footnotes-section {
     color: #aaa;
+    border-top-color: rgba(255, 255, 255, 0.12);
 }
 
-body.dark-mode .footnotes-section hr {
-    border-top-color: #444;
-}
-
+body.dark .footnote-backref,
 body.dark-mode .footnote-backref {
-    color: #666;
+    color: #777;
+}
+
+/* MCQ Explanation styles */
+.mcq-explanation {
+    margin-top: 1rem;
+    padding: 0.85rem 1.15rem;
+    background: rgba(34, 197, 94, 0.08);
+    border-left: 3px solid #16a34a;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #1f2937;
+}
+
+body.dark .mcq-explanation,
+body.dark-mode .mcq-explanation {
+    background: rgba(34, 197, 94, 0.12);
+    border-left-color: #22c55e;
+    color: #e5e7eb;
+}
+
+.mcq-explanation strong {
+    color: #16a34a;
+    margin-right: 0.35rem;
+}
+
+body.dark .mcq-explanation strong,
+body.dark-mode .mcq-explanation strong {
+    color: #4ade80;
 }
