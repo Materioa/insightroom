@@ -1,14 +1,14 @@
 import { error } from '@sveltejs/kit';
 import { renderPostContent } from '$lib/server/renderContent.js';
+import { getCookieToken, validateToken } from '$lib/server/auth.js';
+import { canReadPrivate } from '$lib/server/session.js';
 
 /** @type {import('./$types').PageServerLoad} */
-export const load = async ({ params, parent }) => {
-    const { accessTier, token } = await parent();
-
-    // Import dynamically
+export const load = async ({ params, cookies, fetch }) => {
     const { getPost, getPostByPermalink } = await import('$lib/server/posts.js');
 
     const path = params.postPath;
+    /** @type {any} */
     let post;
 
     // 1. Try to parse as category/slug
@@ -31,18 +31,25 @@ export const load = async ({ params, parent }) => {
         throw error(404, 'Post not found');
     }
 
-    // Check access for private posts
-    let isLocked = false;
+    // Only gated posts need a tier. Public pages never resolve the session, so
+    // the common case stays free of an auth round trip.
+    let accessTier = 'guest';
     if (post.visibility === 'private') {
-        if (accessTier !== 'super' && accessTier !== 'plus') {
-            isLocked = true;
-        }
+        const { accessTier: tier } = await validateToken(getCookieToken(cookies), fetch);
+        accessTier = tier;
     }
+
+    const isLocked = post.visibility === 'private' && !canReadPrivate(accessTier);
 
     // SSR content only for PUBLIC posts so that every visitor — bots, human reviewers,
     // search engines, AI assistants, AdSense — sees full content in the initial HTML.
     // Private posts always use the client-side API fetch (with skeleton loader) so their
     // content never appears in the HTML source, even for authorized users.
+    //
+    // That split is also what makes the page cacheable: for an anonymous visitor
+    // the shell is byte-identical whoever they are, so the CDN can hold it and a
+    // post republished through the CMS appears on the next revalidation rather
+    // than needing a rebuild.
     const isPublicPost = post.visibility !== 'private';
     let ssrContent = '';
 
@@ -67,7 +74,6 @@ export const load = async ({ params, parent }) => {
         claps: post.claps || 0,
         postId: post.id,
         isLocked,
-        token,
         accessTier,
         // Pre-rendered content for all public posts; empty for locked posts
         ssrContent,

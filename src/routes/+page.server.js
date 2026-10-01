@@ -1,40 +1,37 @@
-/** @type {import('./$types').PageServerLoad} */
-export const load = async ({ parent }) => {
-    const { accessTier } = await parent();
+import { getCookieToken, validateToken } from '$lib/server/auth.js';
+import { canReadPrivate } from '$lib/server/session.js';
 
-    // Import dynamically to avoid top-level await issues if any (though standard import is fine here)
+/** @type {import('./$types').PageServerLoad} */
+export const load = async ({ cookies, fetch }) => {
     const { getAllPosts } = await import('$lib/server/posts.js');
     const allPosts = await getAllPosts();
-    console.log('--- DEBUG ALLPOSTS ---');
-    console.log('Is Array?', Array.isArray(allPosts));
-    console.log('Type:', typeof allPosts);
-    if (!Array.isArray(allPosts)) {
-        console.log('allPosts Value:', allPosts);
+
+    const published = allPosts.filter((/** @type {any} */ post) => !post.draft && !post.hidden);
+
+    // The listing is the same for everyone unless a private post is in it, so
+    // only pay for the auth round trip when that is actually the case. This
+    // keeps the cached homepage free of any per-visitor work.
+    const hasPrivatePosts = published.some((/** @type {any} */ post) => post.visibility === 'private');
+
+    let accessTier = 'guest';
+    if (hasPrivatePosts) {
+        ({ accessTier } = await validateToken(getCookieToken(cookies), fetch));
     }
 
-    // Filter posts based on access tier
-    const posts = allPosts.filter(post => {
-        if (post.draft || post.hidden) return false;
+    const canSee = (/** @type {any} */ post) =>
+        post.visibility !== 'private' || canReadPrivate(accessTier);
 
-        if (post.visibility === 'private') {
-            return accessTier === 'super' || accessTier === 'plus';
-        }
-        return true;
-    });
+    const posts = published.filter(canSee);
 
-    // Mark which posts are visible to this user
-    // We can define 'hasAccess' for client-side filtering logic if needed
-    const postsWithAccess = posts.map(post => {
+    // Strip the markdown body: the homepage only renders cards, and every post
+    // body would otherwise be dragged over the wire on each render.
+    const postsWithAccess = posts.map((/** @type {any} */ post) => {
         const { content, ...rest } = post;
-        return {
-            ...rest,
-            // We'll just pass all properties from the post object which now includes 'url'
-            hasAccess: post.visibility !== 'private' || accessTier === 'super' || accessTier === 'plus'
-        };
+        return { ...rest, hasAccess: true };
     });
 
     // Extract categories
-    const categories = [...new Set(posts.flatMap(post => {
+    const categories = [...new Set(posts.flatMap((/** @type {any} */ post) => {
         if (!post.category && !post.categories) return [];
         const cats = post.categories || [post.category];
         return Array.isArray(cats) ? cats : [cats];

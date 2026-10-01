@@ -6,10 +6,16 @@
   import { highlightSelection } from "@highlighters/core";
   import Header from "$lib/components/Header.svelte";
   import Footer from "$lib/components/Footer.svelte";
+  import { session, loadSession } from "$lib/stores/session.js";
   import githubDark from "highlight.js/styles/github-dark.css?raw";
   import a11yLight from "highlight.js/styles/a11y-light.css?raw";
 
   let { children, data } = $props();
+
+  // Cached pages carry no session data, so it is resolved client-side.
+  // `data.user` still wins on a `private, no-store` response (e.g. /writer).
+  let currentUser = $derived(data.user ?? ($session.ready ? $session.user : null));
+  let currentAccessTier = $derived(data.accessTier ?? $session.accessTier);
 
   let isPost = $derived(!!$page.params.postPath);
   let isHome = $derived($page.url.pathname === "/");
@@ -117,6 +123,8 @@
   }
 
   onMount(() => {
+    loadSession();
+
     const cleanupSquircles = initGlobalSquircles();
 
     // Setup selection highlighters using @highlighters/core
@@ -302,8 +310,8 @@
   {currentTheme}
   {setFont}
   {currentFont}
-  user={data.user}
-  accessTier={data.accessTier}
+  user={currentUser}
+  accessTier={currentAccessTier}
 />
 {/if}
 
@@ -317,7 +325,7 @@
   {currentTheme}
   {setFont}
   {currentFont}
-  user={data.user}
-  accessTier={data.accessTier}
+  user={currentUser}
+  accessTier={currentAccessTier}
 />
 {/if}

@@ -1,15 +1,16 @@
 import { json } from '@sveltejs/kit';
 import { getAllPosts } from '$lib/server/posts.js';
-import jwt from 'jsonwebtoken';
-import { env } from '$env/dynamic/private';
+import { validateToken, getCookieToken } from '$lib/server/auth.js';
 import { dev } from '$app/environment';
 
 export const prerender = false;
 
 const ALLOWED_ORIGINS = new Set([
-    'https://materioa.vercel.app',
+    'https://room.getmaterio.app',
     'https://getmaterio.app',
+    'https://accounts.getmaterio.app',
     'http://localhost:5173',
+    'http://localhost:5174',
     'http://localhost:1000'
 ]);
 
@@ -21,6 +22,8 @@ function getCorsHeaders(origin) {
     const headers = {
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        // Visitor-specific: a session cookie resolves this differently per caller.
+        'Cache-Control': 'private, no-store',
         Vary: 'Origin'
     };
 
@@ -34,7 +37,7 @@ function getCorsHeaders(origin) {
     return headers;
 }
 
-/** @type {import('@sveltejs/kit').RequestHandler} */
+/** @type {import('./$types').RequestHandler} */
 export function OPTIONS({ request }) {
     const origin = request.headers.get('origin');
     return new Response(null, {
@@ -42,8 +45,8 @@ export function OPTIONS({ request }) {
     });
 }
 
-/** @type {import('@sveltejs/kit').RequestHandler} */
-export async function GET({ request, cookies, url }) {
+/** @type {import('./$types').RequestHandler} */
+export async function GET({ request, cookies, fetch, url }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);
 
@@ -51,23 +54,16 @@ export async function GET({ request, cookies, url }) {
     const num = url.searchParams.get('num');
     const limit = num ? parseInt(num, 10) : null;
 
-    // 1. Try Authorization header
-    let token = request.headers.get('Authorization')?.split(' ')[1];
-
-    // 2. Fallback to 'materio_auth_token' cookie if header is missing
-    if (!token) {
-        token = cookies.get('materio_auth_token');
-    }
+    // Authorization header first, shared session cookie as the browser fallback.
+    const token = request.headers.get('Authorization')?.split(' ')[1] || getCookieToken(cookies);
 
     if (!token) {
         return json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
     }
 
-    try {
-        // Use env variable or fallback since "no env in play"
-        const secret = env.JWT_SECRET || 'secret';
-        jwt.verify(token, secret);
-    } catch (err) {
+    // Validate against Materio ID, same as every other authenticated route.
+    const { user } = await validateToken(token, fetch);
+    if (!user) {
         return json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders });
     }
 

@@ -1,19 +1,19 @@
 import { json } from '@sveltejs/kit';
 import { getPostsCollection, getDb } from '$lib/server/db.js';
 import { ObjectId } from 'mongodb';
-import { validateToken } from '$lib/server/auth.js';
+import { validateToken, getCookieToken } from '$lib/server/auth.js';
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
 export async function GET({ request, url, cookies, fetch }) {
     // Basic auth check supporting both Cookies and Bearer tokens
-    let token = cookies.get('materio_auth_token');
+    let token = getCookieToken(cookies);
     const authHeader = request.headers.get('Authorization');
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
     }
     if (!token) return json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { user, accessTier } = await validateToken(token, fetch, url);
+    const { user, accessTier } = await validateToken(token, fetch);
     if (!user || accessTier !== 'super') {
         return json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }

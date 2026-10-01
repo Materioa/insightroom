@@ -1015,7 +1015,7 @@
             /** @type {Map<string, string>} */
             const footnoteDefs = new Map();
             const footnoteDefRegex = /^[ \t]*\[\^([^\]]+)\]:[ \t]*([\s\S]*?)(?=(?:^[ \t]*\[\^)|(?:\r?\n[ \t]*\r?\n(?![ \t]))|$)/gm;
-            rawContent = rawContent.replace(footnoteDefRegex, (match, id, text) => {
+            rawContent = rawContent.replace(footnoteDefRegex, (/** @type {string} */ match, /** @type {string} */ id, /** @type {string} */ text) => {
                 const cleanText = text.trim().replace(/\r?\n[ \t]*/g, ' ');
                 footnoteDefs.set(id, cleanText);
                 return '';
@@ -1027,7 +1027,7 @@
             const footnoteNumMap = new Map();
 
             const footnoteRefRegex = /\[\^([^\]]+)\]/g;
-            rawContent = rawContent.replace(footnoteRefRegex, (match, id) => {
+            rawContent = rawContent.replace(footnoteRefRegex, (/** @type {string} */ match, /** @type {string} */ id) => {
                 let num = footnoteNumMap.get(id);
                 if (!num) {
                     num = footnoteOrder.length + 1;

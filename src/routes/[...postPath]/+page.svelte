@@ -11,7 +11,7 @@
     stopAudio,
   } from "$lib/utils/postLogic.js";
   import { page } from "$app/stores";
-  import { dev } from "$app/environment";
+  import { ACCOUNTS_URL, buildLoginUrl } from "$lib/authUrls.js";
   import { showSearchBoxStore } from "$lib/stores/search";
   import { initializePostBase } from "$lib/utils/postBaseLogic.js";
   import { initTOC } from "$lib/utils/toc.js";
@@ -1332,18 +1332,14 @@
               <!-- Action buttons -->
               <div class="locked-actions">
                 <a
- use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                  href={dev
-                    ? `http://localhost:1000/account?callback=${encodeURIComponent("http://localhost:5173" + $page.url.pathname)}`
-                    : `https://materioa.vercel.app/account?callback=${encodeURIComponent("https://room.getmaterio.app" + $page.url.pathname)}`}
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                  href={buildLoginUrl($page.url.origin, $page.url.pathname)}
                   class="locked-btn locked-btn-login no-pill"
                 >
                   <i class="fa-solid fa-user"></i>
                   Log In
                 </a>
                 <a
- use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                  href={dev
-                    ? "http://localhost:1000/account/upgrade"
-                    : "https://materioa.vercel.app/account/upgrade"}
+ use:smoothCorners={{ corners: { radius: 25, smoothing: 0.6 } }}                  href={`${ACCOUNTS_URL}/upgrade`}
                   class="locked-btn locked-btn-upgrade no-pill"
                 >
                   <i class="fa-solid fa-bolt"></i>

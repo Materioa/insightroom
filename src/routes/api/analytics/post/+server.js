@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getPostAnalytics } from '$lib/server/analytics.js';
-import { validateToken } from '$lib/server/auth.js';
+import { validateToken, getCookieToken } from '$lib/server/auth.js';
 
 /** @type {import('./$types').RequestHandler} */
 export const GET = async ({ url, cookies, fetch, request }) => {
@@ -11,10 +11,10 @@ export const GET = async ({ url, cookies, fetch, request }) => {
         if (authHeader && authHeader.startsWith('Bearer ')) {
             token = authHeader.substring(7);
         } else {
-            token = cookies.get('materio_auth_token') || '';
+            token = getCookieToken(cookies) || '';
         }
 
-        const { user, accessTier } = await validateToken(token, fetch, url);
+        const { user, accessTier } = await validateToken(token, fetch);
         if (!user || accessTier !== 'super') {
             return json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
         }

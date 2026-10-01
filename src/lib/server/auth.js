@@ -1,98 +1,109 @@
 import { env } from '$env/dynamic/private';
 
-// Shared server-side authentication cache to reduce external API overhead and speed up TTFB (Time to First Byte)
-/** @type {Map<string, { data: { user: any, accessTier: string }, expires: number }>} */
-const tokenCache = new Map();
+/** Shared session cookie issued by auth.getmaterio.app (Domain=.getmaterio.app in production). */
+export const SESSION_COOKIE = 'materio_token';
+/** Cookie name used by the deprecated auth system. Read as a fallback and cleaned up once invalid. */
+export const LEGACY_SESSION_COOKIE = 'materio_auth_token';
 
-// Track connection failures for auth servers to avoid slow connection timeouts/refusals (e.g. localhost:1000 in dev)
-/** @type {Map<string, number>} */
-const failedEndpoints = new Map();
+export const AUTH_URL = (env.AUTH_URL || 'https://auth.getmaterio.app').replace(/\/$/, '');
 
-const CACHE_DURATION = 5 * 60 * 1000; // Cache valid profiles for 5 minutes
-const COOLDOWN_DURATION = 60 * 1000; // 1 minute cooldown after a connection failure
+/** @param {string} hostname */
+export function isProdHost(hostname) {
+    return hostname === 'getmaterio.app' || hostname.endsWith('.getmaterio.app');
+}
 
 /**
- * Validates a user authentication token with the authentication servers.
- * Implements an in-memory cache and connection failure cooldowns to ensure fast load times.
- * 
- * @param {string | undefined} token - The raw auth token.
- * @param {import('@sveltejs/kit').RequestEvent['fetch']} fetchFn - SvelteKit context-aware fetch function.
- * @param {URL} url - Request URL (used to detect development host).
+ * Cookie options matching Materio's shared-session config so the cookie is
+ * shared with auth/accounts/admin and every other *.getmaterio.app app.
+ * @param {URL} url
+ */
+export function sessionCookieOptions(url) {
+    const prod = isProdHost(url.hostname);
+    return /** @type {const} */ ({
+        path: '/',
+        domain: prod ? '.getmaterio.app' : undefined,
+        secure: prod,
+        httpOnly: false, // auth app reads this client-side for silent SSO
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7
+    });
+}
+
+/**
+ * @param {import('@sveltejs/kit').Cookies} cookies
+ * @returns {string}
+ */
+export function getCookieToken(cookies) {
+    return cookies.get(SESSION_COOKIE) || cookies.get(LEGACY_SESSION_COOKIE) || '';
+}
+
+// Shared server-side cache so we don't hit the auth API on every request.
+/** @type {Map<string, { data: { user: any, accessTier: string }, expires: number }>} */
+const tokenCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 500;
+
+/**
+ * Only the fields the app needs. /api/v2/profile also returns recoveryKey,
+ * 2FA state etc., which must never reach the browser.
+ * @param {any} u
+ */
+function sanitizeUser(u) {
+    return {
+        id: u.id,
+        username: u.username,
+        displayName: u.displayName,
+        email: u.email,
+        profilePicture: u.profilePicture,
+        hasAdminPrivileges: !!u.hasAdminPrivileges,
+        isPlusUser: !!u.isPlusUser,
+        isLiteUser: !!u.isLiteUser
+    };
+}
+
+/**
+ * Validates a session or OAuth access token against auth.getmaterio.app.
+ * Works for browser session tokens and MCP OAuth access tokens alike.
+ *
+ * @param {string | undefined} token
+ * @param {typeof fetch} fetchFn
  * @returns {Promise<{ user: any, accessTier: string }>}
  */
-export async function validateToken(token, fetchFn, url) {
-    if (!token) {
-        return { user: null, accessTier: 'guest' };
-    }
+export async function validateToken(token, fetchFn) {
+    const guest = { user: null, accessTier: 'guest' };
+    if (!token) return guest;
 
-    const now = Date.now();
-
-    // Check successful validation cache
     const cached = tokenCache.get(token);
-    if (cached && cached.expires > now) {
-        return cached.data;
-    }
+    if (cached && cached.expires > Date.now()) return cached.data;
 
-    const isDevHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-    const authBaseUrls = [];
-    if (env.AUTH_URL) {
-        authBaseUrls.push(env.AUTH_URL);
-    }
-    if (isDevHost) {
-        authBaseUrls.push('http://localhost:1000', 'https://getmaterio.app', 'https://materioa.vercel.app');
-    } else {
-        authBaseUrls.push('https://getmaterio.app', 'https://materioa.vercel.app');
-    }
+    try {
+        const res = await fetchFn(`${AUTH_URL}/api/v2/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return guest;
 
-    // Filter out endpoints that are currently in connection cooldown
-    const activeUrls = authBaseUrls.filter(baseUrl => {
-        const cooldownUntil = failedEndpoints.get(baseUrl);
-        return !cooldownUntil || cooldownUntil < now;
-    });
+        const body = await res.json();
+        const raw = body.user || body;
+        if (!raw?.id) return guest;
 
-    // Fallback to all endpoints if all of them are in cooldown
-    const endpointsToTry = activeUrls.length > 0 ? activeUrls : authBaseUrls;
+        const user = sanitizeUser(raw);
+        const banned = body.suspended === true || raw.isBanned === true;
 
-    for (const authBaseUrl of endpointsToTry) {
-        try {
-            const response = await fetchFn(`${authBaseUrl}/api/v2/profile`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                const errBody = await response.text();
-                console.warn(`[AuthCache] Validation failed for ${authBaseUrl}: Status ${response.status}, Error: ${errBody}`);
-                continue;
-            }
-
-            const userData = await response.json();
-            const user = userData.user || userData;
-
-            let accessTier = 'normal';
-            if (user?.hasAdminPrivileges) {
-                accessTier = 'super';
-            } else if (user?.isPlusUser) {
-                accessTier = 'plus';
-            }
-
-            const result = { user, accessTier };
-            tokenCache.set(token, { data: result, expires: Date.now() + CACHE_DURATION });
-            
-            // Clean up any cooldown entries if we succeeded
-            failedEndpoints.delete(authBaseUrl);
-            
-            return result;
-        } catch (err) {
-            // @ts-ignore
-            console.error(`[AuthCache] Network error connecting to ${authBaseUrl}:`, err.message);
-            // Put endpoint on cooldown so we don't try connecting again immediately
-            failedEndpoints.set(authBaseUrl, Date.now() + COOLDOWN_DURATION);
+        let accessTier = 'normal';
+        if (!banned) {
+            if (user.hasAdminPrivileges) accessTier = 'super';
+            else if (user.isPlusUser) accessTier = 'plus';
         }
-    }
 
-    return { user: null, accessTier: 'guest' };
+        const data = { user, accessTier };
+        if (tokenCache.size >= MAX_CACHE_ENTRIES) {
+            const oldest = tokenCache.keys().next().value;
+            if (oldest) tokenCache.delete(oldest);
+        }
+        tokenCache.set(token, { data, expires: Date.now() + CACHE_DURATION });
+        return data;
+    } catch (err) {
+        console.error('[auth] validation network error:', /** @type {Error} */ (err).message);
+        return guest;
+    }
 }

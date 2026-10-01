@@ -4,10 +4,11 @@ import { getAllPosts } from '$lib/server/posts.js';
 export const prerender = false;
 
 const ALLOWED_ORIGINS = new Set([
-    'https://materioa.vercel.app',
-    'https://getmaterio.app',
     'https://room.getmaterio.app',
+    'https://getmaterio.app',
+    'https://accounts.getmaterio.app',
     'http://localhost:5173',
+    'http://localhost:5174',
     'http://localhost:1000'
 ]);
 
@@ -19,6 +20,9 @@ function getCorsHeaders(origin) {
     const headers = {
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        // Same list for every caller, but it changes as posts are published,
+        // so keep it short and let clients revalidate.
+        'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=120',
         Vary: 'Origin'
     };
 
@@ -32,7 +36,7 @@ function getCorsHeaders(origin) {
     return headers;
 }
 
-/** @type {import('@sveltejs/kit').RequestHandler} */
+/** @type {import('./$types').RequestHandler} */
 export function OPTIONS({ request }) {
     const origin = request.headers.get('origin');
     return new Response(null, {
@@ -40,7 +44,7 @@ export function OPTIONS({ request }) {
     });
 }
 
-/** @type {import('@sveltejs/kit').RequestHandler} */
+/** @type {import('./$types').RequestHandler} */
 export async function GET({ request, url }) {
     const origin = request.headers.get('origin');
     const corsHeaders = getCorsHeaders(origin);

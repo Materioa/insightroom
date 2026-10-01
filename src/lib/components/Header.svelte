@@ -2,8 +2,9 @@
   import { smoothCorners } from "@lisse/svelte";
   import { page } from "$app/stores";
   import { searchTerm, showSearchBoxStore } from "$lib/stores/search";
-  import { dev, browser } from "$app/environment";
+  import { browser } from "$app/environment";
   import { optimizeSupabaseUrl } from "$lib/utils/image.js";
+  import { ACCOUNTS_URL, buildLoginUrl } from "$lib/authUrls.js";
 
 
   let {
@@ -24,41 +25,21 @@
     showSettingsMenu = !showSettingsMenu;
   }
 
-  /** @param {string} name */
-  function expireCookie(name) {
-    const expiry = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    const secure = window.location.protocol === "https:" ? "; secure" : "";
-    const domains = ["", "; domain=.getmaterio.app", "; domain=getmaterio.app"];
-
-    for (const domain of domains) {
-      document.cookie = `${name}=; path=/; ${expiry}; samesite=lax${domain}${secure}`;
-    }
-  }
-
-  function handleLogout() {
-    expireCookie("materio_auth_token");
-    expireCookie("materio_user_id");
+  async function handleLogout() {
+    // Server clears the shared session cookie (all *.getmaterio.app apps).
+    await fetch("/auth/logout", { method: "POST" }).catch(() => {});
     localStorage.removeItem("materio_user_id");
     localStorage.removeItem("has_ask_privileges");
     window.location.reload();
   }
 
   function goToLogin() {
-    const useLocalAuth = false; // Set to true to use local Materio auth service on port 1000
-    const loginUrl =
-      dev && useLocalAuth
-        ? `http://localhost:1000/account?callback=${encodeURIComponent(window.location.href)}`
-        : `https://getmaterio.app/account?callback=${encodeURIComponent(window.location.href)}`;
-    window.location.href = loginUrl;
+    const { origin, pathname, search } = window.location;
+    window.location.href = buildLoginUrl(origin, pathname + search);
   }
 
   function goToProfile() {
-    const useLocalAuth = false; // Set to true to use local Materio auth service on port 1000
-    const profileUrl =
-      dev && useLocalAuth
-        ? "http://localhost:1000/account/profile"
-        : "https://getmaterio.app/account/profile";
-    window.location.href = profileUrl;
+    window.location.href = `${ACCOUNTS_URL}/profile`;
   }
 
   /** @param {MouseEvent} event */

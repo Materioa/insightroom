@@ -1,6 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getDb } from '$lib/server/db.js';
-import crypto from 'crypto';
+import { AUTH_URL } from '$lib/server/auth.js';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -14,98 +13,42 @@ export async function OPTIONS() {
 }
 
 /**
- * Dynamic Client Registration (RFC 7591)
- * Claude and other MCP clients use this to register themselves dynamically.
- * Since our auth is handled by Materio's backend, we store the client metadata
- * and return the client_id that the MCP client will use for OAuth flows.
+ * Dynamic Client Registration (RFC 7591), proxied to Materio ID so clients are
+ * registered where they're validated (redirect URIs are enforced at authorize time).
+ * @type {import('@sveltejs/kit').RequestHandler}
  */
-/** @type {import('@sveltejs/kit').RequestHandler} */
-export async function POST({ request }) {
+export async function POST({ request, fetch, getClientAddress }) {
+    /** @type {Record<string, any>} */
+    let body;
     try {
-        const body = await request.json();
+        body = await request.json();
+    } catch {
+        return json({ error: 'invalid_client_metadata', error_description: 'Body must be JSON' }, { status: 400, headers: corsHeaders });
+    }
 
-        // Extract client metadata from the registration request
-        const {
-            client_name,
-            redirect_uris,
-            grant_types,
-            response_types,
-            token_endpoint_auth_method,
-            scope,
-            client_uri,
-            logo_uri,
-            contacts
-        } = body;
-
-        // Validate required fields
-        if (!redirect_uris || !Array.isArray(redirect_uris) || redirect_uris.length === 0) {
-            return json({
-                error: 'invalid_client_metadata',
-                error_description: 'redirect_uris is required and must be a non-empty array'
-            }, { status: 400, headers: corsHeaders });
-        }
-
-        // Generate a unique client_id
-        const client_id = `mcp_${crypto.randomUUID().replace(/-/g, '').substring(0, 24)}`;
-        // For public clients (PKCE), no client_secret is needed
-        const isPublicClient = !token_endpoint_auth_method || token_endpoint_auth_method === 'none';
-
-        const clientRecord = {
-            client_id,
-            client_name: client_name || 'MCP Client',
-            redirect_uris,
-            grant_types: grant_types || ['authorization_code'],
-            response_types: response_types || ['code'],
-            token_endpoint_auth_method: token_endpoint_auth_method || 'none',
-            scope: scope || 'admin',
-            client_uri: client_uri || null,
-            logo_uri: logo_uri || null,
-            contacts: contacts || [],
-            is_public: isPublicClient,
-            created_at: new Date()
-        };
-
-        // Store in MongoDB for reference
-        const db = await getDb();
-        const clientsCol = db.collection('oauth_clients');
-        await clientsCol.insertOne(clientRecord);
-
-        // Return registration response per RFC 7591
-        /** @type {Record<string, any>} */
-        const response = {
-            client_id,
-            client_name: clientRecord.client_name,
-            redirect_uris: clientRecord.redirect_uris,
-            grant_types: clientRecord.grant_types,
-            response_types: clientRecord.response_types,
-            token_endpoint_auth_method: clientRecord.token_endpoint_auth_method,
-            scope: clientRecord.scope,
-            client_id_issued_at: Math.floor(Date.now() / 1000)
-        };
-
-        // If not a public client, generate a secret
-        if (!isPublicClient) {
-            const client_secret = crypto.randomBytes(32).toString('hex');
-            await clientsCol.updateOne(
-                { client_id },
-                { $set: { client_secret } }
-            );
-            response.client_secret = client_secret;
-            response.client_secret_expires_at = 0; // Never expires
-        }
-
-        return json(response, {
-            status: 201,
-            headers: {
-                ...corsHeaders,
-                'Cache-Control': 'no-store'
-            }
-        });
-    } catch (err) {
-        console.error('[DCR Error]', err);
+    if (!Array.isArray(body.redirect_uris) || body.redirect_uris.length === 0) {
         return json({
-            error: 'server_error',
-            error_description: 'Failed to register client'
-        }, { status: 500, headers: corsHeaders });
+            error: 'invalid_client_metadata',
+            error_description: 'redirect_uris is required and must be a non-empty array'
+        }, { status: 400, headers: corsHeaders });
+    }
+
+    // Auth rate-limits registrations per IP, so forward the real client address.
+    let ip = request.headers.get('x-forwarded-for') || '';
+    if (!ip) {
+        try { ip = getClientAddress(); } catch { /* unknown */ }
+    }
+
+    try {
+        const res = await fetch(`${AUTH_URL}/api/v2/auth?action=oauth_register_app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(ip ? { 'x-forwarded-for': ip } : {}) },
+            body: JSON.stringify({ scope: 'openid profile email offline_access admin', ...body })
+        });
+        const data = await res.json().catch(() => ({ error: 'server_error' }));
+        return json(data, { status: res.status, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } });
+    } catch (err) {
+        console.error('[DCR proxy]', /** @type {Error} */ (err).message);
+        return json({ error: 'server_error', error_description: 'Auth server unreachable' }, { status: 502, headers: corsHeaders });
     }
 }

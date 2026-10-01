@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { validateToken } from '$lib/server/auth.js';
+import { validateToken, getCookieToken } from '$lib/server/auth.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { env } from '$env/dynamic/private';
 import fs from 'fs';
@@ -40,7 +40,7 @@ export async function POST({ request, url, fetch }) {
         return json({ success: false, error: 'Unauthorized: Missing Token' }, { status: 401, headers: corsHeaders });
     }
 
-    const { user, accessTier } = await validateToken(token, fetch, url);
+    const { user, accessTier } = await validateToken(token, fetch);
     if (!user || accessTier !== 'super') {
         return json({ success: false, error: 'Unauthorized: Admin privileges required' }, { status: 403, headers: corsHeaders });
     }

@@ -1,19 +1,15 @@
-import { env } from '$env/dynamic/private';
+import { AUTH_URL } from '$lib/server/auth.js';
 
-/** @type {import('@sveltejs/kit').RequestHandler} */
+/**
+ * MCP clients (Claude etc.) expect the authorization endpoint on the same origin
+ * as the resource. Forward the browser to Materio ID's consent page, which sends
+ * unauthenticated users through /login and back.
+ * @type {import('@sveltejs/kit').RequestHandler}
+ */
 export async function GET({ url }) {
-    // Claude and other AI clients sometimes force the Authorization URL to be on the same domain as the API.
-    // This proxy redirects the browser seamlessly to the actual Materio SSO portal.
-    const authBaseUrl = env.AUTH_URL || 'https://getmaterio.app';
-    const ssoUrl = new URL(`${authBaseUrl}/account/sso`);
-    for (const [key, value] of url.searchParams.entries()) {
-        ssoUrl.searchParams.append(key, value);
-    }
-    
-    return new Response(null, {
-        status: 302,
-        headers: {
-            Location: ssoUrl.toString()
-        }
-    });
+    const target = new URL(`${AUTH_URL}/authorize`);
+    for (const [key, value] of url.searchParams) target.searchParams.append(key, value);
+    if (!target.searchParams.has('resource')) target.searchParams.set('resource', `${url.origin}/mcp`);
+
+    return new Response(null, { status: 302, headers: { Location: target.toString() } });
 }

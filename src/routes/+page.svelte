@@ -109,7 +109,7 @@
   />
   <meta
     property="og:image"
-    content="https://materioa.vercel.app/assets/img/og-theinsroom.jpg"
+    content="https://room.getmaterio.app/assets/img/og-theinsroom.jpg"
   />
   <meta property="og:url" content="https://room.getmaterio.app" />
   <meta property="og:type" content="website" />

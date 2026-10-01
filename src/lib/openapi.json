@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Insightroom REST API",
-    "description": "Stateless REST API to manage posts and upload assets for the Insightroom. Authenticates using a Bearer token from Materio.",
+    "description": "Stateless REST API to manage posts and upload assets for the Insightroom. Authenticates with a Materio ID Bearer token (session JWT or OAuth access token from auth.getmaterio.app).",
     "version": "1.0.0"
   },
   "servers": [
