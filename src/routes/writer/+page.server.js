@@ -1,12 +1,5 @@
-import { getAllPosts } from '$lib/server/posts.js';
+﻿import { redirect } from '@sveltejs/kit';
 
 export const load = async () => {
-    const allPosts = await getAllPosts();
-    const posts = allPosts.map(post => {
-        const { content, ...rest } = post;
-        return rest;
-    });
-    return {
-        posts
-    };
+    throw redirect(307, 'https://id.getmaterio.app/admin/writer');
 };
